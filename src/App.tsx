@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx - FIXED VERSION WITH COMPLETE HANDLERS
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -59,14 +59,14 @@ function App() {
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
 
-  // --- All hooks and handlers from previous App.tsx ---
-  // [NOTE: These are unchanged and included for completeness]
+  // --- Resize Handler ---
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // --- Clear pause flags for completed books ---
   useEffect(() => {
     books.forEach(book => {
       if (book.status === 'completed') {
@@ -76,6 +76,7 @@ function App() {
     });
   }, []);
 
+  // --- Update book service settings ---
   useEffect(() => {
     bookService.updateSettings(settings);
     bookService.setProgressCallback(handleBookProgressUpdate);
@@ -84,9 +85,13 @@ function App() {
     });
   }, [settings]);
 
+  // --- Save books to storage ---
   useEffect(() => { storageUtils.saveBooks(books); }, [books]);
+  
+  // --- Reset view when no book selected ---
   useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
 
+  // --- Online/Offline handlers ---
   useEffect(() => {
     const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
     const handleOffline = () => { setIsOnline(false); setShowOfflineMessage(true); setTimeout(() => setShowOfflineMessage(false), 5000); };
@@ -97,6 +102,7 @@ function App() {
 
   const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
   
+  // --- Get alternative AI models ---
   const getAlternativeModels = () => {
     const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
     if (settings.googleApiKey && settings.selectedProvider !== 'google') alternatives.push({ provider: 'google', model: 'gemini-2.5-flash', name: 'Google Gemini 2.5 Flash' });
@@ -108,6 +114,7 @@ function App() {
 
   const showModelSwitchModal = (alternatives: any) => { setModelSwitchOptions(alternatives); setShowModelSwitch(true); };
   
+  // --- Handle model switch ---
   const handleModelSwitch = async (provider: ModelProvider, model: string) => {
     const newSettings = { ...settings, selectedProvider: provider, selectedModel: model };
     setSettings(newSettings);
@@ -122,13 +129,20 @@ function App() {
     }, 100);
   };
 
+  // --- Handle retry decision ---
   const handleRetryDecision = async (decision: 'retry' | 'switch' | 'skip') => {
     if (!currentBook) return;
-    if (decision === 'retry') { bookService.setRetryDecision(currentBook.id, 'retry'); }
+    if (decision === 'retry') { 
+      bookService.setRetryDecision(currentBook.id, 'retry'); 
+    }
     else if (decision === 'switch') {
       bookService.setRetryDecision(currentBook.id, 'switch');
       const alternatives = getAlternativeModels();
-      if (alternatives.length === 0) { alert('No alternative models available. Please configure API keys in Settings.'); setSettingsOpen(true); return; }
+      if (alternatives.length === 0) { 
+        alert('No alternative models available. Please configure API keys in Settings.'); 
+        setSettingsOpen(true); 
+        return; 
+      }
       showModelSwitchModal(alternatives);
     } 
     else if (decision === 'skip') {
@@ -138,6 +152,7 @@ function App() {
     }
   };
 
+  // --- Handle book selection ---
   const handleSelectBook = (id: string | null) => {
     setCurrentBookId(id);
     if (id) {
@@ -150,60 +165,244 @@ function App() {
     }
   };
 
+  // --- Update book progress ---
   const handleBookProgressUpdate = (bookId: string, updates: Partial<BookProject>) => {
     setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
   };
   
+  // ✅ FIXED: Complete handler for creating book roadmap
   const handleCreateBookRoadmap = async (session: BookSession) => {
-    // ... (handler logic is unchanged)
-  };
-  
-  const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
-     // ... (handler logic is unchanged)
-  };
+    if (!session.goal.trim()) {
+      alert('Please enter a learning goal');
+      return;
+    }
 
-  const handlePauseGeneration = (bookId: string) => {
-    bookService.pauseGeneration(bookId);
-    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Paused' }));
-  };
+    if (!hasApiKey) {
+      alert('Please configure an API key in Settings first');
+      setSettingsOpen(true);
+      return;
+    }
 
-  const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
-    // ... (handler logic is unchanged)
-  };
+    const bookId = generateId();
+    const newBook: BookProject = {
+      id: bookId,
+      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
+      goal: session.goal,
+      language: 'en',
+      status: 'planning',
+      progress: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      modules: [],
+      category: 'general',
+      reasoning: session.reasoning
+    };
 
-  const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
-    // ... (handler logic is unchanged)
-  };
+    setBooks(prev => [...prev, newBook]);
+    setCurrentBookId(bookId);
+    setView('detail');
 
-  const handleAssembleBook = async (book: BookProject, session: BookSession) => {
-    // ... (handler logic is unchanged)
-  };
-
-  const handleDeleteBook = (id: string) => {
-    if (window.confirm('Delete this book permanently?')) {
-      setBooks(prev => prev.filter(b => b.id !== id));
-      if (currentBookId === id) setCurrentBookId(null);
-      localStorage.removeItem(`checkpoint_${id}`);
-      localStorage.removeItem(`pause_flag_${id}`);
+    try {
+      console.log('🚀 Starting roadmap generation for:', session.goal);
+      const roadmap = await bookService.generateRoadmap(session, bookId);
+      console.log('✅ Roadmap generated successfully:', roadmap);
+      
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { ...book, roadmap, status: 'roadmap_completed', progress: 10, title: roadmap.modules[0]?.title.includes('Module') ? session.goal : roadmap.modules[0]?.title || session.goal }
+          : book
+      ));
+    } catch (error) {
+      console.error('❌ Roadmap generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { ...book, status: 'error', error: errorMessage }
+          : book
+      ));
+      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check:\n1. Your API key is correct\n2. You have internet connection\n3. The selected AI model is available`);
     }
   };
   
+  // ✅ FIXED: Complete handler for generating all modules
+  const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
+    if (!book.roadmap) {
+      alert('No roadmap available. Please generate a roadmap first.');
+      return;
+    }
+
+    console.log('🚀 Starting module generation for:', book.title);
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating',
+      totalProgress: 0,
+      logMessage: 'Starting generation...',
+      totalWordsGenerated: 0
+    });
+
+    try {
+      await bookService.generateAllModulesWithRecovery(book, session);
+      console.log('✅ All modules generated successfully');
+    } catch (error) {
+      console.error('❌ Module generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
+      
+      if (!errorMessage.includes('GENERATION_PAUSED')) {
+        setGenerationStatus({
+          status: 'error',
+          totalProgress: 0,
+          logMessage: `Generation failed: ${errorMessage}`
+        });
+        alert(`Generation failed: ${errorMessage}`);
+      }
+    }
+  };
+
+  // --- Handle pause generation ---
+  const handlePauseGeneration = (bookId: string) => {
+    console.log('⏸ Pausing generation for:', bookId);
+    bookService.pauseGeneration(bookId);
+    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
+  };
+
+  // ✅ FIXED: Complete handler for resuming generation
+  const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
+    if (!book.roadmap) {
+      alert('No roadmap available');
+      return;
+    }
+
+    console.log('▶ Resuming generation for:', book.title);
+    bookService.resumeGeneration(book.id);
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating',
+      totalProgress: 0,
+      logMessage: 'Resuming generation...',
+      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
+    });
+
+    try {
+      await bookService.generateAllModulesWithRecovery(book, session);
+      console.log('✅ Generation resumed and completed');
+    } catch (error) {
+      console.error('❌ Resume generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Resume failed';
+      
+      if (!errorMessage.includes('GENERATION_PAUSED')) {
+        setGenerationStatus({
+          status: 'error',
+          totalProgress: 0,
+          logMessage: `Resume failed: ${errorMessage}`
+        });
+      }
+    }
+  };
+
+  // ✅ FIXED: Complete handler for retrying failed modules
+  const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
+    const failedModules = book.modules.filter(m => m.status === 'error');
+    
+    if (failedModules.length === 0) {
+      alert('No failed modules to retry');
+      return;
+    }
+
+    console.log('🔄 Retrying', failedModules.length, 'failed modules');
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating',
+      totalProgress: 0,
+      logMessage: `Retrying ${failedModules.length} failed modules...`,
+      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
+    });
+
+    try {
+      await bookService.retryFailedModules(book, session);
+      console.log('✅ Failed modules retry completed');
+    } catch (error) {
+      console.error('❌ Retry failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Retry failed';
+      setGenerationStatus({
+        status: 'error',
+        totalProgress: 0,
+        logMessage: `Retry failed: ${errorMessage}`
+      });
+    }
+  };
+
+  // ✅ FIXED: Complete handler for assembling book
+  const handleAssembleBook = async (book: BookProject, session: BookSession) => {
+    console.log('📦 Assembling final book:', book.title);
+    
+    try {
+      await bookService.assembleFinalBook(book, session);
+      console.log('✅ Book assembled successfully');
+      setGenerationStatus({
+        status: 'completed',
+        totalProgress: 100,
+        logMessage: '✅ Book completed!'
+      });
+    } catch (error) {
+      console.error('❌ Book assembly failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
+      alert(`Failed to assemble book: ${errorMessage}`);
+      setBooks(prev => prev.map(b => 
+        b.id === book.id 
+          ? { ...b, status: 'error', error: errorMessage }
+          : b
+      ));
+    }
+  };
+
+  // --- Handle delete book ---
+  const handleDeleteBook = (id: string) => {
+    if (window.confirm('Delete this book permanently? This cannot be undone.')) {
+      console.log('🗑️ Deleting book:', id);
+      setBooks(prev => prev.filter(b => b.id !== id));
+      if (currentBookId === id) {
+        setCurrentBookId(null);
+        setView('list');
+      }
+      try {
+        localStorage.removeItem(`checkpoint_${id}`);
+        localStorage.removeItem(`pause_flag_${id}`);
+      } catch (e) {
+        console.warn('Failed to clear storage:', e);
+      }
+    }
+  };
+  
+  // --- Handle save settings ---
   const handleSaveSettings = (newSettings: APISettings) => {
+    console.log('💾 Saving settings');
     setSettings(newSettings);
     storageUtils.saveSettings(newSettings);
     setSettingsOpen(false);
   };
   
+  // --- Handle model change ---
   const handleModelChange = (model: string, provider: ModelProvider) => {
+    console.log('🔄 Changing model:', provider, model);
     const newSettings = { ...settings, selectedModel: model, selectedProvider: provider };
     setSettings(newSettings);
     storageUtils.saveSettings(newSettings);
   };
 
-  const handleInstallApp = async () => { await installApp(); };
+  // --- Handle install app ---
+  const handleInstallApp = async () => { 
+    const success = await installApp(); 
+    if (success) console.log('✅ App installed successfully');
+  };
   
+  // --- Handle update book content ---
   const handleUpdateBookContent = (bookId: string, newContent: string) => {
-    setBooks(prev => prev.map(book => book.id === bookId ? { ...book, finalBook: newContent, updatedAt: new Date() } : book));
+    console.log('📝 Updating book content:', bookId);
+    setBooks(prev => prev.map(book => 
+      book.id === bookId 
+        ? { ...book, finalBook: newContent, updatedAt: new Date() }
+        : book
+    ));
   };
 
   return (
@@ -216,15 +415,22 @@ function App() {
         onOpenSettings={() => setSettingsOpen(true)}
         onSelectBook={handleSelectBook}
         onDeleteBook={handleDeleteBook}
-        onNewBook={() => setView('create')}
+        onNewBook={() => {
+          setView('create');
+          setCurrentBookId(null);
+        }}
       />
 
       <main className="main-content">
         {showOfflineMessage && (
           <div className="fixed top-20 right-4 z-50 content-card p-3 animate-fade-in-up">
-            <div className="flex items-center gap-2 text-yellow-400"><WifiOff size={16} /> <span className="text-sm">You're offline</span></div>
+            <div className="flex items-center gap-2 text-yellow-400">
+              <WifiOff size={16} /> 
+              <span className="text-sm">You're offline. Some features may be unavailable.</span>
+            </div>
           </div>
         )}
+
         <BookView
           books={books}
           currentBookId={currentBookId}
@@ -251,17 +457,50 @@ function App() {
         />
       </main>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} settings={settings} onSaveSettings={handleSaveSettings} />
+      {/* Settings Modal */}
+      <SettingsModal 
+        isOpen={settingsOpen} 
+        onClose={() => setSettingsOpen(false)} 
+        settings={settings} 
+        onSaveSettings={handleSaveSettings} 
+      />
       
+      {/* Model Switch Modal */}
       {showModelSwitch && (
-        // ... (Model switch modal JSX is unchanged)
-        <div/>
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+            <h3 className="text-xl font-bold mb-4">Switch AI Model</h3>
+            <p className="text-sm text-gray-400 mb-6">
+              Select an alternative model to continue generation:
+            </p>
+            <div className="space-y-3 mb-6">
+              {modelSwitchOptions.map((option) => (
+                <button
+                  key={`${option.provider}-${option.model}`}
+                  onClick={() => handleModelSwitch(option.provider, option.model)}
+                  className="w-full p-4 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg hover:border-blue-500 transition-all text-left"
+                >
+                  <div className="font-semibold text-white">{option.name}</div>
+                  <div className="text-sm text-gray-400 mt-1">{option.provider} • {option.model}</div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowModelSwitch(false)}
+              className="w-full btn btn-secondary"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
       
+      {/* Install Prompt */}
       {isInstallable && !isInstalled && (
         <InstallPrompt onInstall={handleInstallApp} onDismiss={dismissInstallPrompt} />
       )}
       
+      {/* Analytics */}
       <Analytics />
     </div>
   );
