@@ -1,4 +1,4 @@
-// src/components/BookView.tsx - COMPLETE FILE WITH RETRY SYSTEM
+// src/components/BookView.tsx
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -248,7 +248,6 @@ const PixelAnimation = () => {
   );
 };
 
-// ✅ NEW: Retry Decision Panel Component
 const RetryDecisionPanel = ({
   retryInfo,
   onRetry,
@@ -408,7 +407,6 @@ const RetryDecisionPanel = ({
   );
 };
 
-// ✅ UPDATED: Embedded Progress Panel with Retry Support
 const EmbeddedProgressPanel = ({
   generationStatus,
   stats,
@@ -440,7 +438,6 @@ const EmbeddedProgressPanel = ({
 
   const overallProgress = (stats.completedModules / (stats.totalModules || 1)) * 100;
 
-  // ✅ Show retry panel if waiting for retry decision
   if (isWaitingRetry && generationStatus.retryInfo && onRetryDecision) {
     return (
       <RetryDecisionPanel
@@ -646,40 +643,40 @@ const HomeView = ({
   hasApiKey: boolean;
   bookCount: number;
 }) => (
-  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
-    <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
-    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up">
-      <div className="relative w-28 h-28 mx-auto mb-6">
-        <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
-        <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28 relative" />
+  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0f0f0f]">
+    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up space-y-6">
+      <div className="flex justify-center items-center gap-4">
+          <img src="/white-logo.png" alt="Pustakam Logo" className="w-20 h-20" />
+          <h1 className="text-7xl font-extrabold text-white">Pustakam</h1>
       </div>
-      <h1 className="text-5xl font-bold mb-4 text-white">Turn Ideas into Books</h1>
-      <p className="text-xl text-[var(--color-text-secondary)] mb-10">
-        Pustakam is an AI-powered engine that transforms your concepts into fully-structured
-        digital books.
+      
+      <h2 className="text-5xl font-bold text-white tracking-tight">Turn Ideas into Books</h2>
+      
+      <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto">
+        Pustakam uses AI to transform your concepts into fully-structured digital books. Private, local-first, and completely under your control.
       </p>
+
       {hasApiKey ? (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <button
             onClick={onNewBook}
-            className="btn btn-primary btn-lg shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 w-full sm:w-auto"
+            className="btn bg-white text-black hover:bg-gray-200 text-base px-6 py-3"
           >
-            <Sparkles className="w-5 h-5" />
-            Create New Book
+            ✨ Create Book
           </button>
           {bookCount > 0 && (
-            <button onClick={onShowList} className="btn btn-secondary w-full sm:w-auto">
+            <button onClick={onShowList} className="btn btn-secondary text-base px-6 py-3">
               <List className="w-4 h-4" />
-              View My Books
+              View Library
             </button>
           )}
         </div>
       ) : (
-        <div className="content-card p-6 max-w-md mx-auto">
+        <div className="content-card p-6 max-w-md mx-auto mt-6">
           <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
           <h3 className="font-semibold mb-2">API Key Required</h3>
           <p className="text-sm text-gray-400">
-            Please configure your API key in Settings to begin.
+            Please add your API key in Settings to begin creating books.
           </p>
         </div>
       )}
@@ -1777,9 +1774,8 @@ export function BookView({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* ✅ Generation Progress Panel with Retry Support */}
                   {(isGenerating || isPaused || generationStatus?.status === 'waiting_retry') &&
-                    currentBook.status !== 'completed' && // ✅ FIX: Don't show for completed books
+                    currentBook.status !== 'completed' &&
                         generationStatus &&
                         generationStats && (
                               <EmbeddedProgressPanel
@@ -1875,91 +1871,85 @@ export function BookView({
                     </div>
                   )}
 
-{/* Book Completed */}
-{currentBook.status === 'completed' && (
-  <div className="space-y-6">
-    {/* Completion Header */}
-    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-6">
-      <div className="flex items-center gap-4 mb-4">
-        <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-          <CheckCircle2 className="w-6 h-6 text-green-400" />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-white">Generation Complete</h3>
-          <p className="text-sm text-gray-400">
-            Your book is ready to read and download
-          </p>
-        </div>
-      </div>
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button
-          onClick={() => setDetailTab('read')}
-          className="btn btn-primary justify-center"
-        >
-          <Eye className="w-4 h-4" />
-          Read Book
-        </button>
-        <button
-          onClick={() => bookService.downloadAsMarkdown(currentBook)}
-          className="btn btn-secondary justify-center"
-        >
-          <Download className="w-4 h-4" />
-          Download .MD
-        </button>
-        <button
-          onClick={handleDownloadPdf}
-          disabled={pdfProgress > 0}
-          className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all"
-        >
-          {pdfProgress > 0 ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="hidden sm:inline">PDF ({pdfProgress}%)</span>
-              <span className="sm:hidden">{pdfProgress}%</span>
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Download PDF</span>
-              <span className="sm:hidden">PDF</span>
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-    {/* Book Stats */}
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-        <div className="text-2xl font-bold text-white mb-1">
-          {currentBook.modules.length}
-        </div>
-        <div className="text-xs text-gray-400">Chapters</div>
-      </div>
-      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-        <div className="text-2xl font-bold text-white mb-1">
-          {(currentBook.totalWords || 0).toLocaleString()}
-        </div>
-        <div className="text-xs text-gray-400">Words</div>
-      </div>
-      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-        <div className="text-2xl font-bold text-white mb-1">
-          {currentBook.roadmap?.estimatedReadingTime || 'N/A'}
-        </div>
-        <div className="text-xs text-gray-400">Est. Reading</div>
-      </div>
-      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-        <div className="text-2xl font-bold text-white mb-1 capitalize">
-          {currentBook.roadmap?.difficultyLevel || 'N/A'}
-        </div>
-        <div className="text-xs text-gray-400">Level</div>
-      </div>
-    </div>
-  </div>
-)}
+                  {currentBook.status === 'completed' && (
+                    <div className="space-y-6">
+                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-6">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-green-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">Generation Complete</h3>
+                            <p className="text-sm text-gray-400">
+                              Your book is ready to read and download
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <button
+                            onClick={() => setDetailTab('read')}
+                            className="btn btn-primary justify-center"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Read Book
+                          </button>
+                          <button
+                            onClick={() => bookService.downloadAsMarkdown(currentBook)}
+                            className="btn btn-secondary justify-center"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download .MD
+                          </button>
+                          <button
+                            onClick={handleDownloadPdf}
+                            disabled={pdfProgress > 0}
+                            className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all"
+                          >
+                            {pdfProgress > 0 ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span className="hidden sm:inline">PDF ({pdfProgress}%)</span>
+                                <span className="sm:hidden">{pdfProgress}%</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4" />
+                                <span className="hidden sm:inline">Download PDF</span>
+                                <span className="sm:hidden">PDF</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
+                          <div className="text-2xl font-bold text-white mb-1">
+                            {currentBook.modules.length}
+                          </div>
+                          <div className="text-xs text-gray-400">Chapters</div>
+                        </div>
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
+                          <div className="text-2xl font-bold text-white mb-1">
+                            {(currentBook.totalWords || 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-400">Words</div>
+                        </div>
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
+                          <div className="text-2xl font-bold text-white mb-1">
+                            {currentBook.roadmap?.estimatedReadingTime || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-400">Est. Reading</div>
+                        </div>
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
+                          <div className="text-2xl font-bold text-white mb-1 capitalize">
+                            {currentBook.roadmap?.difficultyLevel || 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-400">Level</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-
-                  {/* Assembling Status */}
                   {currentBook.status === 'assembling' && (
                     <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow">
                       <div className="flex flex-col items-center text-center gap-4">
@@ -1982,7 +1972,6 @@ export function BookView({
                     </div>
                   )}
 
-                  {/* Learning Roadmap */}
                   {currentBook.roadmap &&
                     (currentBook.status !== 'completed' && !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry') && (
                       <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6">
