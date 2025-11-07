@@ -361,6 +361,7 @@ function App() {
           isGenerating={isGenerating}
           onRetryDecision={handleRetryDecision}
           availableModels={getAlternativeModels()}
+          theme={theme}
         />
       </main>
 
@@ -383,7 +384,7 @@ function App() {
                   onClick={() => handleModelSwitch(option.provider, option.model)}
                   className="w-full p-4 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg hover:border-blue-500 transition-all text-left"
                 >
-                  <div className="font-semibold text-white">{option.name}</div>
+                  <div className="font-semibold text-[var(--color-text-primary)]">{option.name}</div>
                   <div className="text-sm text-gray-400 mt-1">{option.provider} • {option.model}</div>
                 </button>
               ))}
