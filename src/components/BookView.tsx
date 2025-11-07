@@ -119,6 +119,7 @@ interface BookViewProps {
   isGenerating?: boolean;
   onRetryDecision?: (decision: 'retry' | 'switch' | 'skip') => void;
   availableModels?: Array<{provider: string; model: string; name: string}>;
+  theme: 'light' | 'dark';
 }
 interface ReadingModeProps {
   content: string;
@@ -755,17 +756,23 @@ const HomeView = ({
   onShowList,
   hasApiKey,
   bookCount,
+  theme,
 }: {
   onNewBook: () => void;
   onShowList: () => void;
   hasApiKey: boolean;
   bookCount: number;
+  theme: 'light' | 'dark';
 }) => (
   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
-    <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
+    {theme === 'dark' && (
+      <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
+    )}
     <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up">
       <div className="relative w-24 h-24 mx-auto mb-6">
-        <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
+        {theme === 'dark' && (
+          <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
+        )}
         <img src="/white-logo.png" alt="Pustakam Logo" className="w-24 h-24 relative logo-img" />
       </div>
       <h1 className="text-4xl font-bold mb-4 text-[var(--color-text-primary)]">Turn Ideas into Books</h1>
@@ -1001,6 +1008,7 @@ export function BookView({
   isGenerating,
   onRetryDecision,
   availableModels,
+  theme,
 }: BookViewProps) {
   const [detailTab, setDetailTab] = useState<'overview' | 'analytics' | 'read'>('overview');
   const [localIsGenerating, setLocalIsGenerating] = useState(false);
@@ -1189,6 +1197,7 @@ export function BookView({
         onShowList={() => setShowListInMain(true)}
         hasApiKey={hasApiKey}
         bookCount={books.length}
+        theme={theme}
       />
     );
   }
@@ -1202,7 +1211,7 @@ export function BookView({
             setView('list');
             setShowListInMain(false);
           }}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-8"
+          className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -1210,7 +1219,7 @@ export function BookView({
 
         <div className="mb-8">
           <h1 className="text-2xl font-bold mb-2">Create New Book</h1>
-          <p className="text-gray-400">Describe what you want to learn and AI will structure it for you.</p>
+          <p className="text-[var(--color-text-secondary)]">Describe what you want to learn and AI will structure it for you.</p>
         </div>
 
         <div className="space-y-6">
@@ -1269,7 +1278,7 @@ export function BookView({
           <div>
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-4"
+              className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mb-4"
             >
               <ChevronDown
                 className={`w-4 h-4 transition-transform ${
