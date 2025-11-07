@@ -98,10 +98,6 @@
     0%, 100% { transform: scale(1); opacity: 0.8; }
     50% { transform: scale(1.05); opacity: 1; }
   }
-  @keyframes aurora-anim {
-    0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
-    100% { transform: translateX(-50%) translateY(-50%) rotate(360deg); }
-  }
 
   /* --- Animation Utilities --- */
   .animate-shimmer { background: linear-gradient(90deg, var(--color-border) 25%, var(--color-card) 50%, var(--color-border) 75%); background-size: 200px 100%; animation: shimmer 1.5s infinite; }
@@ -121,7 +117,6 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    background-color: var(--color-bg);
   }
 
   .main-content {
@@ -133,8 +128,32 @@
     overflow-y: auto;
   }
 
+  .starfield-background, .sun-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out;
+  }
+
+  .starfield-layer1, .starfield-layer2 {
+    position: absolute;
+    inset: 0;
+  }
+  
+  .starfield-layer1 {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px), radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px);
+    background-size: 200px 200px, 300px 300px;
+    background-position: 0 0, 100px 120px;
+  }
+  
+  .starfield-layer2 {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.6) 0.5px, transparent 0.5px), radial-gradient(circle, rgba(255,255,255,0.3) 0.5px, transparent 0.5px);
+    background-size: 150px 150px, 220px 220px;
+    background-position: 75px 40px, 30px 110px;
+  }
+  
   .sun-background {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background-color: #f0f9ff;
     opacity: 0;
     animation: fadeIn 0.5s forwards;
@@ -143,37 +162,12 @@
   .sun-background::before {
     content: '';
     position: absolute;
-    top: -20%; right: -20%;
-    width: 60vw; height: 60vw;
+    top: -20%;
+    right: -20%;
+    width: 60vw;
+    height: 60vw;
     background: radial-gradient(circle, rgba(255, 238, 186, 0.6) 0%, rgba(255, 238, 186, 0) 60%);
     animation: sun-pulse 10s infinite ease-in-out;
-  }
-
-  .aurora-background {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    overflow: hidden;
-  }
-  .aurora-layer {
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 200vw; height: 200vw;
-    border-radius: 50%;
-    opacity: 0.1;
-    mix-blend-mode: screen;
-    animation: aurora-anim 30s linear infinite;
-  }
-  .aurora-layer1 {
-    background: radial-gradient(circle at 30% 30%, #3b82f6, transparent 40%);
-    animation-duration: 25s;
-  }
-  .aurora-layer2 {
-    background: radial-gradient(circle at 70% 60%, #9333ea, transparent 35%);
-    animation-duration: 35s;
-    animation-direction: reverse;
-  }
-  .aurora-layer3 {
-    background: radial-gradient(circle at 40% 80%, #10b981, transparent 45%);
-    animation-duration: 45s;
   }
 
   /* --- Buttons --- */
