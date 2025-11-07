@@ -133,6 +133,7 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
+    transition: opacity 0.5s ease-in-out;
   }
 
   .starfield-layer1, .starfield-layer2 {
@@ -205,6 +206,8 @@
   }
   
   .light .logo-img { filter: invert(1); }
+  .dark .logo-img { filter: none; }
+
   .light .top-header-button { @apply bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200; }
   .light .top-header-button img { filter: none; }
   .light .model-dropdown { @apply bg-white/95 border-gray-200; }
