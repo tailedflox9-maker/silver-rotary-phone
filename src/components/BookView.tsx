@@ -161,7 +161,7 @@ const THEMES = {
 const FONT_FAMILIES = {
   serif: 'ui-serif, Georgia, "Times New Roman", serif',
   sans: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
-  mono: 'ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
+  mono: '"Aptos-Mono", ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
 };
 const MAX_WIDTHS = {
   narrow: '65ch',
@@ -181,7 +181,7 @@ const formatTime = (seconds: number): string => {
 };
 
 // ============================================================================
-// SUB-COMPONENTS (UNCHANGED)
+// SUB-COMPONENTS
 // ============================================================================
 const GradientProgressBar = ({ progress = 0, active = true }) => (
   <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
@@ -208,7 +208,6 @@ const PixelAnimation = () => {
 
     const generatePixels = () => {
       if (containerRef.current) {
-        // Pixel size (w-1.5) is 6px, gap (gap-1.5) is 6px. Total space per pixel is ~12px.
         const pixelSpace = 12; 
         const containerWidth = containerRef.current.offsetWidth;
         const containerHeight = containerRef.current.offsetHeight;
@@ -230,7 +229,6 @@ const PixelAnimation = () => {
       }
     };
 
-    // Use a ResizeObserver to regenerate pixels when the container size changes
     const observer = new ResizeObserver(() => {
       generatePixels();
     });
@@ -239,7 +237,6 @@ const PixelAnimation = () => {
       observer.observe(containerRef.current);
     }
     
-    // Regenerate on a timer for the animation effect
     const interval = setInterval(generatePixels, 250);
 
     return () => {
@@ -251,7 +248,6 @@ const PixelAnimation = () => {
   }, []);
 
   return (
-    // Responsive height: h-10 for mobile (approx. 3 rows), md:h-4 for desktop (1 row)
     <div ref={containerRef} className="flex flex-wrap content-start gap-1.5 w-full h-10 md:h-4 overflow-hidden">
       {pixels.map((p) => (
         <div
@@ -262,7 +258,6 @@ const PixelAnimation = () => {
     </div>
   );
 };
-
 
 const RetryDecisionPanel = ({
   retryInfo,
@@ -620,7 +615,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     return {
       fontSize: 18,
       lineHeight: 1.7,
-      fontFamily: 'serif',
+      fontFamily: 'mono',
       theme: 'dark',
       maxWidth: 'medium',
       textAlign: 'left',
@@ -771,9 +766,10 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
               onClick={() => setShowSettings(!showSettings)}
               className="p-3 rounded-xl transition-all duration-200"
               style={{
-                backgroundColor: showSettings ? currentTheme.accent : 'rgba(0,0,0,0.7)',
+                backgroundColor: showSettings ? currentTheme.accent : 'transparent',
                 color: showSettings ? 'white' : currentTheme.text,
                 backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.1)',
               }}
               title="Reading settings"
             >
@@ -783,9 +779,10 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
               onClick={onEdit}
               className="p-3 rounded-xl transition-all duration-200"
               style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
+                backgroundColor: 'transparent',
                 color: currentTheme.text,
                 backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.1)',
               }}
               title="Edit content"
             >
@@ -795,9 +792,10 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
               onClick={() => setIsFullscreen(false)}
               className="p-3 rounded-xl transition-all duration-200"
               style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
+                backgroundColor: 'transparent',
                 color: currentTheme.text,
                 backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.1)',
               }}
               title="Exit fullscreen (Esc)"
             >
@@ -922,7 +920,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   setSettings({
                     fontSize: 18,
                     lineHeight: 1.7,
-                    fontFamily: 'serif',
+                    fontFamily: 'mono',
                     theme: 'dark',
                     maxWidth: 'medium',
                     textAlign: 'left',
