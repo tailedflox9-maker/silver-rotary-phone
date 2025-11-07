@@ -161,7 +161,7 @@ const THEMES = {
 const FONT_FAMILIES = {
   serif: 'ui-serif, Georgia, "Times New Roman", serif',
   sans: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
-  mono: '"Aptos-Mono", ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
+  mono: 'ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
 };
 const MAX_WIDTHS = {
   narrow: '65ch',
@@ -181,7 +181,7 @@ const formatTime = (seconds: number): string => {
 };
 
 // ============================================================================
-// SUB-COMPONENTS
+// SUB-COMPONENTS (UNCHANGED)
 // ============================================================================
 const GradientProgressBar = ({ progress = 0, active = true }) => (
   <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
@@ -208,6 +208,7 @@ const PixelAnimation = () => {
 
     const generatePixels = () => {
       if (containerRef.current) {
+        // Pixel size (w-1.5) is 6px, gap (gap-1.5) is 6px. Total space per pixel is ~12px.
         const pixelSpace = 12; 
         const containerWidth = containerRef.current.offsetWidth;
         const containerHeight = containerRef.current.offsetHeight;
@@ -229,6 +230,7 @@ const PixelAnimation = () => {
       }
     };
 
+    // Use a ResizeObserver to regenerate pixels when the container size changes
     const observer = new ResizeObserver(() => {
       generatePixels();
     });
@@ -237,6 +239,7 @@ const PixelAnimation = () => {
       observer.observe(containerRef.current);
     }
     
+    // Regenerate on a timer for the animation effect
     const interval = setInterval(generatePixels, 250);
 
     return () => {
@@ -248,6 +251,7 @@ const PixelAnimation = () => {
   }, []);
 
   return (
+    // Responsive height: h-10 for mobile (approx. 3 rows), md:h-4 for desktop (1 row)
     <div ref={containerRef} className="flex flex-wrap content-start gap-1.5 w-full h-10 md:h-4 overflow-hidden">
       {pixels.map((p) => (
         <div
@@ -258,6 +262,7 @@ const PixelAnimation = () => {
     </div>
   );
 };
+
 
 const RetryDecisionPanel = ({
   retryInfo,
@@ -289,13 +294,11 @@ const RetryDecisionPanel = ({
 
     return () => clearInterval(timer);
   }, [countdown]);
-  
   const isRateLimit = retryInfo.error.toLowerCase().includes('rate limit') ||
                       retryInfo.error.toLowerCase().includes('429');
 
   const isNetworkError = retryInfo.error.toLowerCase().includes('network') ||
                          retryInfo.error.toLowerCase().includes('connection');
-  
   return (
     <div className="bg-red-900/20 backdrop-blur-xl border border-red-500/50 rounded-xl overflow-hidden animate-fade-in-up">
       <div className="p-6">
@@ -424,15 +427,12 @@ const EmbeddedProgressPanel = ({
   const isPaused = generationStatus.status === 'paused';
   const isGenerating = generationStatus.status === 'generating';
   const isWaitingRetry = generationStatus.status === 'waiting_retry';
-  
   useEffect(() => {
     if (streamBoxRef.current && generationStatus.currentModule?.generatedText) {
       streamBoxRef.current.scrollTop = streamBoxRef.current.scrollHeight;
     }
   }, [generationStatus.currentModule?.generatedText]);
-  
   const overallProgress = (stats.completedModules / (stats.totalModules || 1)) * 100;
-  
   if (isWaitingRetry && generationStatus.retryInfo && onRetryDecision) {
     return (
       <RetryDecisionPanel
@@ -444,7 +444,6 @@ const EmbeddedProgressPanel = ({
       />
     );
   }
-  
   return (
     <div className={`bg-zinc-900/60 backdrop-blur-xl border rounded-xl overflow-hidden animate-fade-in-up ${
       isPaused ? 'border-yellow-500/50' : 'border-zinc-800/50'
@@ -614,7 +613,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const settingsTimeoutRef = useRef<NodeJS.Timeout>();
-  
   const [settings, setSettings] = useState<ReadingSettings>(() => {
     const saved = localStorage.getItem('pustakam-reading-settings');
     const parsed = saved ? JSON.parse(saved) : {};
@@ -622,18 +620,16 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     return {
       fontSize: 18,
       lineHeight: 1.7,
-      fontFamily: 'mono',
+      fontFamily: 'serif',
       theme: 'dark',
       maxWidth: 'medium',
       textAlign: 'left',
       ...parsed,
     };
   });
-  
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
-  
   useEffect(() => {
     if (!isFullscreen) return;
     const handleScroll = () => {
@@ -646,7 +642,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isFullscreen]);
-  
   useEffect(() => {
     if (showSettings) {
       if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
@@ -656,7 +651,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
     };
   }, [showSettings]);
-  
   useEffect(() => {
     if (isFullscreen) {
       document.body.style.overflow = 'hidden';
@@ -670,7 +664,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       document.documentElement.style.overflow = '';
     };
   }, [isFullscreen]);
-  
   useEffect(() => {
     if (!isFullscreen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -694,10 +687,8 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
-  
   const currentTheme = THEMES[settings.theme];
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-  
   const updateSetting = <K extends keyof ReadingSettings>(
     key: K,
     value: ReadingSettings[K]
@@ -706,7 +697,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
     settingsTimeoutRef.current = setTimeout(() => setShowSettings(false), 5000);
   };
-  
   if (isEditing) {
     return (
       <div className="animate-fade-in">
@@ -728,12 +718,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
           className="w-full h-[70vh] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg p-4 text-white font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           value={editedContent}
           onChange={(e) => onContentChange(e.target.value)}
-          style={{ fontSize: `${settings.fontSize - 2}px`, fontFamily: FONT_FAMILIES[settings.fontFamily] }}
+          style={{ fontSize: `${settings.fontSize - 2}px` }}
         />
       </div>
     );
   }
-  
   const fullscreenStyles = isFullscreen
     ? {
         backgroundColor: currentTheme.bg,
@@ -741,7 +730,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         minHeight: '100vh',
       }
     : {};
-  
   const contentStyles = {
     fontFamily: FONT_FAMILIES[settings.fontFamily],
     fontSize: `${settings.fontSize}px`,
@@ -760,7 +748,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         ? '0 0 40px rgba(0,0,0,0.1)'
         : undefined,
   };
-  
   return (
     <div
       className={`reading-container theme-${settings.theme} ${
@@ -782,9 +769,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-3 rounded-xl transition-all duration-200 bg-black/30 backdrop-blur-md hover:bg-black/50"
+              className="p-3 rounded-xl transition-all duration-200"
               style={{
-                color: currentTheme.text,
+                backgroundColor: showSettings ? currentTheme.accent : 'rgba(0,0,0,0.7)',
+                color: showSettings ? 'white' : currentTheme.text,
+                backdropFilter: 'blur(10px)',
               }}
               title="Reading settings"
             >
@@ -792,9 +781,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
             </button>
             <button
               onClick={onEdit}
-              className="p-3 rounded-xl transition-all duration-200 bg-black/30 backdrop-blur-md hover:bg-black/50"
+              className="p-3 rounded-xl transition-all duration-200"
               style={{
+                backgroundColor: 'rgba(0,0,0,0.7)',
                 color: currentTheme.text,
+                backdropFilter: 'blur(10px)',
               }}
               title="Edit content"
             >
@@ -802,9 +793,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
             </button>
             <button
               onClick={() => setIsFullscreen(false)}
-              className="p-3 rounded-xl transition-all duration-200 bg-black/30 backdrop-blur-md hover:bg-black/50"
+              className="p-3 rounded-xl transition-all duration-200"
               style={{
+                backgroundColor: 'rgba(0,0,0,0.7)',
                 color: currentTheme.text,
+                backdropFilter: 'blur(10px)',
               }}
               title="Exit fullscreen (Esc)"
             >
@@ -929,7 +922,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   setSettings({
                     fontSize: 18,
                     lineHeight: 1.7,
-                    fontFamily: 'mono', // Changed to 'mono' as per FONT_FAMILIES default
+                    fontFamily: 'serif',
                     theme: 'dark',
                     maxWidth: 'medium',
                     textAlign: 'left',
@@ -1000,6 +993,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 // REDESIGNED SUB-COMPONENTS
 // ============================================================================
 
+// --- SCALED DOWN: Home View ---
 const HomeView = ({
   onNewBook,
   onShowList,
@@ -1052,6 +1046,7 @@ const HomeView = ({
   </div>
 );
 
+// --- SCALED DOWN: Book List ---
 const BookListGrid = ({
   books,
   onSelectBook,
@@ -1089,7 +1084,6 @@ const BookListGrid = ({
       : '';
     return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
   };
-  
   const getStatusText = (status: BookProject['status']) =>
     ({
       planning: 'Planning',
@@ -1224,6 +1218,7 @@ const DetailTabButton = ({
   </button>
 );
 
+
 // ============================================================================
 // MAIN BOOKVIEW COMPONENT
 // ============================================================================
@@ -1270,7 +1265,6 @@ export function BookView({
   const [editedContent, setEditedContent] = useState('');
   const currentBook = currentBookId ? books.find(b => b.id === currentBookId) : null;
   const [pdfProgress, setPdfProgress] = useState(0);
-  
   useEffect(() => {
     if (currentBook) {
       const isGen = ['generating_roadmap', 'generating_content', 'assembling'].includes(
@@ -1280,13 +1274,11 @@ export function BookView({
       setIsEditing(false);
     }
   }, [currentBook]);
-  
   useEffect(() => {
     return () => {
       if (currentBookId) bookService.cancelActiveRequests(currentBookId);
     };
   }, [currentBookId]);
-  
   const handleCreateRoadmap = async () => {
     if (!formData.goal.trim() || !hasApiKey) return;
     setLocalIsGenerating(true);
@@ -1298,7 +1290,6 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
-  
   const handleStartGeneration = async () => {
     if (!currentBook) return;
     setLocalIsGenerating(true);
@@ -1321,13 +1312,11 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
-  
   const handlePause = () => {
     if (currentBook && onPauseGeneration) {
       onPauseGeneration(currentBook.id);
     }
   };
-  
   const handleResume = () => {
     if (currentBook && onResumeGeneration) {
       onResumeGeneration(currentBook, {
@@ -1344,7 +1333,6 @@ export function BookView({
       });
     }
   };
-  
   const handleStartAssembly = async () => {
     if (!currentBook) return;
     setLocalIsGenerating(true);
@@ -1367,26 +1355,22 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
-  
   const handleDownloadPdf = async () => {
     if (!currentBook) return;
     setPdfProgress(1);
     await pdfService.generatePdf(currentBook, setPdfProgress);
     setTimeout(() => setPdfProgress(0), 2000);
   };
-  
   const handleStartEditing = () => {
     if (currentBook?.finalBook) {
       setEditedContent(currentBook.finalBook);
       setIsEditing(true);
     }
   };
-  
   const handleCancelEditing = () => {
     setIsEditing(false);
     setEditedContent('');
   };
-  
   const handleSaveChanges = () => {
     if (currentBook && editedContent) {
       onUpdateBookContent(currentBook.id, editedContent);
@@ -1394,7 +1378,6 @@ export function BookView({
       setEditedContent('');
     }
   };
-  
   const getStatusIcon = (status: BookProject['status']) => {
     const iconMap: Record<BookProject['status'], React.ElementType> = {
       planning: Clock,
@@ -1419,7 +1402,6 @@ export function BookView({
       : '';
     return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
   };
-  
   const getStatusText = (status: BookProject['status']) =>
     ({
       planning: 'Planning',
@@ -1455,6 +1437,7 @@ export function BookView({
     );
   }
   
+// --- SIMPLE MINIMAL CREATE VIEW ---
   if (view === 'create') {
     return (
       <div className="w-full max-w-2xl mx-auto px-6 py-10">
@@ -1475,6 +1458,7 @@ export function BookView({
         </div>
 
         <div className="space-y-6">
+          {/* Learning Goal */}
           <div>
             <label htmlFor="goal" className="block text-sm font-medium mb-2">
               Learning Goal
@@ -1490,6 +1474,7 @@ export function BookView({
             />
           </div>
 
+          {/* Two Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="audience" className="block text-sm font-medium mb-2">
@@ -1524,6 +1509,7 @@ export function BookView({
             </div>
           </div>
 
+          {/* Advanced Options */}
           <div>
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
@@ -1593,6 +1579,7 @@ export function BookView({
             )}
           </div>
 
+          {/* Submit Button */}
           <button
             onClick={handleCreateRoadmap}
             disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
@@ -1615,6 +1602,7 @@ export function BookView({
     );
   }
   
+  // --- FINAL, SCALED DOWN DETAIL VIEW ---
   if (view === 'detail' && currentBook) {
     const areAllModulesDone =
       currentBook.roadmap &&
@@ -1682,7 +1670,7 @@ export function BookView({
                 onEdit={handleStartEditing}
                 onSave={handleSaveChanges}
                 onCancel={handleCancelEditing}
-                onContentChange={handleUpdateBookContent}
+                onContentChange={setEditedContent}
               />
             ) : (
               <>
