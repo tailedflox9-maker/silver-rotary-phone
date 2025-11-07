@@ -6,7 +6,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { useGenerationStats } from './components/GenerationProgressPanel';
 import { APISettings, ModelProvider } from './types';
 import { usePWA } from './hooks/usePWA';
-import { WifiOff } from 'lucide-react';
+import { WifiOff, Sun, Moon } from 'lucide-react';
 import { storageUtils } from './utils/storage';
 import { bookService } from './services/bookService';
 import { BookView } from './components/BookView';
@@ -15,6 +15,7 @@ import { generateId } from './utils/helpers';
 import { TopHeader } from './components/TopHeader';
 
 type AppView = 'list' | 'create' | 'detail';
+type Theme = 'light' | 'dark';
 
 interface GenerationStatus {
   currentModule?: { id: string; title: string; attempt: number; progress: number; generatedText?: string; };
@@ -39,6 +40,7 @@ function App() {
   const [generationStartTime, setGenerationStartTime] = useState<Date>(new Date());
   const [showModelSwitch, setShowModelSwitch] = useState(false);
   const [modelSwitchOptions, setModelSwitchOptions] = useState<Array<{provider: ModelProvider; model: string; name: string}>>([]);
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('pustakam-theme') as Theme) || 'dark');
 
   const { isInstallable, isInstalled, installApp, dismissInstallPrompt } = usePWA();
   
@@ -58,6 +60,12 @@ function App() {
     generationStartTime,
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
+  
+  // Apply and save theme changes
+  useEffect(() => {
+    localStorage.setItem('pustakam-theme', theme);
+    document.documentElement.className = theme;
+  }, [theme]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -93,6 +101,10 @@ function App() {
     window.addEventListener('offline', handleOffline);
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
+  
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
+  };
 
   const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
   
@@ -291,10 +303,19 @@ function App() {
 
   return (
     <div className="app-container">
+      {theme === 'dark' ? (
+        <div className="starfield-background">
+          <div className="starfield-layer1" />
+          <div className="starfield-layer2" />
+        </div>
+      ) : (
+        <div className="sun-background" />
+      )}
+
       <TopHeader
         settings={settings}
         books={books}
-        currentBook={currentBook}
+        currentBookId={currentBookId}
         onModelChange={handleModelChange}
         onOpenSettings={() => setSettingsOpen(true)}
         onSelectBook={handleSelectBook}
@@ -303,6 +324,8 @@ function App() {
           setView('create');
           setCurrentBookId(null);
         }}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <main className="main-content">
