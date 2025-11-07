@@ -52,7 +52,8 @@ import {
   CheckCircle2,
   Pause,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Sun // Import Sun icon
 } from 'lucide-react';
 import { BookProject, BookSession } from '../types/book';
 import { bookService } from '../services/bookService';
@@ -132,7 +133,7 @@ interface ReadingSettings {
   fontSize: number;
   lineHeight: number;
   fontFamily: 'serif' | 'sans' | 'mono';
-  theme: 'dark' | 'sepia';
+  theme: 'dark' | 'sepia' | 'light'; // Added 'light'
   maxWidth: 'narrow' | 'medium' | 'wide';
   textAlign: 'left' | 'justify';
 }
@@ -156,6 +157,14 @@ const THEMES = {
     secondary: '#8B7355',
     border: '#D4C4A8',
     accent: '#B45309',
+  },
+  light: { // NEW LIGHT THEME
+    bg: '#FFFFFF',
+    contentBg: '#F9F9F9',
+    text: '#1A1A1A',
+    secondary: '#555555',
+    border: '#E0E0E0',
+    accent: '#3B82F6', // Using blue-500 from index.css as primary accent
   },
 };
 const FONT_FAMILIES = {
@@ -227,8 +236,7 @@ const PixelAnimation = () => {
             }));
           setPixels(newPixels);
         }
-      }
-    };
+      };
 
     // Use a ResizeObserver to regenerate pixels when the container size changes
     const observer = new ResizeObserver(() => {
@@ -580,13 +588,15 @@ const EmbeddedProgressPanel = ({
 
 const CodeBlock = React.memo(({ children, language, theme }: any) => (
   <SyntaxHighlighter
-    style={vscDarkPlus}
+    style={vscDarkPlus} // Keep dark theme for syntax highlighting colors
     language={language}
     PreTag="div"
     className={`!rounded-xl !my-6 !text-sm border ${
       theme === 'dark'
         ? '!bg-[#0D1117] border-gray-700'
-        : '!bg-[#F0EAD6] border-[#D4C4A8] !text-gray-800'
+        : theme === 'sepia'
+        ? '!bg-[#F0EAD6] border-[#D4C4A8] !text-gray-800'
+        : '!bg-[#f8f8f8] border-gray-200 !text-gray-800' // For light theme
     }`}
     customStyle={{
       padding: '1.5rem',
@@ -616,7 +626,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   const [settings, setSettings] = useState<ReadingSettings>(() => {
     const saved = localStorage.getItem('pustakam-reading-settings');
     const parsed = saved ? JSON.parse(saved) : {};
-    if (parsed.theme === 'light') parsed.theme = 'dark';
+    // Removed the line `if (parsed.theme === 'light') parsed.theme = 'dark';`
     return {
       fontSize: 18,
       lineHeight: 1.7,
@@ -744,7 +754,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     boxShadow:
       isFullscreen && settings.theme !== 'light'
         ? '0 0 80px rgba(0,0,0,0.5)'
-        : isFullscreen
+        : isFullscreen && settings.theme === 'light'
         ? '0 0 40px rgba(0,0,0,0.1)'
         : undefined,
   };
@@ -877,7 +887,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Theme</label>
                 <div className="flex gap-1">
-                  {(['dark', 'sepia'] as const).map((theme) => (
+                  {(['dark', 'sepia', 'light'] as const).map((theme) => ( // Added 'light'
                     <button
                       key={theme}
                       onClick={() => updateSetting('theme', theme)}
@@ -890,7 +900,13 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                         color: settings.theme === theme ? 'white' : currentTheme.text,
                       }}
                     >
-                      {theme === 'dark' ? <Moon size={12} /> : <Palette size={12} />}
+                      {theme === 'dark' ? (
+                        <Moon size={12} />
+                      ) : theme === 'sepia' ? (
+                        <Palette size={12} />
+                      ) : (
+                        <Sun size={12} /> // Sun icon for light theme
+                      )}
                       {theme.charAt(0).toUpperCase() + theme.slice(1)}
                     </button>
                   ))}
@@ -969,9 +985,9 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       )}
       <div ref={contentRef} style={isFullscreen ? { paddingTop: '2rem' } : {}}>
         <article
-          className={`prose prose-invert prose-lg max-w-none transition-all duration-300 ${
+          className={`prose prose-lg max-w-none transition-all duration-300 ${
             isFullscreen ? 'mx-auto' : ''
-          }`}
+          } ${settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''}`}
           style={contentStyles}
         >
           <ReactMarkdown
