@@ -130,7 +130,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
             <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button">
               {currentProvider ? <currentProvider.icon /> : <Brain size={18} />}
               <span className="hidden md:inline text-sm font-medium text-[var(--color-text-secondary)]">{currentModel?.name || "Select Model"}</span>
-              <ChevronDown size={14} className="text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {modelDropdownOpen && (
               <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
