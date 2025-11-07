@@ -60,6 +60,7 @@ import { bookService } from '../services/bookService';
 import { BookAnalytics } from './BookAnalytics';
 import { CustomSelect } from './CustomSelect';
 import { pdfService } from '../services/pdfService';
+import { readingProgressUtils } from '../utils/readingProgress';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -606,7 +607,7 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
   </SyntaxHighlighter>
 ));
 
-const ReadingMode: React.FC<ReadingModeProps> = ({
+const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIndex: number }> = ({
   content,
   isEditing,
   editedContent,
@@ -614,6 +615,8 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   onSave,
   onCancel,
   onContentChange,
+  bookId,
+  currentModuleIndex
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<ReadingSettings>(() => {
@@ -629,6 +632,35 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       ...parsed,
     };
   });
+
+  // Auto-save bookmark on scroll
+  useEffect(() => {
+    if (!contentRef.current || isEditing) return;
+
+    const handleScroll = () => {
+      if (contentRef.current) {
+        const scrollPosition = contentRef.current.scrollTop;
+        readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+      }
+    };
+
+    const scrollContainer = contentRef.current;
+    scrollContainer.addEventListener('scroll', handleScroll);
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, [bookId, currentModuleIndex, isEditing]);
+
+  // Restore scroll position on load
+  useEffect(() => {
+    if (contentRef.current && !isEditing) {
+      const bookmark = readingProgressUtils.getBookmark(bookId);
+      if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
+        contentRef.current.scrollTop = bookmark.scrollPosition;
+      }
+    }
+  }, [bookId, currentModuleIndex, isEditing]);
 
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
@@ -823,6 +855,8 @@ const BookListGrid = ({
   setView: (view: AppView) => void;
   setShowListInMain: (show: boolean) => void;
 }) => {
+  const [hoveredBookId, setHoveredBookId] = useState<string | null>(null);
+
   const getStatusIcon = (status: BookProject['status']) => {
     const iconMap: Record<BookProject['status'], React.ElementType> = {
       planning: Clock,
@@ -847,6 +881,7 @@ const BookListGrid = ({
       : '';
     return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
   };
+
   const getStatusText = (status: BookProject['status']) =>
     ({
       planning: 'Planning',
@@ -858,12 +893,30 @@ const BookListGrid = ({
       error: 'Error',
     }[status] || 'Unknown');
 
+  const getStatusColor = (status: BookProject['status']) => {
+    const colors = {
+      completed: 'from-green-500/20 to-emerald-500/20 border-green-500/30',
+      generating_content: 'from-blue-500/20 to-purple-500/20 border-blue-500/30',
+      assembling: 'from-orange-500/20 to-yellow-500/20 border-orange-500/30',
+      roadmap_completed: 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30',
+      error: 'from-red-500/20 to-pink-500/20 border-red-500/30',
+      planning: 'from-gray-500/20 to-slate-500/20 border-gray-500/30',
+      generating_roadmap: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
+    };
+    return colors[status] || 'from-gray-500/20 to-slate-500/20 border-gray-500/30';
+  };
+
+  const getReadingProgress = (bookId: string) => {
+    const bookmark = readingProgressUtils.getBookmark(bookId);
+    return bookmark;
+  };
+
   return (
-    <div className="w-full max-w-3xl mx-auto px-6 py-10">
+    <div className="w-full max-w-7xl mx-auto px-6 py-10">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">My Books</h1>
-          <p className="text-[var(--color-text-secondary)] mt-1 text-sm">{books.length} projects</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">My Library</h1>
+          <p className="text-[var(--color-text-secondary)] mt-1 text-sm">{books.length} {books.length === 1 ? 'project' : 'projects'}</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => setShowListInMain(false)} className="btn btn-secondary btn-sm">
@@ -880,79 +933,225 @@ const BookListGrid = ({
           </button>
         </div>
       </div>
-      <div className="space-y-3">
-        {books.map((book) => (
-          <div
-            key={book.id}
-            className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg transition-all hover:border-gray-600 hover:shadow-md cursor-pointer group"
-            onClick={() => onSelectBook(book.id)}
+
+      {books.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="w-20 h-20 mx-auto mb-6 bg-[var(--color-card)] rounded-full flex items-center justify-center border border-[var(--color-border)]">
+            <BookOpen className="w-10 h-10 text-[var(--color-text-secondary)]" />
+          </div>
+          <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">No books yet</h3>
+          <p className="text-[var(--color-text-secondary)] mb-6">Create your first AI-generated book to get started</p>
+          <button
+            onClick={() => {
+              setView('create');
+              setShowListInMain(false);
+            }}
+            className="btn btn-primary"
           >
-            <div className="p-5">
-              <div className="flex items-start justify-between gap-5">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)] truncate group-hover:text-blue-300 transition-colors mb-1.5">
-                    {book.title}
-                  </h3>
-                  <p className="text-sm text-[var(--color-text-secondary)] mb-3 line-clamp-2">{book.goal}</p>
-                  
-                  <div className="flex items-center flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--color-text-secondary)]">
-                    <div className="flex items-center gap-1.5">
-                      {getStatusIcon(book.status)}
-                      <span className="capitalize text-xs">{getStatusText(book.status)}</span>
+            <Sparkles className="w-4 h-4" /> Create First Book
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {books.map((book) => {
+            const isHovering = hoveredBookId === book.id;
+            const readingProgress = getReadingProgress(book.id);
+            const hasBookmark = readingProgress && book.status === 'completed';
+            
+            return (
+              <div
+                key={book.id}
+                onClick={() => onSelectBook(book.id)}
+                onMouseEnter={() => setHoveredBookId(book.id)}
+                onMouseLeave={() => setHoveredBookId(null)}
+                className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer group
+                  ${isHovering ? 'scale-[1.02] shadow-2xl' : 'scale-100 shadow-lg'}
+                  bg-gradient-to-br ${getStatusColor(book.status)}`}
+              >
+                {/* Bookmark Badge - Top Right */}
+                {hasBookmark && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/20 border border-blue-500/40 rounded-full backdrop-blur-sm">
+                      <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-xs font-semibold text-blue-300">
+                        {readingProgress.percentComplete}%
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                       <Clock className="w-3.5 h-3.5" />
-                       <span className="text-xs">{new Date(book.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    {book.modules.length > 0 && 
-                      <div className="flex items-center gap-1.5">
-                        <ListChecks className="w-3.5 h-3.5" />
-                        <span className="text-xs">{book.modules.length} modules</span>
-                      </div>
-                    }
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  {book.status === 'completed' && (
+                )}
+
+                {/* Animated background gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                {/* Content */}
+                <div className="relative p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all">
+                        {book.title}
+                      </h3>
+                      <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2">{book.goal}</p>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        bookService.downloadAsMarkdown(book);
+                        onDeleteBook(book.id);
                       }}
-                      className="btn-ghost p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Download"
+                      className="ml-4 p-2 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
+                      title="Delete"
                     >
-                      <Download className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteBook(book.id);
-                    }}
-                    className="btn-ghost p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              {book.status !== 'completed' && book.status !== 'error' && (
-                <div className="mt-3">
-                  <div className="w-full bg-gray-800/50 rounded-full h-1.5 overflow-hidden border border-gray-700">
-                    <div
-                      className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out relative"
-                      style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-black/30 rounded-full border border-white/10 w-fit mb-4">
+                    {getStatusIcon(book.status)}
+                    <span className="text-xs font-medium text-gray-300 capitalize">
+                      {getStatusText(book.status)}
+                    </span>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-black/20 rounded-lg p-3 border border-white/5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                        <span className="text-xs text-gray-400">Modules</span>
+                      </div>
+                      <div className="text-lg font-bold text-white">{book.modules.length}</div>
+                    </div>
+                    <div className="bg-black/20 rounded-lg p-3 border border-white/5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Hash className="w-3.5 h-3.5 text-green-400" />
+                        <span className="text-xs text-gray-400">Words</span>
+                      </div>
+                      <div className="text-lg font-bold text-white">
+                        {book.totalWords ? `${(book.totalWords / 1000).toFixed(1)}K` : '0'}
+                      </div>
+                    </div>
+                    <div className="bg-black/20 rounded-lg p-3 border border-white/5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="text-xs text-gray-400">
+                          {book.status === 'completed' ? 'Read' : 'Progress'}
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-white">
+                        {book.status === 'completed' && hasBookmark
+                          ? `${readingProgress.percentComplete}%`
+                          : `${Math.round(book.progress)}%`}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Progress Bar - Reading Progress for Completed Books */}
+                  {book.status === 'completed' && hasBookmark ? (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+                        <span>Reading Progress</span>
+                        <span>{readingProgress.percentComplete}%</span>
+                      </div>
+                      <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/10">
+                        <div
+                          className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                          style={{ width: `${readingProgress.percentComplete}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : book.status !== 'completed' && book.status !== 'error' ? (
+                    <div className="mb-4">
+                      <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/10">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500 relative overflow-hidden"
+                          style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Continue Reading Button for Bookmarked Books */}
+                  {hasBookmark && (
+                    <div className="mb-4">
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <BookOpen className="w-4 h-4 text-blue-400" />
+                              <span className="text-xs font-semibold text-blue-300">Continue Reading</span>
+                            </div>
+                            <p className="text-xs text-gray-400 truncate">
+                              {book.modules[readingProgress.moduleIndex]?.title || 'Module ' + (readingProgress.moduleIndex + 1)}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Last read {readingProgressUtils.formatLastRead(readingProgress.lastReadAt)}
+                            </p>
+                          </div>
+                          <div className="ml-3">
+                            <Play className="w-5 h-5 text-blue-400" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preview Panel (shows on hover) */}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      isHovering ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+                    }`}
+                  >
+                    <div className="bg-black/40 rounded-lg p-4 border border-white/10 mt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Eye className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs font-semibold text-gray-300">Preview</span>
+                      </div>
+                      <p className="text-xs text-gray-400 line-clamp-3 leading-relaxed">
+                        {book.finalBook 
+                          ? book.finalBook.substring(0, 150).replace(/[#*_`]/g, '') + '...'
+                          : book.modules.length > 0
+                          ? `Latest: ${book.modules[book.modules.length - 1]?.title}`
+                          : 'No content yet. Start generating!'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between text-xs text-gray-500 mt-4 pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3" />
+                      <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                    {book.status === 'completed' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          bookService.downloadAsMarkdown(book);
+                        }}
+                        className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                        title="Download"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+
+                {/* Hover Glow Effect */}
+                <div className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+                  isHovering ? 'opacity-100' : 'opacity-0'
+                }`}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-xl" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -1436,6 +1635,8 @@ export function BookView({
                 onSave={handleSaveChanges}
                 onCancel={handleCancelEditing}
                 onContentChange={setEditedContent}
+                bookId={currentBook.id}
+                currentModuleIndex={0} // You can track actual module if needed
               />
             ) : (
               <>
