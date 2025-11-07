@@ -53,7 +53,7 @@ import {
   Pause,
   AlertTriangle,
   ChevronDown,
-  Sun // Import Sun icon
+  Sun
 } from 'lucide-react';
 import { BookProject, BookSession } from '../types/book';
 import { bookService } from '../services/bookService';
@@ -133,7 +133,7 @@ interface ReadingSettings {
   fontSize: number;
   lineHeight: number;
   fontFamily: 'serif' | 'sans' | 'mono';
-  theme: 'dark' | 'sepia' | 'light'; // Added 'light'
+  theme: 'dark' | 'sepia' | 'light';
   maxWidth: 'narrow' | 'medium' | 'wide';
   textAlign: 'left' | 'justify';
 }
@@ -158,13 +158,13 @@ const THEMES = {
     border: '#D4C4A8',
     accent: '#B45309',
   },
-  light: { // NEW LIGHT THEME
+  light: {
     bg: '#FFFFFF',
     contentBg: '#F9F9F9',
     text: '#1A1A1A',
     secondary: '#555555',
     border: '#E0E0E0',
-    accent: '#3B82F6', // Using blue-500 from index.css as primary accent
+    accent: '#3B82F6',
   },
 };
 const FONT_FAMILIES = {
@@ -217,7 +217,6 @@ const PixelAnimation = () => {
 
     const generatePixels = () => {
       if (containerRef.current) {
-        // Pixel size (w-1.5) is 6px, gap (gap-1.5) is 6px. Total space per pixel is ~12px.
         const pixelSpace = 12; 
         const containerWidth = containerRef.current.offsetWidth;
         const containerHeight = containerRef.current.offsetHeight;
@@ -236,9 +235,9 @@ const PixelAnimation = () => {
             }));
           setPixels(newPixels);
         }
-      };
+      }
+    };
 
-    // Use a ResizeObserver to regenerate pixels when the container size changes
     const observer = new ResizeObserver(() => {
       generatePixels();
     });
@@ -247,7 +246,6 @@ const PixelAnimation = () => {
       observer.observe(containerRef.current);
     }
     
-    // Regenerate on a timer for the animation effect
     const interval = setInterval(generatePixels, 250);
 
     return () => {
@@ -259,7 +257,6 @@ const PixelAnimation = () => {
   }, []);
 
   return (
-    // Responsive height: h-10 for mobile (approx. 3 rows), md:h-4 for desktop (1 row)
     <div ref={containerRef} className="flex flex-wrap content-start gap-1.5 w-full h-10 md:h-4 overflow-hidden">
       {pixels.map((p) => (
         <div
@@ -588,7 +585,7 @@ const EmbeddedProgressPanel = ({
 
 const CodeBlock = React.memo(({ children, language, theme }: any) => (
   <SyntaxHighlighter
-    style={vscDarkPlus} // Keep dark theme for syntax highlighting colors
+    style={vscDarkPlus}
     language={language}
     PreTag="div"
     className={`!rounded-xl !my-6 !text-sm border ${
@@ -596,7 +593,7 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
         ? '!bg-[#0D1117] border-gray-700'
         : theme === 'sepia'
         ? '!bg-[#F0EAD6] border-[#D4C4A8] !text-gray-800'
-        : '!bg-[#f8f8f8] border-gray-200 !text-gray-800' // For light theme
+        : '!bg-[#f8f8f8] border-gray-200 !text-gray-800'
     }`}
     customStyle={{
       padding: '1.5rem',
@@ -617,16 +614,10 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   onCancel,
   onContentChange,
 }) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const settingsTimeoutRef = useRef<NodeJS.Timeout>();
   const [settings, setSettings] = useState<ReadingSettings>(() => {
     const saved = localStorage.getItem('pustakam-reading-settings');
     const parsed = saved ? JSON.parse(saved) : {};
-    // Removed the line `if (parsed.theme === 'light') parsed.theme = 'dark';`
     return {
       fontSize: 18,
       lineHeight: 1.7,
@@ -637,76 +628,13 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       ...parsed,
     };
   });
+
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
-  useEffect(() => {
-    if (!isFullscreen) return;
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      setScrollProgress(progress);
-      setShowScrollTop(scrollTop > 500);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isFullscreen]);
-  useEffect(() => {
-    if (showSettings) {
-      if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
-      settingsTimeoutRef.current = setTimeout(() => setShowSettings(false), 5000);
-    }
-    return () => {
-      if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
-    };
-  }, [showSettings]);
-  useEffect(() => {
-    if (isFullscreen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'auto';
-    } else {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
-  }, [isFullscreen]);
-  useEffect(() => {
-    if (!isFullscreen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsFullscreen(false);
-      } else if (e.key === 'F11') {
-        e.preventDefault();
-      } else if (e.ctrlKey || e.metaKey) {
-        if (e.key === '=' || e.key === '+') {
-          e.preventDefault();
-          setSettings((prev) => ({ ...prev, fontSize: Math.min(28, prev.fontSize + 1) }));
-        } else if (e.key === '-') {
-          e.preventDefault();
-          setSettings((prev) => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }));
-        } else if (e.key === '0') {
-          e.preventDefault();
-          setSettings((prev) => ({ ...prev, fontSize: 18 }));
-        }
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen]);
+
   const currentTheme = THEMES[settings.theme];
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-  const updateSetting = <K extends keyof ReadingSettings>(
-    key: K,
-    value: ReadingSettings[K]
-  ) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-    if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
-    settingsTimeoutRef.current = setTimeout(() => setShowSettings(false), 5000);
-  };
+
   if (isEditing) {
     return (
       <div className="animate-fade-in">
@@ -733,261 +661,72 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       </div>
     );
   }
-  const fullscreenStyles = isFullscreen
-    ? {
-        backgroundColor: currentTheme.bg,
-        color: currentTheme.text,
-        minHeight: '100vh',
-      }
-    : {};
+  
+  const readingAreaStyles = {
+    backgroundColor: currentTheme.bg,
+    color: currentTheme.text,
+  };
+  
   const contentStyles = {
     fontFamily: FONT_FAMILIES[settings.fontFamily],
     fontSize: `${settings.fontSize}px`,
     lineHeight: settings.lineHeight,
     maxWidth: MAX_WIDTHS[settings.maxWidth],
     textAlign: settings.textAlign as any,
-    backgroundColor: isFullscreen ? currentTheme.contentBg : undefined,
-    color: isFullscreen ? currentTheme.text : undefined,
-    padding: isFullscreen ? '3rem 2rem' : undefined,
-    margin: isFullscreen ? '0 auto' : undefined,
-    borderRadius: isFullscreen ? '0' : undefined,
-    boxShadow:
-      isFullscreen && settings.theme !== 'light'
-        ? '0 0 80px rgba(0,0,0,0.5)'
-        : isFullscreen && settings.theme === 'light'
-        ? '0 0 40px rgba(0,0,0,0.1)'
-        : undefined,
+    color: currentTheme.text,
   };
+
   return (
     <div
-      className={`reading-container theme-${settings.theme} ${
-        isFullscreen ? 'fixed inset-0 z-50 overflow-y-auto' : ''
-      }`}
-      style={fullscreenStyles}
+      className={`reading-container theme-${settings.theme} rounded-lg border border-[var(--color-border)] overflow-hidden transition-colors duration-300`}
+      style={readingAreaStyles}
     >
-      {isFullscreen && (
-        <div
-          className="fixed top-0 left-0 h-1 z-50 transition-all duration-200"
-          style={{
-            width: `${scrollProgress}%`,
-            backgroundColor: currentTheme.accent,
-          }}
-        />
-      )}
-      {isFullscreen ? (
-        <>
-          <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+      {/* Control Bar */}
+      <div className="flex justify-between items-center gap-3 p-3 border-b" style={{ borderColor: currentTheme.border }}>
+        <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
+          {(['light', 'sepia', 'dark'] as const).map((theme) => (
             <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-3 rounded-xl transition-all duration-200"
+              key={theme}
+              onClick={() => setSettings(prev => ({ ...prev, theme }))}
+              className={`p-2 rounded-md transition-all`}
               style={{
-                backgroundColor: showSettings ? currentTheme.accent : 'rgba(0,0,0,0.7)',
-                color: showSettings ? 'white' : currentTheme.text,
-                backdropFilter: 'blur(10px)',
+                backgroundColor: settings.theme === theme ? currentTheme.accent : 'transparent',
+                color: settings.theme === theme ? '#FFFFFF' : currentTheme.secondary,
               }}
-              title="Reading settings"
+              title={`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme`}
             >
-              <Settings size={18} />
+              {theme === 'light' ? <Sun size={16} /> : theme === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
             </button>
-            <button
-              onClick={onEdit}
-              className="p-3 rounded-xl transition-all duration-200"
-              style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                color: currentTheme.text,
-                backdropFilter: 'blur(10px)',
-              }}
-              title="Edit content"
-            >
-              <Edit size={18} />
-            </button>
-            <button
-              onClick={() => setIsFullscreen(false)}
-              className="p-3 rounded-xl transition-all duration-200"
-              style={{
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                color: currentTheme.text,
-                backdropFilter: 'blur(10px)',
-              }}
-              title="Exit fullscreen (Esc)"
-            >
-              <Minimize2 size={18} />
-            </button>
-          </div>
-          {showSettings && (
-            <div
-              className="fixed top-16 right-4 z-50 p-6 rounded-2xl shadow-2xl min-w-[280px] animate-fade-in-up"
-              style={{
-                backgroundColor: currentTheme.contentBg,
-                border: `1px solid ${currentTheme.border}`,
-                color: currentTheme.text,
-                backdropFilter: 'blur(20px)',
-              }}
-            >
-              <h4 className="font-semibold mb-4 flex items-center gap-2">
-                <BookOpen size={16} />
-                Reading Settings
-              </h4>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Font Size</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateSetting('fontSize', Math.max(12, settings.fontSize - 1))}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ backgroundColor: currentTheme.bg }}
-                  >
-                    <ZoomOut size={14} />
-                  </button>
-                  <span className="min-w-[3rem] text-center font-mono">{settings.fontSize}px</span>
-                  <button
-                    onClick={() => updateSetting('fontSize', Math.min(28, settings.fontSize + 1))}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ backgroundColor: currentTheme.bg }}
-                  >
-                    <ZoomIn size={14} />
-                  </button>
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Line Spacing</label>
-                <input
-                  type="range"
-                  min="1.2"
-                  max="2.2"
-                  step="0.1"
-                  value={settings.lineHeight}
-                  onChange={(e) => updateSetting('lineHeight', parseFloat(e.target.value))}
-                  className="w-full"
-                  style={{ accentColor: currentTheme.accent }}
-                />
-                <div className="text-xs opacity-70 mt-1">{settings.lineHeight.toFixed(1)}</div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Font Style</label>
-                <div className="grid grid-cols-3 gap-1">
-                  {(['serif', 'sans', 'mono'] as const).map((font) => (
-                    <button
-                      key={font}
-                      onClick={() => updateSetting('fontFamily', font)}
-                      className={`p-2 text-xs rounded-lg transition-all ${
-                        settings.fontFamily === font ? 'font-semibold' : ''
-                      }`}
-                      style={{
-                        backgroundColor:
-                          settings.fontFamily === font ? currentTheme.accent : currentTheme.bg,
-                        color: settings.fontFamily === font ? 'white' : currentTheme.text,
-                        fontFamily: FONT_FAMILIES[font],
-                      }}
-                    >
-                      {font === 'serif' ? 'Serif' : font === 'sans' ? 'Sans' : 'Mono'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Theme</label>
-                <div className="flex gap-1">
-                  {(['dark', 'sepia', 'light'] as const).map((theme) => ( // Added 'light'
-                    <button
-                      key={theme}
-                      onClick={() => updateSetting('theme', theme)}
-                      className={`flex-1 p-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1 ${
-                        settings.theme === theme ? 'font-semibold' : ''
-                      }`}
-                      style={{
-                        backgroundColor:
-                          settings.theme === theme ? currentTheme.accent : currentTheme.bg,
-                        color: settings.theme === theme ? 'white' : currentTheme.text,
-                      }}
-                    >
-                      {theme === 'dark' ? (
-                        <Moon size={12} />
-                      ) : theme === 'sepia' ? (
-                        <Palette size={12} />
-                      ) : (
-                        <Sun size={12} /> // Sun icon for light theme
-                      )}
-                      {theme.charAt(0).toUpperCase() + theme.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Column Width</label>
-                <div className="flex gap-1">
-                  {(['narrow', 'medium', 'wide'] as const).map((width) => (
-                    <button
-                      key={width}
-                      onClick={() => updateSetting('maxWidth', width)}
-                      className={`flex-1 p-2 text-xs rounded-lg transition-all ${
-                        settings.maxWidth === width ? 'font-semibold' : ''
-                      }`}
-                      style={{
-                        backgroundColor:
-                          settings.maxWidth === width ? currentTheme.accent : currentTheme.bg,
-                        color: settings.maxWidth === width ? 'white' : currentTheme.text,
-                      }}
-                    >
-                      {width.charAt(0).toUpperCase() + width.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button
-                onClick={() =>
-                  setSettings({
-                    fontSize: 18,
-                    lineHeight: 1.7,
-                    fontFamily: 'serif',
-                    theme: 'dark',
-                    maxWidth: 'medium',
-                    textAlign: 'left',
-                  })
-                }
-                className="w-full p-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1"
-                style={{
-                  backgroundColor: currentTheme.bg,
-                  color: currentTheme.secondary,
-                }}
-              >
-                <RotateCcw size={12} />
-                Reset to Defaults
-              </button>
-            </div>
-          )}
-          {showScrollTop && (
-            <button
-              onClick={scrollToTop}
-              className="fixed bottom-8 right-8 p-4 rounded-full shadow-lg transition-all duration-300 animate-fade-in"
-              style={{
-                backgroundColor: currentTheme.accent,
-                color: 'white',
-              }}
-              title="Scroll to top"
-            >
-              <ChevronUp size={20} />
-            </button>
-          )}
-        </>
-      ) : (
-        <div className="flex justify-end items-center gap-3 mb-6 sticky top-0 bg-[var(--color-bg)] z-10 py-2">
-          <button onClick={onEdit} className="btn btn-secondary btn-sm">
-            <Edit size={14} /> Edit
-          </button>
-          <button
-            onClick={() => setIsFullscreen(true)}
-            className="btn btn-secondary btn-sm"
-            title="Enter fullscreen reading mode"
-          >
-            <Maximize2 size={14} />
-          </button>
+          ))}
         </div>
-      )}
-      <div ref={contentRef} style={isFullscreen ? { paddingTop: '2rem' } : {}}>
+
+        <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }))}
+              className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+            >
+              <ZoomOut size={16} />
+            </button>
+            <span className="min-w-[3rem] text-center text-sm font-mono" style={{ color: currentTheme.secondary }}>{settings.fontSize}px</span>
+            <button
+              onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.min(28, prev.fontSize + 1) }))}
+              className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+            >
+              <ZoomIn size={16} />
+            </button>
+        </div>
+        
+        <button onClick={onEdit} className="btn btn-secondary btn-sm" style={{borderColor: currentTheme.border, color: currentTheme.secondary}}>
+          <Edit size={14} /> Edit
+        </button>
+      </div>
+      
+      {/* Content Area */}
+      <div ref={contentRef} className="p-4 sm:p-8">
         <article
           className={`prose prose-lg max-w-none transition-all duration-300 ${
-            isFullscreen ? 'mx-auto' : ''
-          } ${settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''}`}
+            settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''
+          }`}
           style={contentStyles}
         >
           <ReactMarkdown
@@ -1004,6 +743,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     </div>
   );
 };
+
 
 // ============================================================================
 // REDESIGNED SUB-COMPONENTS
