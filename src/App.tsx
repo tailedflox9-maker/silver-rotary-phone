@@ -304,9 +304,10 @@ function App() {
   return (
     <div className="app-container">
       {theme === 'dark' ? (
-        <div className="starfield-background">
-          <div className="starfield-layer1" />
-          <div className="starfield-layer2" />
+        <div className="aurora-background">
+          <div className="aurora-layer aurora-layer1" />
+          <div className="aurora-layer aurora-layer2" />
+          <div className="aurora-layer aurora-layer3" />
         </div>
       ) : (
         <div className="sun-background" />
