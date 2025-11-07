@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Settings, Search, Brain, Check, AlertCircle, ChevronDown, Menu, BookOpen, Trash2, Plus, User } from 'lucide-react';
 import { APISettings, ModelProvider, BookProject, BookCategory } from '../types';
 
-// --- Helper Icons & Configs (Moved from Sidebar) ---
+// --- Helper Icons & Configs ---
 
 const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5 filter brightness-0 invert" />;
 const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5 filter brightness-0 invert" />;
@@ -78,51 +78,51 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
   }, [settings.selectedProvider, settings.selectedModel]);
 
   return (
-    <header className="relative flex-shrink-0 w-full h-16 bg-[var(--color-sidebar)] border-b border-[var(--color-border)] flex items-center px-4 md:px-6 z-30">
-      <div className="flex items-center gap-2.5">
+    <header className="relative flex-shrink-0 w-full h-16 bg-[var(--color-sidebar)] border-b border-[var(--color-border)] flex items-center px-6 md:px-8 z-30">
+      <div className="flex items-center gap-3">
         <img src="/white-logo.png" alt="Logo" className="w-8 h-8" />
         <div className="hidden md:block">
-          <h1 className="text-lg font-bold">Pustakam</h1>
-          <p className="text-xs text-[var(--color-text-secondary)] -mt-1.5">injin</p>
+          <h1 className="text-lg font-bold tracking-tight">Pustakam</h1>
+          <p className="text-xs text-[var(--color-text-secondary)] -mt-1">injin</p>
         </div>
       </div>
 
       <div className="flex-1" />
 
-      <div className="hidden md:flex items-center relative w-full max-w-lg">
-        <Search className="absolute left-3 w-5 h-5 text-gray-500" />
-        <input type="text" placeholder="Search anything..." className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
+      <div className="hidden md:flex items-center relative w-full max-w-md">
+        <Search className="absolute left-3.5 w-4 h-4 text-gray-500" />
+        <input type="text" placeholder="Search anything..." className="w-full bg-transparent border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors" />
       </div>
 
       <div className="flex-1" />
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {/* --- Model Selector --- */}
         <div className="relative">
-          <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2 px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-card)] transition-colors">
-            {currentProvider ? <currentProvider.icon /> : <Brain size={20} />}
-            <span className="hidden md:inline text-sm font-medium">{currentModel?.name || "Select Model"}</span>
-            <ChevronDown size={16} className={`transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+          <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-transparent border border-[var(--color-border)] rounded-lg hover:border-gray-600 transition-colors">
+            {currentProvider ? <currentProvider.icon /> : <Brain size={18} />}
+            <span className="hidden md:inline text-sm font-medium text-gray-300">{currentModel?.name || "Select Model"}</span>
+            <ChevronDown size={14} className={`text-gray-500 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           {modelDropdownOpen && (
-            <div className="absolute top-full right-0 mt-2 w-72 bg-[#1F1F1F] border border-[var(--color-border)] rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto animate-fade-in-up">
+            <div className="absolute top-full right-0 mt-2 w-80 bg-[#1A1A1A] border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up">
               {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => (
-                <div key={provider} className="p-1">
-                  <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-400 border-b border-white/5">
+                <div key={provider} className="p-3 border-b border-white/5 last:border-b-0">
+                  <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     <config.icon /> {config.name}
-                    {!hasApiKeyForProvider(provider) && <div className="ml-auto flex items-center gap-1 text-red-400"><AlertCircle size={12} /> No Key</div>}
+                    {!hasApiKeyForProvider(provider) && <div className="ml-auto flex items-center gap-1.5 text-red-400 normal-case"><AlertCircle size={12} /> No Key</div>}
                   </div>
-                  <div className="py-1">
+                  <div className="space-y-1 mt-2">
                     {config.models.map((model: any) => {
                       const isSelected = settings.selectedModel === model.id && settings.selectedProvider === provider;
                       return (
-                        <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-md transition-colors p-3 ${isSelected ? 'bg-blue-500/20' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5' : 'text-gray-600 cursor-not-allowed'}`} >
+                        <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-white/5 border border-white/10' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
                           <div className="flex justify-between items-center">
                             <div>
-                              <div className={`text-sm font-medium ${isSelected ? 'text-blue-300' : 'text-gray-200'}`}>{model.name}</div>
-                              <div className="text-xs text-gray-500">{model.description}</div>
+                              <div className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-300'}`}>{model.name}</div>
+                              <div className="text-xs text-gray-500 mt-0.5">{model.description}</div>
                             </div>
-                            {isSelected && <Check size={16} className="text-blue-300" />}
+                            {isSelected && <Check size={16} className="text-gray-400" />}
                           </div>
                         </button>
                       );
@@ -136,33 +136,33 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
         {/* --- Library Dropdown --- */}
         <div className="relative">
-          <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-card)] transition-colors" title="Library & Settings">
-            <BookOpen size={20} />
+          <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-transparent border border-[var(--color-border)] rounded-lg hover:border-gray-600 transition-colors" title="Library & Settings">
+            <BookOpen size={18} />
           </button>
           {libraryOpen && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-[#1F1F1F] border border-[var(--color-border)] rounded-lg shadow-xl z-50 animate-fade-in-up">
-              <div className="p-3 border-b border-white/10">
+            <div className="absolute top-full right-0 mt-2 w-80 bg-[#1A1A1A] border border-[var(--color-border)] rounded-xl shadow-2xl z-50 animate-fade-in-up">
+              <div className="p-4 border-b border-white/5">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search library..." className="w-full bg-white/5 border-transparent rounded-md pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/10" />
+                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search library..." className="w-full bg-white/5 border border-transparent rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-white/10 transition-colors text-white placeholder-gray-500" />
                 </div>
               </div>
-              <div className="max-h-80 overflow-y-auto p-2">
+              <div className="max-h-80 overflow-y-auto p-3">
                 {sortedBooks.map(book => (
-                  <div key={book.id} onClick={() => { onSelectBook(book.id); setLibraryOpen(false); }} className={`group flex items-center justify-between w-full rounded-md cursor-pointer p-3 ${currentBookId === book.id ? 'bg-blue-500/20 text-blue-300' : 'text-gray-300 hover:bg-white/5'}`}>
-                    <span className="text-sm font-medium truncate">{book.title}</span>
-                    <button onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }} className="p-1 rounded-md opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 hover:bg-red-900/20">
+                  <div key={book.id} onClick={() => { onSelectBook(book.id); setLibraryOpen(false); }} className={`group flex items-center justify-between w-full rounded-lg cursor-pointer p-3 mb-2 transition-all ${currentBookId === book.id ? 'bg-white/5 border border-white/10' : 'border border-transparent hover:bg-white/5'}`}>
+                    <span className="text-sm font-medium truncate text-gray-200">{book.title}</span>
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }} className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 hover:bg-red-900/20 transition-all">
                       <Trash2 size={14} />
                     </button>
                   </div>
                 ))}
                 {books.length === 0 && <div className="text-center text-sm text-gray-500 py-8">No books yet.</div>}
               </div>
-              <div className="border-t border-white/10 p-2 space-y-1">
-                <button onClick={() => { onNewBook(); setLibraryOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-md">
+              <div className="border-t border-white/5 p-3 space-y-1">
+                <button onClick={() => { onNewBook(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors">
                   <Plus size={16} /> New Book
                 </button>
-                <button onClick={() => { onOpenSettings(); setLibraryOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-md">
+                <button onClick={() => { onOpenSettings(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors">
                   <Settings size={16} /> Settings
                 </button>
               </div>
@@ -170,7 +170,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
           )}
         </div>
       </div>
-       {(modelDropdownOpen || libraryOpen) && <div className="fixed inset-0 z-40" onClick={() => { setModelDropdownOpen(false); setLibraryOpen(false); }} />}
+      {(modelDropdownOpen || libraryOpen) && <div className="fixed inset-0 z-40" onClick={() => { setModelDropdownOpen(false); setLibraryOpen(false); }} />}
     </header>
   );
 }
