@@ -92,7 +92,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
       <div className="hidden md:flex items-center justify-center w-full max-w-2xl">
         <div className="px-4 py-2 bg-[var(--color-bg)]/50 border border-[var(--color-border)]/50 rounded-lg">
           <p className="text-sm text-gray-400 text-center">
-            ✨ <span className="text-gray-300">Start writing your next chapter</span> - AI-powered book creation
+            📚 <span className="text-gray-300">Learn anything, create knowledge books</span> - AI-powered learning companion
           </p>
         </div>
       </div>
