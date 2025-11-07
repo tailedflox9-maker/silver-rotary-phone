@@ -1,3 +1,4 @@
+// src/components/BookView.tsx
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -62,9 +63,7 @@ import { pdfService } from '../services/pdfService';
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
-
 type AppView = 'list' | 'create' | 'detail';
-
 interface GenerationStatus {
   currentModule?: {
     id: string;
@@ -86,7 +85,6 @@ interface GenerationStatus {
     waitTime?: number;
   };
 }
-
 interface GenerationStats {
   startTime: Date;
   totalModules: number;
@@ -97,7 +95,6 @@ interface GenerationStats {
   totalWordsGenerated: number;
   wordsPerMinute: number;
 }
-
 interface BookViewProps {
   books: BookProject[];
   currentBookId: string | null;
@@ -122,7 +119,6 @@ interface BookViewProps {
   onRetryDecision?: (decision: 'retry' | 'switch' | 'skip') => void;
   availableModels?: Array<{provider: string; model: string; name: string}>;
 }
-
 interface ReadingModeProps {
   content: string;
   isEditing: boolean;
@@ -132,7 +128,6 @@ interface ReadingModeProps {
   onCancel: () => void;
   onContentChange: (content: string) => void;
 }
-
 interface ReadingSettings {
   fontSize: number;
   lineHeight: number;
@@ -145,7 +140,6 @@ interface ReadingSettings {
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
 const THEMES = {
   dark: {
     bg: '#0F0F0F',
@@ -164,13 +158,11 @@ const THEMES = {
     accent: '#B45309',
   },
 };
-
 const FONT_FAMILIES = {
   serif: 'ui-serif, Georgia, "Times New Roman", serif',
   sans: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
   mono: 'ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
 };
-
 const MAX_WIDTHS = {
   narrow: '65ch',
   medium: '75ch',
@@ -180,7 +172,6 @@ const MAX_WIDTHS = {
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
-
 const formatTime = (seconds: number): string => {
   if (isNaN(seconds) || seconds < 1) return '--';
   if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -192,7 +183,6 @@ const formatTime = (seconds: number): string => {
 // ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
-
 const GradientProgressBar = ({ progress = 0, active = true }) => (
   <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
     <div
@@ -208,7 +198,6 @@ const GradientProgressBar = ({ progress = 0, active = true }) => (
 
 const PixelAnimation = () => {
   const [pixels, setPixels] = useState<any[]>([]);
-
   useEffect(() => {
     const colors = [
       'bg-orange-500',
@@ -218,7 +207,6 @@ const PixelAnimation = () => {
       'bg-zinc-700',
       'bg-zinc-600',
     ];
-
     const generate = () => {
       const newPixels = Array(70)
         .fill(0)
@@ -229,12 +217,10 @@ const PixelAnimation = () => {
         }));
       setPixels(newPixels);
     };
-
     generate();
     const interval = setInterval(generate, 200);
     return () => clearInterval(interval);
   }, []);
-
   return (
     <div className="flex flex-wrap gap-1.5 h-14">
       {pixels.map((p) => (
@@ -267,23 +253,21 @@ const RetryDecisionPanel = ({
   availableModels: Array<{provider: string; model: string; name: string}>;
 }) => {
   const [countdown, setCountdown] = useState(Math.ceil((retryInfo.waitTime || 0) / 1000));
-  
+
   useEffect(() => {
     if (countdown <= 0) return;
-    
+
     const timer = setInterval(() => {
       setCountdown(prev => Math.max(0, prev - 1));
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, [countdown]);
-
-  const isRateLimit = retryInfo.error.toLowerCase().includes('rate limit') || 
+  const isRateLimit = retryInfo.error.toLowerCase().includes('rate limit') ||
                       retryInfo.error.toLowerCase().includes('429');
-  
+
   const isNetworkError = retryInfo.error.toLowerCase().includes('network') ||
                          retryInfo.error.toLowerCase().includes('connection');
-
   return (
     <div className="bg-red-900/20 backdrop-blur-xl border border-red-500/50 rounded-xl overflow-hidden animate-fade-in-up">
       <div className="p-6">
@@ -408,19 +392,16 @@ const EmbeddedProgressPanel = ({
   availableModels?: Array<{provider: string; model: string; name: string}>;
 }) => {
   const streamBoxRef = useRef<HTMLDivElement>(null);
-  
+
   const isPaused = generationStatus.status === 'paused';
   const isGenerating = generationStatus.status === 'generating';
   const isWaitingRetry = generationStatus.status === 'waiting_retry';
-
   useEffect(() => {
     if (streamBoxRef.current && generationStatus.currentModule?.generatedText) {
       streamBoxRef.current.scrollTop = streamBoxRef.current.scrollHeight;
     }
   }, [generationStatus.currentModule?.generatedText]);
-
   const overallProgress = (stats.completedModules / (stats.totalModules || 1)) * 100;
-
   if (isWaitingRetry && generationStatus.retryInfo && onRetryDecision) {
     return (
       <RetryDecisionPanel
@@ -432,7 +413,6 @@ const EmbeddedProgressPanel = ({
       />
     );
   }
-
   return (
     <div className={`bg-zinc-900/60 backdrop-blur-xl border rounded-xl overflow-hidden animate-fade-in-up ${
       isPaused ? 'border-yellow-500/50' : 'border-zinc-800/50'
@@ -460,8 +440,8 @@ const EmbeddedProgressPanel = ({
           </div>
           <div className="flex items-center gap-3">
             <div className={`px-3 py-1.5 border rounded-full text-xs font-semibold ${
-              isPaused 
-                ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300' 
+              isPaused
+                ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300'
                 : 'bg-blue-500/20 border-blue-500/30 text-blue-300'
             }`}>
               {Math.round(overallProgress)}%
@@ -527,7 +507,7 @@ const EmbeddedProgressPanel = ({
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <Clock className="w-4 h-4 text-yellow-500" />
               <span>
-                {isPaused 
+                {isPaused
                   ? `Paused • ${stats.completedModules}/${stats.totalModules} done`
                   : `${formatTime(stats.estimatedTimeRemaining)} remaining`
                 }
@@ -555,7 +535,7 @@ const EmbeddedProgressPanel = ({
           <div className="mt-3 text-xs text-zinc-500 flex items-center gap-1.5">
             <AlertCircle className="w-3.5 h-3.5" />
             <span>
-              {isPaused 
+              {isPaused
                 ? 'Progress is saved. You can close this tab safely.'
                 : 'You can pause anytime. Progress will be saved automatically.'
               }
@@ -589,39 +569,49 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
 
 const HomeView = ({
   onNewBook,
+  onShowList,
   hasApiKey,
+  bookCount,
 }: {
   onNewBook: () => void;
+  onShowList: () => void;
   hasApiKey: boolean;
+  bookCount: number;
 }) => (
-  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0f0f0f]">
-    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up space-y-6">
-      <div className="flex justify-center items-center gap-4">
-          <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28" />
-          <h1 className="text-6xl font-extrabold text-white">Pustakam</h1>
+  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
+    <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
+    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up">
+      <div className="relative w-28 h-28 mx-auto mb-6">
+        <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
+        <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28 relative" />
       </div>
-      
-      <h2 className="text-5xl font-bold text-white tracking-tight">Turn Ideas into Books</h2>
-      
-      <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto">
-        Pustakam uses AI to transform your concepts into fully-structured digital books. Private, local-first, and completely under your control.
+      <h1 className="text-5xl font-bold mb-4 text-white">Turn Ideas into Books</h1>
+      <p className="text-xl text-[var(--color-text-secondary)] mb-10">
+        Pustakam is an AI-powered engine that transforms your concepts into fully-structured
+        digital books.
       </p>
-
       {hasApiKey ? (
-        <div className="flex items-center justify-center pt-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={onNewBook}
-            className="btn bg-white text-black hover:bg-gray-200 text-base px-6 py-3"
+            className="btn btn-primary btn-lg shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 w-full sm:w-auto"
           >
-            ✨ Create Book
+            <Sparkles className="w-5 h-5" />
+            Create New Book
           </button>
+          {bookCount > 0 && (
+            <button onClick={onShowList} className="btn btn-secondary w-full sm:w-auto">
+              <List className="w-4 h-4" />
+              View My Books
+            </button>
+          )}
         </div>
       ) : (
-        <div className="content-card p-6 max-w-md mx-auto mt-6">
+        <div className="content-card p-6 max-w-md mx-auto">
           <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
           <h3 className="font-semibold mb-2">API Key Required</h3>
           <p className="text-sm text-gray-400">
-            Please add your API key in Settings to begin creating books.
+            Please configure your API key in Settings to begin.
           </p>
         </div>
       )}
@@ -666,7 +656,6 @@ const BookListGrid = ({
       : '';
     return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
   };
-
   const getStatusText = (status: BookProject['status']) =>
     ({
       planning: 'Planning',
@@ -677,7 +666,6 @@ const BookListGrid = ({
       completed: 'Completed',
       error: 'Error',
     }[status] || 'Unknown');
-
   return (
     <div className="flex-1 flex flex-col h-full">
       <div className="p-6 border-b border-[var(--color-border)]">
@@ -776,8 +764,6 @@ const BookListGrid = ({
   );
 };
 
-// src/components/BookView.tsx (continued)
-
 const DetailTabButton = ({
   label,
   Icon,
@@ -817,7 +803,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const settingsTimeoutRef = useRef<NodeJS.Timeout>();
-
   const [settings, setSettings] = useState<ReadingSettings>(() => {
     const saved = localStorage.getItem('pustakam-reading-settings');
     const parsed = saved ? JSON.parse(saved) : {};
@@ -832,14 +817,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       ...parsed,
     };
   });
-
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
-
   useEffect(() => {
     if (!isFullscreen) return;
-
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -847,11 +829,9 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       setScrollProgress(progress);
       setShowScrollTop(scrollTop > 500);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isFullscreen]);
-
   useEffect(() => {
     if (showSettings) {
       if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
@@ -861,7 +841,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
     };
   }, [showSettings]);
-
   useEffect(() => {
     if (isFullscreen) {
       document.body.style.overflow = 'hidden';
@@ -875,10 +854,8 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       document.documentElement.style.overflow = '';
     };
   }, [isFullscreen]);
-
   useEffect(() => {
     if (!isFullscreen) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsFullscreen(false);
@@ -897,14 +874,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
-
   const currentTheme = THEMES[settings.theme];
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
   const updateSetting = <K extends keyof ReadingSettings>(
     key: K,
     value: ReadingSettings[K]
@@ -913,7 +887,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     if (settingsTimeoutRef.current) clearTimeout(settingsTimeoutRef.current);
     settingsTimeoutRef.current = setTimeout(() => setShowSettings(false), 5000);
   };
-
   if (isEditing) {
     return (
       <div className="animate-fade-in">
@@ -940,7 +913,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       </div>
     );
   }
-
   const fullscreenStyles = isFullscreen
     ? {
         backgroundColor: currentTheme.bg,
@@ -948,7 +920,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         minHeight: '100vh',
       }
     : {};
-
   const contentStyles = {
     fontFamily: FONT_FAMILIES[settings.fontFamily],
     fontSize: `${settings.fontSize}px`,
@@ -967,7 +938,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         ? '0 0 40px rgba(0,0,0,0.1)'
         : undefined,
   };
-
   return (
     <div
       className={`reading-container theme-${settings.theme} ${
@@ -984,7 +954,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
           }}
         />
       )}
-
       {isFullscreen ? (
         <>
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
@@ -1025,7 +994,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
               <Minimize2 size={18} />
             </button>
           </div>
-
           {showSettings && (
             <div
               className="fixed top-16 right-4 z-50 p-6 rounded-2xl shadow-2xl min-w-[280px] animate-fade-in-up"
@@ -1040,8 +1008,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                 <BookOpen size={16} />
                 Reading Settings
               </h4>
-
-              {/* Font Size */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Font Size</label>
                 <div className="flex items-center gap-2">
@@ -1062,8 +1028,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   </button>
                 </div>
               </div>
-
-              {/* Line Spacing */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Line Spacing</label>
                 <input
@@ -1078,8 +1042,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                 />
                 <div className="text-xs opacity-70 mt-1">{settings.lineHeight.toFixed(1)}</div>
               </div>
-
-              {/* Font Style */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Font Style</label>
                 <div className="grid grid-cols-3 gap-1">
@@ -1102,8 +1064,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* Theme */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Theme</label>
                 <div className="flex gap-1">
@@ -1126,8 +1086,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* Column Width */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Column Width</label>
                 <div className="flex gap-1">
@@ -1149,8 +1107,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* Reset Button */}
               <button
                 onClick={() =>
                   setSettings({
@@ -1173,7 +1129,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
               </button>
             </div>
           )}
-
           {showScrollTop && (
             <button
               onClick={scrollToTop}
@@ -1202,7 +1157,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
           </button>
         </div>
       )}
-
       <div ref={contentRef} style={isFullscreen ? { paddingTop: '2rem' } : {}}>
         <article
           className={`prose prose-invert prose-lg max-w-none transition-all duration-300 ${
@@ -1228,7 +1182,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 // ============================================================================
 // MAIN BOOKVIEW COMPONENT
 // ============================================================================
-
 export function BookView({
   books,
   currentBookId,
@@ -1272,7 +1225,6 @@ export function BookView({
   const [editedContent, setEditedContent] = useState('');
   const currentBook = currentBookId ? books.find(b => b.id === currentBookId) : null;
   const [pdfProgress, setPdfProgress] = useState(0);
-
   useEffect(() => {
     if (currentBook) {
       const isGen = ['generating_roadmap', 'generating_content', 'assembling'].includes(
@@ -1282,13 +1234,11 @@ export function BookView({
       setIsEditing(false);
     }
   }, [currentBook]);
-
   useEffect(() => {
     return () => {
       if (currentBookId) bookService.cancelActiveRequests(currentBookId);
     };
   }, [currentBookId]);
-
   const handleCreateRoadmap = async () => {
     if (!formData.goal.trim() || !hasApiKey) return;
     setLocalIsGenerating(true);
@@ -1300,7 +1250,6 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
-
   const handleStartGeneration = async () => {
     if (!currentBook) return;
     setLocalIsGenerating(true);
@@ -1323,13 +1272,11 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
-
   const handlePause = () => {
     if (currentBook && onPauseGeneration) {
       onPauseGeneration(currentBook.id);
     }
   };
-
   const handleResume = () => {
     if (currentBook && onResumeGeneration) {
       onResumeGeneration(currentBook, {
@@ -1346,7 +1293,6 @@ export function BookView({
       });
     }
   };
-
   const handleStartAssembly = async () => {
     if (!currentBook) return;
     setLocalIsGenerating(true);
@@ -1369,26 +1315,22 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
-
   const handleDownloadPdf = async () => {
     if (!currentBook) return;
     setPdfProgress(1);
     await pdfService.generatePdf(currentBook, setPdfProgress);
     setTimeout(() => setPdfProgress(0), 2000);
   };
-
   const handleStartEditing = () => {
     if (currentBook?.finalBook) {
       setEditedContent(currentBook.finalBook);
       setIsEditing(true);
     }
   };
-
   const handleCancelEditing = () => {
     setIsEditing(false);
     setEditedContent('');
   };
-
   const handleSaveChanges = () => {
     if (currentBook && editedContent) {
       onUpdateBookContent(currentBook.id, editedContent);
@@ -1396,7 +1338,6 @@ export function BookView({
       setEditedContent('');
     }
   };
-
   const getStatusIcon = (status: BookProject['status']) => {
     const iconMap: Record<BookProject['status'], React.ElementType> = {
       planning: Clock,
@@ -1421,7 +1362,6 @@ export function BookView({
       : '';
     return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
   };
-
   const getStatusText = (status: BookProject['status']) =>
     ({
       planning: 'Planning',
@@ -1436,7 +1376,6 @@ export function BookView({
   // ============================================================================
   // VIEW RENDERING
   // ============================================================================
-
   if (view === 'list') {
     if (showListInMain)
       return (
@@ -1451,15 +1390,15 @@ export function BookView({
     return (
       <HomeView
         onNewBook={() => setView('create')}
+        onShowList={() => setShowListInMain(true)}
         hasApiKey={hasApiKey}
+        bookCount={books.length}
       />
     );
   }
-
   if (view === 'create') {
     return (
       <div className="flex-1 flex flex-col h-full">
-        {/* Header */}
         <div className="p-6 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-4">
             <button
@@ -1477,13 +1416,10 @@ export function BookView({
             </div>
           </div>
         </div>
-
-        {/* Form */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="content-card p-6">
               <div className="space-y-6">
-                {/* Learning Goal */}
                 <div>
                   <label className="flex items-center gap-2 text-lg font-semibold mb-2">
                     <Target size={18} className="text-blue-400" />
@@ -1498,8 +1434,6 @@ export function BookView({
                     required
                   />
                 </div>
-
-                {/* Target Audience & Complexity */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="flex items-center gap-2 font-semibold mb-2">
@@ -1534,8 +1468,6 @@ export function BookView({
                     />
                   </div>
                 </div>
-
-                {/* Advanced Options Toggle */}
                 <div className="border-t border-[var(--color-border)] pt-4">
                   <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
@@ -1549,8 +1481,7 @@ export function BookView({
                     />
                   </button>
                 </div>
-                
-                {/* Reasoning Field (Conditional) */}
+
                 {showAdvanced && (
                     <div className="animate-fade-in-up">
                         <label className="flex items-center gap-2 font-semibold mb-2">
@@ -1566,9 +1497,6 @@ export function BookView({
                         />
                     </div>
                 )}
-
-
-                {/* Preferences */}
                 <div>
                   <label className="font-semibold mb-3 block">Preferences</label>
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -1605,8 +1533,6 @@ export function BookView({
                     </label>
                   </div>
                 </div>
-
-                {/* Submit Button */}
                 <div className="pt-2">
                   <button
                     onClick={handleCreateRoadmap}
@@ -1633,7 +1559,6 @@ export function BookView({
       </div>
     );
   }
-
   if (view === 'detail' && currentBook) {
     const areAllModulesDone =
       currentBook.roadmap &&
@@ -1642,10 +1567,8 @@ export function BookView({
     const failedModules = currentBook.modules.filter((m) => m.status === 'error');
     const completedModules = currentBook.modules.filter((m) => m.status === 'completed');
     const isPaused = generationStatus?.status === 'paused';
-
     return (
       <div className="flex-1 flex flex-col h-full">
-        {/* Header */}
         <div className="p-4 sm:p-6 border-b border-[var(--color-border)]">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -1670,8 +1593,6 @@ export function BookView({
               </div>
             </div>
           </div>
-
-          {/* Tabs */}
           {currentBook.status === 'completed' && (
             <div className="mt-4 flex items-center gap-2">
               <DetailTabButton
@@ -1695,8 +1616,6 @@ export function BookView({
             </div>
           )}
         </div>
-
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className={detailTab === 'read' ? '' : 'p-4 sm:p-6'}>
             <div className={detailTab === 'read' ? '' : 'max-w-4xl mx-auto'}>
@@ -1734,7 +1653,6 @@ export function BookView({
                       availableModels={availableModels}
                     />
                   )}
-
                   {currentBook.status === 'roadmap_completed' &&
                     !areAllModulesDone &&
                     !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry' && (
@@ -1788,7 +1706,6 @@ export function BookView({
                         </button>
                       </div>
                     )}
-
                   {areAllModulesDone && currentBook.status !== 'completed' && !localIsGenerating && (
                     <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-6 space-y-6 animate-fade-in-up">
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
@@ -1810,7 +1727,6 @@ export function BookView({
                       </button>
                     </div>
                   )}
-
                   {currentBook.status === 'completed' && (
                     <div className="space-y-6">
                       <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-6">
@@ -1889,7 +1805,6 @@ export function BookView({
                       </div>
                     </div>
                   )}
-
                   {currentBook.status === 'assembling' && (
                     <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow">
                       <div className="flex flex-col items-center text-center gap-4">
@@ -1911,7 +1826,6 @@ export function BookView({
                       </div>
                     </div>
                   )}
-
                   {currentBook.roadmap &&
                     (currentBook.status !== 'completed' && !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry') && (
                       <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6">
@@ -1926,7 +1840,6 @@ export function BookView({
                             );
                             const isActive =
                               generationStatus?.currentModule?.id === module.id;
-
                             return (
                               <div
                                 key={module.id}
@@ -1981,6 +1894,5 @@ export function BookView({
       </div>
     );
   }
-
   return null;
 }
