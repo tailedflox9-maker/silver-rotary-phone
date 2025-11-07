@@ -3,6 +3,34 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* ==========================================================================
+   Font Face Declarations
+   ========================================================================== */
+@font-face {
+  font-family: 'Aptos-Mono';
+  src: url('/fonts/Aptos-Mono.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aptos-Mono';
+  src: url('/fonts/Aptos-Mono-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aptos-Mono';
+  src: url('/fonts/Aptos-Mono-Bold-Italic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* ==========================================================================
    Base Layer & Theming
    ========================================================================== */
