@@ -339,7 +339,6 @@ export function TopHeader({ settings, books, currentBook, onModelChange, onOpenS
         </div>
       </div>
 
-      {/* Backdrop */}
       {(modelDropdownOpen || libraryOpen) && (
         <div 
           className="fixed inset-0 z-40" 
@@ -348,3 +347,7 @@ export function TopHeader({ settings, books, currentBook, onModelChange, onOpenS
             setLibraryOpen(false);
           }}
         />
+      )}
+    </header>
+  );
+}
