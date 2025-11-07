@@ -91,7 +91,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
       <div className="hidden md:flex items-center relative w-full max-w-md">
         <Search className="absolute left-3.5 w-4 h-4 text-gray-500" />
-        <input type="text" placeholder="Search anything..." className="w-full bg-transparent border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors" />
+        <input type="text" placeholder="Search anything..." className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors" />
       </div>
 
       <div className="flex-1" />
@@ -99,7 +99,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
       <div className="flex items-center gap-3">
         {/* --- Model Selector --- */}
         <div className="relative">
-          <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-transparent border border-[var(--color-border)] rounded-lg hover:border-gray-600 transition-colors">
+          <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:border-gray-600 transition-colors">
             {currentProvider ? <currentProvider.icon /> : <Brain size={18} />}
             <span className="hidden md:inline text-sm font-medium text-gray-300">{currentModel?.name || "Select Model"}</span>
             <ChevronDown size={14} className={`text-gray-500 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
@@ -136,7 +136,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
         {/* --- Library Dropdown --- */}
         <div className="relative">
-          <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-transparent border border-[var(--color-border)] rounded-lg hover:border-gray-600 transition-colors" title="Library & Settings">
+          <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:border-gray-600 transition-colors" title="Library & Settings">
             <BookOpen size={18} />
           </button>
           {libraryOpen && (
