@@ -1437,173 +1437,236 @@ export function BookView({
     );
   }
   
-  // --- FINAL, SCALED DOWN CREATE VIEW ---
+// --- ELEGANT, MINIMAL CREATE VIEW ---
   if (view === 'create') {
     return (
-      <div className="w-full max-w-2xl mx-auto px-6 py-10">
-        <div className="flex items-center gap-3 mb-8">
+      <div className="w-full max-w-3xl mx-auto px-6 py-12">
+        {/* Minimal Header */}
+        <div className="mb-12">
           <button
             onClick={() => {
               setView('list');
               setShowListInMain(false);
             }}
-            className="btn-ghost p-2"
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-white transition-colors mb-6 group"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>Back</span>
           </button>
-          <div>
-            <h1 className="text-2xl font-bold">Create a New Book</h1>
-            <p className="text-[var(--color-text-secondary)] mt-1 text-sm">Start with a goal and let the AI build the structure.</p>
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 mb-4">
+              <Sparkles className="w-7 h-7 text-blue-400" />
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight">Create Your Book</h1>
+            <p className="text-gray-400 text-lg max-w-xl mx-auto">
+              Transform your idea into a structured learning journey
+            </p>
           </div>
         </div>
 
-        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl">
-          <div className="p-7 space-y-7">
-            <div>
-              <label htmlFor="goal" className="flex items-center gap-2.5 text-base font-semibold mb-2">
-                <Target size={18} className="text-blue-400" />
-                <span>Learning Goal</span>
-              </label>
-              <p className="text-sm text-[var(--color-text-secondary)] mb-3">
-                This is the core concept of your book. Be descriptive.
-              </p>
+        {/* Clean Form Container */}
+        <div className="space-y-8">
+          {/* Main Goal Input - Hero Section */}
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative bg-[var(--color-card)] border border-[var(--color-border)] rounded-2xl p-8 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-blue-400" />
+                </div>
+                <label htmlFor="goal" className="text-lg font-semibold">
+                  What do you want to learn?
+                </label>
+              </div>
               <textarea
                 id="goal"
                 value={formData.goal}
                 onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
-                placeholder="e.g., Master advanced TypeScript for scalable applications"
-                className="textarea-style focus:ring-blue-500/50"
+                placeholder="E.g., Master advanced TypeScript patterns and build scalable enterprise applications"
+                className="w-full bg-transparent border-0 text-lg text-white placeholder-gray-600 focus:outline-none resize-none leading-relaxed"
                 rows={3}
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-[var(--color-border)]">
-              <div>
-                <label htmlFor="audience" className="font-semibold mb-2 block text-sm">
-                  Target Audience
-                </label>
-                <input
-                  id="audience"
-                  type="text"
-                  value={formData.targetAudience}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, targetAudience: e.target.value }))
-                  }
-                  placeholder="e.g., Software Developers"
-                  className="input-style"
-                />
-              </div>
-              <div>
-                <label htmlFor="complexity" className="font-semibold mb-2 block text-sm">
-                  Complexity Level
-                </label>
-                <CustomSelect
-                  value={formData.complexityLevel || 'intermediate'}
-                  onChange={(val) =>
-                    setFormData((p) => ({ ...p, complexityLevel: val as any }))
-                  }
-                  options={[
-                    { value: 'beginner', label: 'Beginner' },
-                    { value: 'intermediate', label: 'Intermediate' },
-                    { value: 'advanced', label: 'Advanced' },
-                  ]}
-                />
-              </div>
-            </div>
-
-            <div className="pt-5 border-t border-[var(--color-border)]">
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center justify-between w-full text-left font-semibold text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} />
-                  <span>Advanced Options</span>
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    showAdvanced ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-              {showAdvanced && (
-                  <div className="animate-fade-in-up mt-5">
-                      <label htmlFor="reasoning" className="font-semibold mb-2 block text-sm">
-                        Reasoning (Optional)
-                      </label>
-                      <p className="text-xs text-[var(--color-text-secondary)] mb-3">
-                        Explain the "why" behind this book.
-                      </p>
-                      <textarea
-                      id="reasoning"
-                      value={formData.reasoning}
-                      onChange={(e) => setFormData((p) => ({ ...p, reasoning: e.target.value }))}
-                      placeholder="e.g., A project-based path missing from other books..."
-                      className="textarea-style"
-                      rows={2}
-                      />
-                  </div>
-              )}
-            </div>
-
-            <div className="pt-5 border-t border-[var(--color-border)]">
-              <label className="font-semibold mb-3 block text-sm">Content Preferences</label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <label className="flex items-center gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors w-full">
-                  <input
-                    type="checkbox"
-                    checked={formData.preferences?.includeExamples}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        preferences: { ...p.preferences!, includeExamples: e.target.checked },
-                      }))
-                    }
-                    className="w-4 h-4 accent-blue-500"
-                  />
-                  <span className="text-sm">Include Code Examples</span>
-                </label>
-                <label className="flex items-center gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors w-full">
-                  <input
-                    type="checkbox"
-                    checked={formData.preferences?.includePracticalExercises}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        preferences: {
-                          ...p.preferences!,
-                          includePracticalExercises: e.target.checked,
-                        },
-                      }))
-                    }
-                    className="w-4 h-4 accent-blue-500"
-                  />
-                  <span className="text-sm">Include Practice Exercises</span>
-                </label>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className={`w-2 h-2 rounded-full transition-colors ${formData.goal.trim() ? 'bg-green-500' : 'bg-gray-700'}`}></div>
+                <span>{formData.goal.trim() ? 'Ready to generate' : 'Start by describing your learning goal'}</span>
               </div>
             </div>
           </div>
 
-          <div className="p-5 bg-[var(--color-bg)] border-t border-[var(--color-border)] rounded-b-xl">
+          {/* Quick Options - Minimalist Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-6 space-y-3 hover:border-gray-600 transition-colors">
+              <div className="flex items-center gap-2.5">
+                <Users className="w-5 h-5 text-purple-400" />
+                <label htmlFor="audience" className="font-medium text-white">
+                  Target Audience
+                </label>
+              </div>
+              <input
+                id="audience"
+                type="text"
+                value={formData.targetAudience}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, targetAudience: e.target.value }))
+                }
+                placeholder="Software Developers, Students..."
+                className="w-full bg-white/5 border-0 border-b border-white/10 px-0 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 transition-colors"
+              />
+            </div>
+
+            <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-6 space-y-3 hover:border-gray-600 transition-colors">
+              <div className="flex items-center gap-2.5">
+                <Brain className="w-5 h-5 text-green-400" />
+                <label htmlFor="complexity" className="font-medium text-white">
+                  Complexity Level
+                </label>
+              </div>
+              <CustomSelect
+                value={formData.complexityLevel || 'intermediate'}
+                onChange={(val) =>
+                  setFormData((p) => ({ ...p, complexityLevel: val as any }))
+                }
+                options={[
+                  { value: 'beginner', label: 'Beginner - Starting from basics' },
+                  { value: 'intermediate', label: 'Intermediate - Some experience' },
+                  { value: 'advanced', label: 'Advanced - Deep expertise' },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Advanced Options - Collapsible */}
+          <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-orange-400" />
+                </div>
+                <span className="font-medium">Advanced Options</span>
+              </div>
+              <ChevronDown
+                className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${
+                  showAdvanced ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+            {showAdvanced && (
+              <div className="px-6 pb-6 space-y-6 animate-fade-in-up">
+                <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                
+                {/* Reasoning */}
+                <div className="space-y-3">
+                  <label htmlFor="reasoning" className="flex items-center gap-2 text-sm font-medium text-gray-300">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    Context & Reasoning
+                  </label>
+                  <textarea
+                    id="reasoning"
+                    value={formData.reasoning}
+                    onChange={(e) => setFormData((p) => ({ ...p, reasoning: e.target.value }))}
+                    placeholder="Explain the 'why' behind this book, any specific focus areas, or unique perspectives..."
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none transition-colors"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Content Preferences */}
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+                    <ListChecks className="w-4 h-4 text-green-400" />
+                    Content Preferences
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={formData.preferences?.includeExamples}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              preferences: { ...p.preferences!, includeExamples: e.target.checked },
+                            }))
+                          }
+                          className="w-5 h-5 accent-blue-500 rounded"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
+                          Include Code Examples
+                        </div>
+                        <div className="text-xs text-gray-500">Practical code snippets throughout</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={formData.preferences?.includePracticalExercises}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              preferences: {
+                                ...p.preferences!,
+                                includePracticalExercises: e.target.checked,
+                              },
+                            }))
+                          }
+                          className="w-5 h-5 accent-green-500 rounded"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-white group-hover:text-green-300 transition-colors">
+                          Include Practice Exercises
+                        </div>
+                        <div className="text-xs text-gray-500">Hands-on challenges and projects</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* CTA Button - Prominent */}
+          <div className="pt-6">
             <button
               onClick={handleCreateRoadmap}
               disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
-              className="btn btn-primary w-full py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full overflow-hidden rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {localIsGenerating ? (
-                <>
-                  <Loader2 className="animate-spin w-5 h-5" />
-                  Generating Roadmap...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={18} />
-                  Create Book Roadmap
-                </>
-              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-[length:200%_100%] group-hover:bg-[position:100%_0] transition-all duration-500"></div>
+              <div className="relative flex items-center justify-center gap-3 px-8 py-5 text-white font-semibold text-lg">
+                {localIsGenerating ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span>Generating Your Roadmap...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                    <span>Generate Book Roadmap</span>
+                  </>
+                )}
+              </div>
             </button>
+            {!hasApiKey && (
+              <p className="text-center text-sm text-red-400 mt-4 flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Please configure an API key in Settings first
+              </p>
+            )}
           </div>
+
+          {/* Subtle Footer Note */}
+          <p className="text-center text-xs text-gray-600 flex items-center justify-center gap-2">
+            <Zap className="w-3.5 h-3.5" />
+            Powered by AI • Generated in seconds
+          </p>
         </div>
       </div>
     );
