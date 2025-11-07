@@ -6,15 +6,17 @@ import { SettingsModal } from './components/SettingsModal';
 import { useGenerationStats } from './components/GenerationProgressPanel';
 import { APISettings, ModelProvider } from './types';
 import { usePWA } from './hooks/usePWA';
-import { Menu, WifiOff, Settings, CheckCircle2 } from 'lucide-react';
+import { WifiOff, CheckCircle2, Settings as SettingsIcon } from 'lucide-react';
 import { storageUtils } from './utils/storage';
 import { bookService } from './services/bookService';
 import { BookView } from './components/BookView';
 import { BookProject, BookSession } from './types/book';
 import { generateId } from './utils/helpers';
+import { TopHeader } from './components/TopHeader'; // Import the new header
 
 type AppView = 'list' | 'create' | 'detail';
 
+// ... (GenerationStatus interface remains the same)
 interface GenerationStatus {
   currentModule?: {
     id: string;
@@ -36,6 +38,7 @@ interface GenerationStatus {
   };
 }
 
+
 function App() {
   const [books, setBooks] = useState<BookProject[]>(() => storageUtils.getBooks());
   const [settings, setSettings] = useState<APISettings>(() => storageUtils.getSettings());
@@ -45,11 +48,11 @@ function App() {
   );
   const [view, setView] = useState<AppView>('list');
   const [showListInMain, setShowListInMain] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineMessage, setShowOfflineMessage] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus>({
     status: 'idle',
     totalProgress: 0,
@@ -58,7 +61,7 @@ function App() {
   const [generationStartTime, setGenerationStartTime] = useState<Date>(new Date());
   const [showModelSwitch, setShowModelSwitch] = useState(false);
   const [modelSwitchOptions, setModelSwitchOptions] = useState<Array<{provider: ModelProvider; model: string; name: string}>>([]);
-  
+
   const { isInstallable, isInstalled, installApp, dismissInstallPrompt } = usePWA();
   const currentBook = useMemo(() =>
     currentBookId ? books.find(b => b.id === currentBookId) : null,
@@ -71,9 +74,11 @@ function App() {
       generationStatus.status === 'generating'
     );
   }, [currentBook?.status, generationStatus.status]);
+  
   const totalWordsGenerated = currentBook?.modules.reduce((sum, m) =>
     sum + (m.status === 'completed' ? m.wordCount : 0), 0
   ) || 0;
+
   const generationStats = useGenerationStats(
     currentBook?.roadmap?.totalModules || 0,
     currentBook?.modules.filter(m => m.status === 'completed').length || 0,
@@ -81,20 +86,37 @@ function App() {
     generationStartTime,
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
+  
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  // ✅ FIX: Clean up pause flags for completed books on mount
+  // ... (All other hooks and handlers from App.tsx remain the same)
+  // [NOTE: For brevity, the existing handlers like `handleCreateBookRoadmap`, 
+  // `handleGenerateAllModules`, etc., are omitted here but should be kept in your file.]
+  
+  // --- Start of existing hooks and handlers from App.tsx ---
   useEffect(() => {
     books.forEach(book => {
       if (book.status === 'completed') {
         try {
           localStorage.removeItem(`pause_flag_${book.id}`);
-          console.log('✓ Cleared pause flag for completed book:', book.id);
         } catch (error) {
           console.warn('Failed to clear pause flag:', error);
         }
       }
     });
-  }, []); // Run only once on mount
+  }, []);
 
   useEffect(() => {
     if (currentBook && currentBook.status === 'generating_content') {
@@ -114,33 +136,6 @@ function App() {
       }
     }
   }, [currentBook?.id]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      const tablet = window.innerWidth >= 768 && window.innerWidth < 1024;
-      const desktop = window.innerWidth >= 1024;
-
-      setIsMobile(mobile);
-
-      if (desktop) {
-        setSidebarOpen(true);
-      } else if (mobile || tablet) {
-        if (view === 'list' || view === 'create') {
-          setSidebarOpen(false);
-        }
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', () => {
-      setTimeout(handleResize, 100);
-    });
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
-  }, [view]);
 
   useEffect(() => {
     bookService.updateSettings(settings);
@@ -199,7 +194,7 @@ function App() {
     };
   }, [isMobile, sidebarOpen]);
 
-  const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey); // ✅ UPDATED
+  const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
 
   const getAlternativeModels = () => {
     const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
@@ -228,7 +223,6 @@ function App() {
       });
     }
 
-    // ✅ NEW: Add Groq alternatives
     if (settings.groqApiKey && settings.selectedProvider !== 'groq') {
       alternatives.push({
         provider: 'groq',
@@ -300,7 +294,6 @@ function App() {
     }
   };
 
-  // ✅ FIXED: Clear pause flag when selecting completed books
   const handleSelectBook = (id: string | null) => {
     setCurrentBookId(id);
     if (id) {
@@ -308,16 +301,13 @@ function App() {
 
       const book = books.find(b => b.id === id);
       if (book) {
-        // ✅ FIX: Clear pause flag if book is completed
         if (book.status === 'completed') {
           try {
             localStorage.removeItem(`pause_flag_${id}`);
-            console.log('✓ Cleared pause flag for completed book:', id);
           } catch (error) {
             console.warn('Failed to clear pause flag:', error);
           }
           
-          // Reset generation status for completed books
           setGenerationStatus({
             status: 'idle',
             totalProgress: 0,
@@ -459,7 +449,6 @@ function App() {
   };
 
   const handlePauseGeneration = (bookId: string) => {
-    console.log('🔴 Pausing generation for book:', bookId);
     bookService.pauseGeneration(bookId);
 
     setGenerationStatus(prev => ({
@@ -470,7 +459,6 @@ function App() {
   };
 
   const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
-    console.log('▶ Resuming generation for book:', book.id);
     bookService.resumeGeneration(book.id);
 
     setGenerationStartTime(new Date());
@@ -627,105 +615,88 @@ function App() {
     );
   };
 
-  const handleMenuClick = () => {
-    setSidebarOpen(true);
-  };
-
   const handleBackdropClick = () => {
     if (isMobile) {
       setSidebarOpen(false);
     }
   };
+  // --- End of existing hooks and handlers ---
+
 
   return (
-    <div className="app-container viewport-full prevent-overscroll">
+    <div className="app-container flex flex-col bg-[#0f0f0f]">
       {sidebarOpen && !window.matchMedia('(min-width: 1024px)').matches && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={handleBackdropClick}
         />
       )}
-      <Sidebar
-        books={books}
-        currentBookId={currentBookId}
-        onSelectBook={handleSelectBook}
-        onDeleteBook={handleDeleteBook}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onNewBook={() => {
-          setView('create');
-          setShowListInMain(false);
-          if (isMobile) {
-            setSidebarOpen(false);
-          }
-        }}
-        onCloseSidebar={() => setSidebarOpen(false)}
-        isFolded={sidebarFolded}
-        onToggleFold={() => setSidebarFolded(!sidebarFolded)}
-        isSidebarOpen={sidebarOpen}
+
+      <TopHeader
         settings={settings}
         onModelChange={handleModelChange}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
-      <div className="main-content">
-        {!sidebarOpen && (
-          <button
-            onClick={handleMenuClick}
-            className={`fixed z-30 btn-secondary shadow-lg transition-all duration-200 lg:hidden ${
-              isMobile
-                ? 'top-4 left-4 p-3 rounded-xl'
-                : 'top-4 left-4 p-2.5 rounded-lg'
-            }`}
-            title="Open sidebar"
-            style={{
-              top: isMobile ? 'max(16px, env(safe-area-inset-top))' : '16px'
-            }}
-          >
-            <Menu className={`${isMobile ? 'w-6 h-6' : 'w-5 h-5'}`} />
-          </button>
-        )}
-        {showOfflineMessage && (
-          <div
-            className={`fixed z-50 content-card animate-fade-in-up ${
-              isMobile
-                ? 'top-20 left-4 right-4 p-4'
-                : 'top-4 right-4 p-3'
-            }`}
-            style={{
-              top: isMobile ? 'max(80px, calc(env(safe-area-inset-top) + 64px))' : '16px'
-            }}
-          >
-            <div className="flex items-center gap-2 text-yellow-400">
-              <WifiOff className={`${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
-              <span className={`font-medium ${isMobile ? 'text-base' : 'text-sm'}`}>
-                You're offline
-              </span>
-            </div>
-          </div>
-        )}
-        <BookView
+
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar
           books={books}
           currentBookId={currentBookId}
-          onCreateBookRoadmap={handleCreateBookRoadmap}
-          onGenerateAllModules={handleGenerateAllModules}
-          onRetryFailedModules={handleRetryFailedModules}
-          onAssembleBook={handleAssembleBook}
           onSelectBook={handleSelectBook}
           onDeleteBook={handleDeleteBook}
-          hasApiKey={hasApiKey}
-          view={view}
-          setView={setView}
-          onUpdateBookContent={handleUpdateBookContent}
-          showListInMain={showListInMain}
-          setShowListInMain={setShowListInMain}
-          isMobile={isMobile}
-          generationStatus={generationStatus}
-          generationStats={generationStats}
-          onPauseGeneration={handlePauseGeneration}
-          onResumeGeneration={handleResumeGeneration}
-          isGenerating={isGenerating}
-          onRetryDecision={handleRetryDecision}
-          availableModels={getAlternativeModels()}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onNewBook={() => {
+            setView('create');
+            setShowListInMain(false);
+            if (isMobile) {
+              setSidebarOpen(false);
+            }
+          }}
+          onCloseSidebar={() => setSidebarOpen(false)}
+          isFolded={sidebarFolded}
+          onToggleFold={() => setSidebarFolded(!sidebarFolded)}
+          isSidebarOpen={sidebarOpen}
+          // Remove props that are now in TopHeader
+          // settings={settings}
+          // onModelChange={handleModelChange}
         />
+        <main className="main-content flex-1 overflow-y-auto">
+          {showOfflineMessage && (
+            <div className="fixed top-20 right-4 z-50 content-card animate-fade-in-up p-3">
+              <div className="flex items-center gap-2 text-yellow-400">
+                <WifiOff className="w-4 h-4" />
+                <span className="font-medium text-sm">You're offline</span>
+              </div>
+            </div>
+          )}
+          <BookView
+            books={books}
+            currentBookId={currentBookId}
+            onCreateBookRoadmap={handleCreateBookRoadmap}
+            onGenerateAllModules={handleGenerateAllModules}
+            onRetryFailedModules={handleRetryFailedModules}
+            onAssembleBook={handleAssembleBook}
+            onSelectBook={handleSelectBook}
+            onDeleteBook={handleDeleteBook}
+            hasApiKey={hasApiKey}
+            view={view}
+            setView={setView}
+            onUpdateBookContent={handleUpdateBookContent}
+            showListInMain={showListInMain}
+            setShowListInMain={setShowListInMain}
+            isMobile={isMobile}
+            generationStatus={generationStatus}
+            generationStats={generationStats}
+            onPauseGeneration={handlePauseGeneration}
+            onResumeGeneration={handleResumeGeneration}
+            isGenerating={isGenerating}
+            onRetryDecision={handleRetryDecision}
+            availableModels={getAlternativeModels()}
+          />
+        </main>
       </div>
+
       <SettingsModal
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -734,16 +705,12 @@ function App() {
       />
       {showModelSwitch && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+           <div className="bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
             <div className="flex items-center gap-3 mb-6">
-              <Settings className="w-6 h-6 text-blue-400" />
+              <SettingsIcon className="w-6 h-6 text-blue-400" />
               <h3 className="text-xl font-semibold text-white">Switch AI Model</h3>
             </div>
-
-            <p className="text-sm text-gray-400 mb-6">
-              Select a different AI model to continue generation:
-            </p>
-
+            <p className="text-sm text-gray-400 mb-6">Select a different AI model to continue generation:</p>
             <div className="space-y-3 mb-6">
               {modelSwitchOptions.map((option) => (
                 <button
@@ -753,41 +720,21 @@ function App() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-white group-hover:text-blue-400 transition-colors">
-                        {option.name}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Model: {option.model}
-                      </div>
+                      <div className="font-semibold text-white group-hover:text-blue-400 transition-colors">{option.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">Model: {option.model}</div>
                     </div>
                     <CheckCircle2 className="w-5 h-5 text-gray-600 group-hover:text-blue-400 transition-colors" />
                   </div>
                 </button>
               ))}
             </div>
-
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowModelSwitch(false)}
-                className="flex-1 btn btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowModelSwitch(false);
-                  setSettingsOpen(true);
-                }}
-                className="flex-1 btn btn-primary"
-              >
-                <Settings className="w-4 h-4" />
-                Configure Keys
+              <button onClick={() => setShowModelSwitch(false)} className="flex-1 btn btn-secondary">Cancel</button>
+              <button onClick={() => { setShowModelSwitch(false); setSettingsOpen(true); }} className="flex-1 btn btn-primary">
+                <SettingsIcon className="w-4 h-4" /> Configure Keys
               </button>
             </div>
-
-            <div className="mt-4 text-xs text-zinc-500 text-center">
-              💡 You can add more AI providers in Settings
-            </div>
+            <div className="mt-4 text-xs text-zinc-500 text-center">💡 You can add more AI providers in Settings</div>
           </div>
         </div>
       )}
