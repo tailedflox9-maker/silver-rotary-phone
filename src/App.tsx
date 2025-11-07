@@ -1,4 +1,4 @@
-// src/App.tsx - FIXED VERSION WITH COMPLETE HANDLERS
+// src/App.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -59,14 +59,12 @@ function App() {
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
 
-  // --- Resize Handler ---
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- Clear pause flags for completed books ---
   useEffect(() => {
     books.forEach(book => {
       if (book.status === 'completed') {
@@ -76,7 +74,6 @@ function App() {
     });
   }, []);
 
-  // --- Update book service settings ---
   useEffect(() => {
     bookService.updateSettings(settings);
     bookService.setProgressCallback(handleBookProgressUpdate);
@@ -85,13 +82,10 @@ function App() {
     });
   }, [settings]);
 
-  // --- Save books to storage ---
   useEffect(() => { storageUtils.saveBooks(books); }, [books]);
   
-  // --- Reset view when no book selected ---
   useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
 
-  // --- Online/Offline handlers ---
   useEffect(() => {
     const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
     const handleOffline = () => { setIsOnline(false); setShowOfflineMessage(true); setTimeout(() => setShowOfflineMessage(false), 5000); };
@@ -102,7 +96,6 @@ function App() {
 
   const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
   
-  // --- Get alternative AI models ---
   const getAlternativeModels = () => {
     const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
     if (settings.googleApiKey && settings.selectedProvider !== 'google') alternatives.push({ provider: 'google', model: 'gemini-2.5-flash', name: 'Google Gemini 2.5 Flash' });
@@ -114,7 +107,6 @@ function App() {
 
   const showModelSwitchModal = (alternatives: any) => { setModelSwitchOptions(alternatives); setShowModelSwitch(true); };
   
-  // --- Handle model switch ---
   const handleModelSwitch = async (provider: ModelProvider, model: string) => {
     const newSettings = { ...settings, selectedProvider: provider, selectedModel: model };
     setSettings(newSettings);
@@ -129,7 +121,6 @@ function App() {
     }, 100);
   };
 
-  // --- Handle retry decision ---
   const handleRetryDecision = async (decision: 'retry' | 'switch' | 'skip') => {
     if (!currentBook) return;
     if (decision === 'retry') { 
@@ -152,7 +143,6 @@ function App() {
     }
   };
 
-  // --- Handle book selection ---
   const handleSelectBook = (id: string | null) => {
     setCurrentBookId(id);
     if (id) {
@@ -165,12 +155,10 @@ function App() {
     }
   };
 
-  // --- Update book progress ---
   const handleBookProgressUpdate = (bookId: string, updates: Partial<BookProject>) => {
     setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
   };
   
-  // ✅ FIXED: Complete handler for creating book roadmap
   const handleCreateBookRoadmap = async (session: BookSession) => {
     if (!session.goal.trim()) {
       alert('Please enter a learning goal');
@@ -224,7 +212,6 @@ function App() {
     }
   };
   
-  // ✅ FIXED: Complete handler for generating all modules
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) {
       alert('No roadmap available. Please generate a roadmap first.');
@@ -258,14 +245,12 @@ function App() {
     }
   };
 
-  // --- Handle pause generation ---
   const handlePauseGeneration = (bookId: string) => {
     console.log('⏸ Pausing generation for:', bookId);
     bookService.pauseGeneration(bookId);
     setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
   };
 
-  // ✅ FIXED: Complete handler for resuming generation
   const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) {
       alert('No roadmap available');
@@ -299,7 +284,6 @@ function App() {
     }
   };
 
-  // ✅ FIXED: Complete handler for retrying failed modules
   const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
     const failedModules = book.modules.filter(m => m.status === 'error');
     
@@ -331,7 +315,6 @@ function App() {
     }
   };
 
-  // ✅ FIXED: Complete handler for assembling book
   const handleAssembleBook = async (book: BookProject, session: BookSession) => {
     console.log('📦 Assembling final book:', book.title);
     
@@ -355,7 +338,6 @@ function App() {
     }
   };
 
-  // --- Handle delete book ---
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
       console.log('🗑️ Deleting book:', id);
@@ -373,7 +355,6 @@ function App() {
     }
   };
   
-  // --- Handle save settings ---
   const handleSaveSettings = (newSettings: APISettings) => {
     console.log('💾 Saving settings');
     setSettings(newSettings);
@@ -381,7 +362,6 @@ function App() {
     setSettingsOpen(false);
   };
   
-  // --- Handle model change ---
   const handleModelChange = (model: string, provider: ModelProvider) => {
     console.log('🔄 Changing model:', provider, model);
     const newSettings = { ...settings, selectedModel: model, selectedProvider: provider };
@@ -389,13 +369,11 @@ function App() {
     storageUtils.saveSettings(newSettings);
   };
 
-  // --- Handle install app ---
   const handleInstallApp = async () => { 
     const success = await installApp(); 
     if (success) console.log('✅ App installed successfully');
   };
   
-  // --- Handle update book content ---
   const handleUpdateBookContent = (bookId: string, newContent: string) => {
     console.log('📝 Updating book content:', bookId);
     setBooks(prev => prev.map(book => 
@@ -410,7 +388,7 @@ function App() {
       <TopHeader
         settings={settings}
         books={books}
-        currentBookId={currentBookId}
+        currentBook={currentBook} {/* Pass the full book object */}
         onModelChange={handleModelChange}
         onOpenSettings={() => setSettingsOpen(true)}
         onSelectBook={handleSelectBook}
@@ -457,7 +435,6 @@ function App() {
         />
       </main>
 
-      {/* Settings Modal */}
       <SettingsModal 
         isOpen={settingsOpen} 
         onClose={() => setSettingsOpen(false)} 
@@ -465,7 +442,6 @@ function App() {
         onSaveSettings={handleSaveSettings} 
       />
       
-      {/* Model Switch Modal */}
       {showModelSwitch && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
@@ -495,12 +471,10 @@ function App() {
         </div>
       )}
       
-      {/* Install Prompt */}
       {isInstallable && !isInstalled && (
         <InstallPrompt onInstall={handleInstallApp} onDismiss={dismissInstallPrompt} />
       )}
       
-      {/* Analytics */}
       <Analytics />
     </div>
   );
