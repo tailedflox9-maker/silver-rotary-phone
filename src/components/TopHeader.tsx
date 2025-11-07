@@ -5,10 +5,10 @@ import { APISettings, ModelProvider, BookProject } from '../types';
 
 // --- Helper Icons & Configs ---
 
-const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5" />;
-const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5" />;
-const ZhipuIcon = () => <img src="/zhipu.svg" alt="ZhipuAI" className="w-5 h-5" />;
-const GroqIcon = () => <img src="/groq.svg" alt="Groq" className="w-5 h-5" />;
+const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5 logo-img" />;
+const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5 logo-img" />;
+const ZhipuIcon = () => <img src="/zhipu.svg" alt="ZhipuAI" className="w-5 h-5 logo-img" />;
+const GroqIcon = () => <img src="/groq.svg" alt="Groq" className="w-5 h-5 logo-img" />;
 
 const modelConfig = {
   google: {
@@ -107,7 +107,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
           <img src="/white-logo.png" alt="Logo" className="w-8 h-8 logo-img" />
           <div className="hidden md:block">
             <h1 className="text-lg font-bold tracking-tight text-[var(--color-text-primary)]">Pustakam</h1>
-            <p className="text-xs text-gray-500 -mt-1">injin</p>
+            <p className="text-xs text-[var(--color-text-secondary)] -mt-1">injin</p>
           </div>
         </div>
 
@@ -115,28 +115,28 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
         <div className="flex items-center gap-3">
           {/* --- Theme Toggle --- */}
-          <button onClick={onToggleTheme} className="flex items-center justify-center w-9 h-9 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all" title="Toggle Theme">
+          <button onClick={onToggleTheme} className="flex items-center justify-center w-9 h-9 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button" title="Toggle Theme">
             {theme === 'dark' ? <Sun size={18} className="text-gray-300" /> : <Moon size={18} className="text-gray-500" />}
           </button>
 
           {/* --- Time Display --- */}
-          <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg">
-            <Clock size={16} className="text-gray-400" />
-            <span className="text-sm text-gray-300">{formatTime(currentTime)}</span>
+          <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg top-header-button">
+            <Clock size={16} className="text-[var(--color-text-secondary)]" />
+            <span className="text-sm text-[var(--color-text-secondary)]">{formatTime(currentTime)}</span>
           </div>
 
           {/* --- Model Selector --- */}
           <div className="relative">
-            <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all">
+            <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button">
               {currentProvider ? <currentProvider.icon /> : <Brain size={18} />}
-              <span className="hidden md:inline text-sm font-medium text-gray-200">{currentModel?.name || "Select Model"}</span>
-              <ChevronDown size={14} className={`text-gray-400 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+              <span className="hidden md:inline text-sm font-medium text-[var(--color-text-secondary)]">{currentModel?.name || "Select Model"}</span>
+              <ChevronDown size={14} className="text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {modelDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up">
+              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
                 {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => (
                   <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
-                    <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       <config.icon /> {config.name}
                       {!hasApiKeyForProvider(provider) && <div className="ml-auto flex items-center gap-1.5 text-red-400 normal-case"><AlertCircle size={12} /> No Key</div>}
                     </div>
@@ -144,13 +144,13 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
                       {config.models.map((model: any) => {
                         const isSelected = settings.selectedModel === model.id && settings.selectedProvider === provider;
                         return (
-                          <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-white/10 border border-white/20' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
+                          <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-white/10 border border-white/20 selected' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
                             <div className="flex justify-between items-center">
                               <div>
-                                <div className={`text-sm font-medium ${isSelected ? 'text-[var(--color-text-primary)]' : 'text-gray-300'}`}>{model.name}</div>
-                                <div className="text-xs text-gray-500 mt-0.5">{model.description}</div>
+                                <div className={`text-sm font-medium ${isSelected ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{model.name}</div>
+                                <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{model.description}</div>
                               </div>
-                              {isSelected && <Check size={16} className="text-gray-400" />}
+                              {isSelected && <Check size={16} className="text-[var(--color-text-secondary)]" />}
                             </div>
                           </button>
                         );
@@ -164,33 +164,33 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
           {/* --- Library Dropdown --- */}
           <div className="relative">
-            <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all" title="Library & Settings">
-              <BookOpen size={18} className="text-gray-300" />
+            <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button" title="Library & Settings">
+              <BookOpen size={18} className="text-[var(--color-text-secondary)]" />
             </button>
             {libraryOpen && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 animate-fade-in-up">
+              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 animate-fade-in-up model-dropdown">
                 <div className="p-4 border-b border-[var(--color-border)]">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search library..." className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-white/20 transition-colors text-[var(--color-text-primary)] placeholder-gray-500" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
+                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search library..." className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-white/20 transition-colors text-[var(--color-text-primary)] placeholder-[var(--color-text-placeholder)]" />
                   </div>
                 </div>
                 <div className="max-h-80 overflow-y-auto p-3">
                   {sortedBooks.map(book => (
-                    <div key={book.id} onClick={() => { onSelectBook(book.id); setLibraryOpen(false); }} className={`group flex items-center justify-between w-full rounded-lg cursor-pointer p-3 mb-2 transition-all ${currentBookId === book.id ? 'bg-white/10 border border-white/20' : 'border border-transparent hover:bg-white/5'}`}>
-                      <span className="text-sm font-medium truncate text-gray-200">{book.title}</span>
-                      <button onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }} className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 hover:bg-red-900/20 transition-all">
+                    <div key={book.id} onClick={() => { onSelectBook(book.id); setLibraryOpen(false); }} className={`group flex items-center justify-between w-full rounded-lg cursor-pointer p-3 mb-2 transition-all ${currentBookId === book.id ? 'bg-white/10 border border-white/20 selected' : 'border border-transparent hover:bg-white/5'}`}>
+                      <span className="text-sm font-medium truncate text-[var(--color-text-secondary)]">{book.title}</span>
+                      <button onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }} className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all">
                         <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
-                  {books.length === 0 && <div className="text-center text-sm text-gray-500 py-8">No books yet.</div>}
+                  {books.length === 0 && <div className="text-center text-sm text-[var(--color-text-secondary)] py-8">No books yet.</div>}
                 </div>
                 <div className="border-t border-[var(--color-border)] p-3 space-y-1">
-                  <button onClick={() => { onNewBook(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors">
+                  <button onClick={() => { onNewBook(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-white/5 rounded-lg transition-colors">
                     <Plus size={16} /> New Book
                   </button>
-                  <button onClick={() => { onOpenSettings(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors">
+                  <button onClick={() => { onOpenSettings(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-white/5 rounded-lg transition-colors">
                     <Settings size={16} /> Settings
                   </button>
                 </div>
