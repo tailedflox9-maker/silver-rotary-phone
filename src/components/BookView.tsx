@@ -962,6 +962,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 // REDESIGNED SUB-COMPONENTS
 // ============================================================================
 
+// --- SCALED DOWN: Home View ---
 const HomeView = ({
   onNewBook,
   onShowList,
@@ -975,13 +976,13 @@ const HomeView = ({
 }) => (
   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
     <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
-    <div className="relative z-10 max-w-3xl mx-auto animate-fade-in-up">
-      <div className="relative w-28 h-28 mx-auto mb-8">
+    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up">
+      <div className="relative w-24 h-24 mx-auto mb-6">
         <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
-        <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28 relative" />
+        <img src="/white-logo.png" alt="Pustakam Logo" className="w-24 h-24 relative" />
       </div>
-      <h1 className="text-5xl font-bold mb-6 text-white">Turn Ideas into Books</h1>
-      <p className="text-xl text-[var(--color-text-secondary)] mb-12">
+      <h1 className="text-4xl font-bold mb-4 text-white">Turn Ideas into Books</h1>
+      <p className="text-lg text-[var(--color-text-secondary)] mb-10">
         Pustakam is an AI-powered engine that transforms your concepts into fully-structured
         digital books.
       </p>
@@ -989,9 +990,9 @@ const HomeView = ({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={onNewBook}
-            className="btn btn-primary btn-lg shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 w-full sm:w-auto"
+            className="btn btn-primary shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 w-full sm:w-auto"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
             Create New Book
           </button>
           {bookCount > 0 && (
@@ -1002,7 +1003,7 @@ const HomeView = ({
           )}
         </div>
       ) : (
-        <div className="bg-[var(--color-card)] p-8 rounded-xl max-w-md mx-auto">
+        <div className="bg-[var(--color-card)] p-6 rounded-xl max-w-md mx-auto">
           <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
           <h3 className="font-semibold mb-2">API Key Required</h3>
           <p className="text-sm text-[var(--color-text-secondary)]">
@@ -1014,6 +1015,7 @@ const HomeView = ({
   </div>
 );
 
+// --- SCALED DOWN: Book List ---
 const BookListGrid = ({
   books,
   onSelectBook,
@@ -1049,7 +1051,7 @@ const BookListGrid = ({
     )
       ? 'animate-spin'
       : '';
-    return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
+    return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
   };
   const getStatusText = (status: BookProject['status']) =>
     ({
@@ -1063,55 +1065,55 @@ const BookListGrid = ({
     }[status] || 'Unknown');
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-6 py-12">
-      <div className="flex items-center justify-between mb-10">
+    <div className="w-full max-w-3xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Books</h1>
-          <p className="text-[var(--color-text-secondary)] mt-1">{books.length} projects</p>
+          <h1 className="text-2xl font-bold">My Books</h1>
+          <p className="text-[var(--color-text-secondary)] mt-1 text-sm">{books.length} projects</p>
         </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => setShowListInMain(false)} className="btn btn-secondary">
-            <ArrowLeft className="w-4 h-4" /> Back to Home
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowListInMain(false)} className="btn btn-secondary btn-sm">
+            <ArrowLeft className="w-4 h-4" /> Back
           </button>
           <button
             onClick={() => {
               setView('create');
               setShowListInMain(false);
             }}
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm"
           >
             <Plus className="w-4 h-4" /> New Book
           </button>
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {books.map((book) => (
           <div
             key={book.id}
-            className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg transition-all hover:border-gray-600 hover:shadow-lg cursor-pointer group"
+            className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg transition-all hover:border-gray-600 hover:shadow-md cursor-pointer group"
             onClick={() => onSelectBook(book.id)}
           >
-            <div className="p-6">
-              <div className="flex items-start justify-between gap-6">
+            <div className="p-5">
+              <div className="flex items-start justify-between gap-5">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-semibold text-white truncate group-hover:text-blue-300 transition-colors mb-2">
+                  <h3 className="text-lg font-semibold text-white truncate group-hover:text-blue-300 transition-colors mb-1.5">
                     {book.title}
                   </h3>
-                  <p className="text-sm text-[var(--color-text-secondary)] mb-4 line-clamp-2">{book.goal}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)] mb-3 line-clamp-2">{book.goal}</p>
                   
-                  <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--color-text-secondary)]">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--color-text-secondary)]">
+                    <div className="flex items-center gap-1.5">
                       {getStatusIcon(book.status)}
-                      <span className="capitalize">{getStatusText(book.status)}</span>
+                      <span className="capitalize text-xs">{getStatusText(book.status)}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                       <Clock className="w-4 h-4" />
-                       <span>{new Date(book.createdAt).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-1.5">
+                       <Clock className="w-3.5 h-3.5" />
+                       <span className="text-xs">{new Date(book.createdAt).toLocaleDateString()}</span>
                     </div>
                     {book.modules.length > 0 && 
-                      <div className="flex items-center gap-2">
-                        <ListChecks className="w-4 h-4" />
-                        <span>{book.modules.length} modules</span>
+                      <div className="flex items-center gap-1.5">
+                        <ListChecks className="w-3.5 h-3.5" />
+                        <span className="text-xs">{book.modules.length} modules</span>
                       </div>
                     }
                   </div>
@@ -1123,10 +1125,10 @@ const BookListGrid = ({
                         e.stopPropagation();
                         bookService.downloadAsMarkdown(book);
                       }}
-                      className="btn-ghost p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="btn-ghost p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Download"
                     >
-                      <Download className="w-5 h-5" />
+                      <Download className="w-4 h-4" />
                     </button>
                   )}
                   <button
@@ -1134,16 +1136,16 @@ const BookListGrid = ({
                       e.stopPropagation();
                       onDeleteBook(book.id);
                     }}
-                    className="btn-ghost p-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    className="btn-ghost p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                     title="Delete"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
               {book.status !== 'completed' && book.status !== 'error' && (
-                <div className="mt-4">
-                  <div className="w-full bg-gray-800/50 rounded-full h-2 overflow-hidden border border-gray-700">
+                <div className="mt-3">
+                  <div className="w-full bg-gray-800/50 rounded-full h-1.5 overflow-hidden border border-gray-700">
                     <div
                       className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out relative"
                       style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
@@ -1367,7 +1369,7 @@ export function BookView({
     )
       ? 'animate-spin'
       : '';
-    return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
+    return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
   };
   const getStatusText = (status: BookProject['status']) =>
     ({
@@ -1403,10 +1405,12 @@ export function BookView({
       />
     );
   }
+  
+  // --- FINAL, SCALED DOWN CREATE VIEW ---
   if (view === 'create') {
     return (
-      <div className="w-full max-w-2xl mx-auto px-6 py-12">
-        <div className="flex items-center gap-4 mb-10">
+      <div className="w-full max-w-2xl mx-auto px-6 py-10">
+        <div className="flex items-center gap-3 mb-8">
           <button
             onClick={() => {
               setView('list');
@@ -1417,139 +1421,154 @@ export function BookView({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold">Create New Book</h1>
-            <p className="text-[var(--color-text-secondary)] mt-1">Define your learning goal and let AI do the rest.</p>
+            <h1 className="text-2xl font-bold">Create a New Book</h1>
+            <p className="text-[var(--color-text-secondary)] mt-1 text-sm">Start with a goal and let the AI build the structure.</p>
           </div>
         </div>
-        <div className="space-y-8">
-          <div>
-            <label className="flex items-center gap-2 text-lg font-semibold mb-3">
-              <Target size={18} className="text-blue-400" />
-              Learning Goal
-            </label>
-            <textarea
-              value={formData.goal}
-              onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
-              placeholder="e.g., Learn Python for Data Science..."
-              className="textarea-style focus:ring-blue-500/50"
-              rows={3}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl">
+          <div className="p-7 space-y-7">
             <div>
-              <label className="flex items-center gap-2 font-semibold mb-3">
-                <Users size={16} className="text-green-400" />
-                Target Audience
+              <label htmlFor="goal" className="flex items-center gap-2.5 text-base font-semibold mb-2">
+                <Target size={18} className="text-blue-400" />
+                <span>Learning Goal</span>
               </label>
-              <input
-                type="text"
-                value={formData.targetAudience}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, targetAudience: e.target.value }))
-                }
-                placeholder="e.g., Beginners, Professionals..."
-                className="input-style focus:ring-green-500/50"
+              <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+                This is the core concept of your book. Be descriptive.
+              </p>
+              <textarea
+                id="goal"
+                value={formData.goal}
+                onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
+                placeholder="e.g., Master advanced TypeScript for scalable applications"
+                className="textarea-style focus:ring-blue-500/50"
+                rows={3}
+                required
               />
             </div>
-            <div>
-              <label className="flex items-center gap-2 font-semibold mb-3">
-                <Brain size={16} className="text-yellow-400" />
-                Complexity
-              </label>
-              <CustomSelect
-                value={formData.complexityLevel || 'intermediate'}
-                onChange={(val) =>
-                  setFormData((p) => ({ ...p, complexityLevel: val as any }))
-                }
-                options={[
-                  { value: 'beginner', label: 'Beginner' },
-                  { value: 'intermediate', label: 'Intermediate' },
-                  { value: 'advanced', label: 'Advanced' },
-                ]}
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-[var(--color-border)]">
+              <div>
+                <label htmlFor="audience" className="font-semibold mb-2 block text-sm">
+                  Target Audience
+                </label>
+                <input
+                  id="audience"
+                  type="text"
+                  value={formData.targetAudience}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, targetAudience: e.target.value }))
+                  }
+                  placeholder="e.g., Software Developers"
+                  className="input-style"
+                />
+              </div>
+              <div>
+                <label htmlFor="complexity" className="font-semibold mb-2 block text-sm">
+                  Complexity Level
+                </label>
+                <CustomSelect
+                  value={formData.complexityLevel || 'intermediate'}
+                  onChange={(val) =>
+                    setFormData((p) => ({ ...p, complexityLevel: val as any }))
+                  }
+                  options={[
+                    { value: 'beginner', label: 'Beginner' },
+                    { value: 'intermediate', label: 'Intermediate' },
+                    { value: 'advanced', label: 'Advanced' },
+                  ]}
+                />
+              </div>
             </div>
-          </div>
-          <div className="border-t border-[var(--color-border)] pt-6">
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center justify-between w-full text-left font-semibold text-gray-400 hover:text-white transition-colors"
-            >
-              <span>Advanced Options</span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${
-                  showAdvanced ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
+
+            <div className="pt-5 border-t border-[var(--color-border)]">
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center justify-between w-full text-left font-semibold text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} />
+                  <span>Advanced Options</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    showAdvanced ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              {showAdvanced && (
+                  <div className="animate-fade-in-up mt-5">
+                      <label htmlFor="reasoning" className="font-semibold mb-2 block text-sm">
+                        Reasoning (Optional)
+                      </label>
+                      <p className="text-xs text-[var(--color-text-secondary)] mb-3">
+                        Explain the "why" behind this book.
+                      </p>
+                      <textarea
+                      id="reasoning"
+                      value={formData.reasoning}
+                      onChange={(e) => setFormData((p) => ({ ...p, reasoning: e.target.value }))}
+                      placeholder="e.g., A project-based path missing from other books..."
+                      className="textarea-style"
+                      rows={2}
+                      />
+                  </div>
+              )}
+            </div>
+
+            <div className="pt-5 border-t border-[var(--color-border)]">
+              <label className="font-semibold mb-3 block text-sm">Content Preferences</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="flex items-center gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors w-full">
+                  <input
+                    type="checkbox"
+                    checked={formData.preferences?.includeExamples}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        preferences: { ...p.preferences!, includeExamples: e.target.checked },
+                      }))
+                    }
+                    className="w-4 h-4 accent-blue-500"
+                  />
+                  <span className="text-sm">Include Code Examples</span>
+                </label>
+                <label className="flex items-center gap-2.5 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors w-full">
+                  <input
+                    type="checkbox"
+                    checked={formData.preferences?.includePracticalExercises}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        preferences: {
+                          ...p.preferences!,
+                          includePracticalExercises: e.target.checked,
+                        },
+                      }))
+                    }
+                    className="w-4 h-4 accent-blue-500"
+                  />
+                  <span className="text-sm">Include Practice Exercises</span>
+                </label>
+              </div>
+            </div>
           </div>
 
-          {showAdvanced && (
-              <div className="animate-fade-in-up -mt-2">
-                  <label className="flex items-center gap-2 font-semibold mb-3">
-                  <Sparkles size={16} className="text-purple-400" />
-                  Reasoning (Optional)
-                  </label>
-                  <textarea
-                  value={formData.reasoning}
-                  onChange={(e) => setFormData((p) => ({ ...p, reasoning: e.target.value }))}
-                  placeholder="e.g., Why is this book being created? What problem does it solve or what unique perspective does it offer?"
-                  className="textarea-style focus:ring-purple-500/50"
-                  rows={3}
-                  />
-              </div>
-          )}
-          <div>
-            <label className="font-semibold mb-4 block">Preferences</label>
-            <div className="flex flex-col sm:flex-row gap-6">
-              <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.preferences?.includeExamples}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      preferences: { ...p.preferences!, includeExamples: e.target.checked },
-                    }))
-                  }
-                  className="w-4 h-4 accent-blue-500"
-                />
-                Include Examples
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.preferences?.includePracticalExercises}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      preferences: {
-                        ...p.preferences!,
-                        includePracticalExercises: e.target.checked,
-                      },
-                    }))
-                  }
-                  className="w-4 h-4 accent-blue-500"
-                />
-                Include Exercises
-              </label>
-            </div>
-          </div>
-          <div className="pt-4">
+          <div className="p-5 bg-[var(--color-bg)] border-t border-[var(--color-border)] rounded-b-xl">
             <button
               onClick={handleCreateRoadmap}
               disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
-              className="btn btn-primary btn-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary w-full py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {localIsGenerating ? (
                 <>
-                  <Loader2 className="animate-spin" />
-                  Generating...
+                  <Loader2 className="animate-spin w-5 h-5" />
+                  Generating Roadmap...
                 </>
               ) : (
                 <>
-                  <Sparkles />
-                  Create Roadmap
+                  <Sparkles size={18} />
+                  Create Book Roadmap
                 </>
               )}
             </button>
@@ -1558,6 +1577,8 @@ export function BookView({
       </div>
     );
   }
+  
+  // --- FINAL, SCALED DOWN DETAIL VIEW ---
   if (view === 'detail' && currentBook) {
     const areAllModulesDone =
       currentBook.roadmap &&
@@ -1567,20 +1588,20 @@ export function BookView({
     const completedModules = currentBook.modules.filter((m) => m.status === 'completed');
     const isPaused = generationStatus?.status === 'paused';
     return (
-      <div className="w-full max-w-4xl mx-auto px-6 py-12">
-        <div className="mb-10">
+      <div className="w-full max-w-3xl mx-auto px-6 py-10">
+        <div className="mb-8">
           <button
             onClick={() => {
               setView('list');
               onSelectBook(null);
               setShowListInMain(true);
             }}
-            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors mb-6"
+            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors mb-5"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to My Books
           </button>
-          <h1 className="text-4xl font-bold text-white mb-2">{currentBook.title}</h1>
+          <h1 className="text-3xl font-bold text-white mb-1.5">{currentBook.title}</h1>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 text-sm font-medium">
               {getStatusIcon(currentBook.status)}
@@ -1590,8 +1611,8 @@ export function BookView({
         </div>
 
         {currentBook.status === 'completed' && (
-          <div className="border-b border-[var(--color-border)] mb-10">
-            <div className="flex items-center gap-8">
+          <div className="border-b border-[var(--color-border)] mb-8">
+            <div className="flex items-center gap-6">
               <DetailTabButton
                 label="Overview"
                 Icon={ListChecks}
@@ -1614,7 +1635,7 @@ export function BookView({
           </div>
         )}
         
-        <div className="space-y-8">
+        <div className="space-y-6">
             {detailTab === 'analytics' && currentBook.status === 'completed' ? (
               <BookAnalytics book={currentBook} />
             ) : detailTab === 'read' && currentBook.status === 'completed' ? (
@@ -1650,23 +1671,23 @@ export function BookView({
                 {currentBook.status === 'roadmap_completed' &&
                   !areAllModulesDone &&
                   !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry' && (
-                    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-8">
+                    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
                       <div className="flex items-center gap-4 mb-5">
-                        <div className="w-12 h-12 flex items-center justify-center bg-blue-500/10 rounded-lg">
-                          <Play className="w-6 h-6 text-blue-500" />
+                        <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10 rounded-lg">
+                          <Play className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                          <h3 className="text-xl font-semibold text-white">
+                          <h3 className="text-lg font-semibold text-white">
                             Ready to Generate Content
                           </h3>
-                          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                          <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
                             {completedModules.length > 0
                               ? `Resume from ${completedModules.length} completed modules`
                               : 'Start generating all modules'}
                           </p>
                         </div>
                       </div>
-                      <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 mb-6">
+                      <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 mb-5">
                         <div className="flex items-start gap-3">
                           <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                           <div className="text-sm text-gray-300">
@@ -1682,16 +1703,12 @@ export function BookView({
                       <button
                         onClick={handleStartGeneration}
                         disabled={localIsGenerating}
-                        className="btn btn-primary w-full btn-lg"
+                        className="btn btn-primary w-full py-2.5"
                       >
                         {localIsGenerating ? (
-                          <>
-                            <Loader2 className="animate-spin" />
-                            Generating...
-                          </>
+                          <><Loader2 className="animate-spin" /> Generating...</>
                         ) : (
-                          <>
-                            <Play className="w-4 h-4" />
+                          <><Play className="w-4 h-4" />
                             {completedModules.length > 0
                               ? 'Resume Generation'
                               : 'Generate All Modules'}
@@ -1701,72 +1718,57 @@ export function BookView({
                     </div>
                   )}
                 {areAllModulesDone && currentBook.status !== 'completed' && !localIsGenerating && (
-                  <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-8 space-y-6 animate-fade-in-up">
+                  <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-7 space-y-5 animate-fade-in-up">
                     <div className="text-center">
-                      <div className="w-16 h-16 flex items-center justify-center bg-green-500/10 rounded-full mx-auto mb-4">
-                        <CheckCircle className="w-8 h-8 text-green-400" />
+                      <div className="w-12 h-12 flex items-center justify-center bg-green-500/10 rounded-full mx-auto mb-3">
+                        <CheckCircle className="w-7 h-7 text-green-400" />
                       </div>
-                      <h3 className="text-2xl font-bold text-white">Generation Complete!</h3>
-                      <p className="text-base text-[var(--color-text-secondary)] mt-2">
-                        All chapters written. Ready to assemble the final book.
+                      <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
+                      <p className="text-sm text-[var(--color-text-secondary)] mt-1.5">
+                        All chapters written. Ready to assemble.
                       </p>
                     </div>
-                    <button onClick={handleStartAssembly} className="btn btn-primary w-full btn-lg">
+                    <button onClick={handleStartAssembly} className="btn btn-primary w-full py-2.5">
                       <Box className="w-5 h-5" />
                       Assemble Final Book
                     </button>
                   </div>
                 )}
                 {currentBook.status === 'completed' && (
-                    <div className="space-y-8">
-                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-8">
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="w-14 h-14 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <CheckCircle2 className="w-7 h-7 text-green-400" />
+                    <div className="space-y-6">
+                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-7">
+                        <div className="flex items-center gap-4 mb-5">
+                          <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-green-400" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-semibold text-white">Generation Complete</h3>
-                            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                            <h3 className="text-lg font-semibold text-white">Generation Complete</h3>
+                            <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
                               Your book is ready to read and download.
                             </p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <button
-                            onClick={() => setDetailTab('read')}
-                            className="btn btn-primary justify-center py-3"
-                          >
-                            <Eye className="w-4 h-4" />
-                            Read Book
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <button onClick={() => setDetailTab('read')} className="btn btn-primary justify-center py-2.5">
+                            <Eye className="w-4 h-4" /> Read Book
                           </button>
-                          <button
-                            onClick={() => bookService.downloadAsMarkdown(currentBook)}
-                            className="btn btn-secondary justify-center py-3"
-                          >
-                            <Download className="w-4 h-4" />
-                            Download .MD
+                          <button onClick={() => bookService.downloadAsMarkdown(currentBook)} className="btn btn-secondary justify-center py-2.5">
+                            <Download className="w-4 h-4" /> Download .MD
                           </button>
                           <button
                             onClick={handleDownloadPdf}
                             disabled={pdfProgress > 0}
-                            className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all py-3"
+                            className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all py-2.5"
                           >
                             {pdfProgress > 0 ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Generating PDF ({pdfProgress}%)</span>
-                              </>
+                              <><Loader2 className="w-4 h-4 animate-spin" /> PDF ({pdfProgress}%)</>
                             ) : (
-                              <>
-                                <Download className="w-4 h-4" />
-                                <span>Download PDF</span>
-                              </>
+                              <><Download className="w-4 h-4" /> Download PDF</>
                             )}
                           </button>
                         </div>
                       </div>
-                      {/* --- UPDATED & COMPACT STATS CARDS --- */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
                           <div className="text-2xl font-bold text-white">
                             {currentBook.modules.length}
@@ -1795,32 +1797,32 @@ export function BookView({
                     </div>
                   )}
                 {currentBook.status === 'assembling' && (
-                  <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-10 space-y-8 animate-assembling-glow text-center">
-                      <div className="relative w-16 h-16 mx-auto">
+                  <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow text-center">
+                      <div className="relative w-14 h-14 mx-auto">
                         <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
-                        <div className="relative w-16 h-16 flex items-center justify-center bg-green-500/10 rounded-full">
-                          <Box className="w-8 h-8 text-green-400" />
+                        <div className="relative w-14 h-14 flex items-center justify-center bg-green-500/10 rounded-full">
+                          <Box className="w-7 h-7 text-green-400" />
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold text-white">Assembling Your Book</h3>
-                        <p className="text-[var(--color-text-secondary)] mt-2 max-w-md mx-auto">
+                        <h3 className="text-xl font-bold text-white">Assembling Your Book</h3>
+                        <p className="text-[var(--color-text-secondary)] mt-1.5 max-w-md mx-auto text-sm">
                           Finalizing chapters and preparing for download...
                         </p>
                       </div>
-                    <div className="w-full bg-black/30 rounded-full h-2.5 overflow-hidden border border-white/10">
+                    <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/10">
                       <div className="h-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 rounded-full animate-slide-in-out"></div>
                     </div>
                   </div>
                 )}
                 {currentBook.roadmap &&
                   (currentBook.status !== 'completed' && !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry') && (
-                    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-8">
-                      <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
+                      <div className="flex items-center gap-3 mb-5">
                         <ListChecks className="w-5 h-5 text-purple-400" />
-                        <h3 className="text-xl font-bold">Learning Roadmap</h3>
+                        <h3 className="text-lg font-bold">Learning Roadmap</h3>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {currentBook.roadmap.modules.map((module, index) => {
                           const completedModule = currentBook.modules.find(
                             (m) => m.roadmapModuleId === module.id
@@ -1830,7 +1832,7 @@ export function BookView({
                           return (
                             <div
                               key={module.id}
-                              className={`flex items-start gap-4 p-4 rounded-lg border transition-all ${
+                              className={`flex items-center gap-3.5 p-3.5 rounded-lg border transition-all ${
                                 isActive
                                   ? 'bg-blue-500/10 border-blue-500/40'
                                   : completedModule?.status === 'completed'
@@ -1841,7 +1843,7 @@ export function BookView({
                               }`}
                             >
                               <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all mt-1 ${
+                                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
                                   completedModule?.status === 'completed'
                                     ? 'bg-emerald-500 text-white'
                                     : completedModule?.status === 'error'
@@ -1852,20 +1854,20 @@ export function BookView({
                                 }`}
                               >
                                 {completedModule?.status === 'completed' ? (
-                                  <Check size={16} />
+                                  <Check size={14} />
                                 ) : completedModule?.status === 'error' ? (
-                                  <X size={16} />
+                                  <X size={14} />
                                 ) : isActive ? (
-                                  <Loader2 size={16} className="animate-spin" />
+                                  <Loader2 size={14} className="animate-spin" />
                                 ) : (
                                   index + 1
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-base text-white">
+                                <h4 className="font-medium text-base text-white">
                                   {module.title}
                                 </h4>
-                                <p className="text-sm text-[var(--color-text-secondary)] mt-1">{module.estimatedTime}</p>
+                                <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{module.estimatedTime}</p>
                               </div>
                             </div>
                           );
