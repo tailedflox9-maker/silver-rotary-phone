@@ -197,41 +197,72 @@ const GradientProgressBar = ({ progress = 0, active = true }) => (
 );
 
 const PixelAnimation = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [pixels, setPixels] = useState<any[]>([]);
+
   useEffect(() => {
     const colors = [
-      'bg-orange-500',
-      'bg-yellow-500',
-      'bg-amber-600',
-      'bg-red-500',
-      'bg-zinc-700',
-      'bg-zinc-600',
+      'bg-orange-500', 'bg-yellow-500', 'bg-amber-600',
+      'bg-red-500', 'bg-zinc-700', 'bg-zinc-600',
     ];
-    const generate = () => {
-      const newPixels = Array(70)
-        .fill(0)
-        .map((_, i) => ({
-          id: i,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          opacity: Math.random() > 0.6 ? 'opacity-100' : 'opacity-30',
-        }));
-      setPixels(newPixels);
+
+    const generatePixels = () => {
+      if (containerRef.current) {
+        // Pixel size (w-1.5) is 6px, gap (gap-1.5) is 6px. Total space per pixel is ~12px.
+        const pixelSpace = 12; 
+        const containerWidth = containerRef.current.offsetWidth;
+        const containerHeight = containerRef.current.offsetHeight;
+
+        const numCols = Math.floor(containerWidth / pixelSpace);
+        const numRows = Math.floor(containerHeight / pixelSpace);
+        const totalPixels = numCols * numRows;
+
+        if (totalPixels > 0) {
+          const newPixels = Array(totalPixels)
+            .fill(0)
+            .map((_, i) => ({
+              id: i,
+              color: colors[Math.floor(Math.random() * colors.length)],
+              opacity: Math.random() > 0.5 ? 'opacity-100' : 'opacity-30',
+            }));
+          setPixels(newPixels);
+        }
+      }
     };
-    generate();
-    const interval = setInterval(generate, 200);
-    return () => clearInterval(interval);
+
+    // Use a ResizeObserver to regenerate pixels when the container size changes
+    const observer = new ResizeObserver(() => {
+      generatePixels();
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    
+    // Regenerate on a timer for the animation effect
+    const interval = setInterval(generatePixels, 250);
+
+    return () => {
+      clearInterval(interval);
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
   }, []);
+
   return (
-    <div className="flex flex-wrap gap-1.5 h-14">
+    // Responsive height: h-10 for mobile (approx. 3 rows), md:h-4 for desktop (1 row)
+    <div ref={containerRef} className="flex flex-wrap content-start gap-1.5 w-full h-10 md:h-4 overflow-hidden">
       {pixels.map((p) => (
         <div
           key={p.id}
-          className={`w-1.5 h-1.5 rounded-sm ${p.color} ${p.opacity} transition-all duration-200`}
+          className={`w-1.5 h-1.5 rounded-sm ${p.color} ${p.opacity} transition-opacity duration-200`}
         />
       ))}
     </div>
   );
 };
+
 
 const RetryDecisionPanel = ({
   retryInfo,
