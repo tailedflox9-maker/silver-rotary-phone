@@ -16,6 +16,13 @@ export interface BookProject {
   error?: string;
   category: BookCategory;
   reasoning?: string; // Optional field for the book's rationale
+  totalWords?: number; // Ensure this is part of the type
+  readingProgress?: {
+    currentModuleIndex: number;
+    scrollPosition: number;
+    lastReadAt: Date;
+    percentComplete: number;
+  };
 }
 
 export interface BookRoadmap {
@@ -63,4 +70,12 @@ export interface BookSession {
     includeQuizzes: boolean;
   };
   reasoning?: string; // Optional field for the book's rationale
+}
+
+export interface ReadingBookmark {
+  bookId: string;
+  moduleIndex: number;
+  scrollPosition: number;
+  lastReadAt: Date;
+  percentComplete: number;
 }
