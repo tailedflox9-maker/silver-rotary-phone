@@ -13,13 +13,13 @@
   }
 
   :root {
-    /* Core Color Palette */
-    --color-bg: #0A0A0A;
-    --color-sidebar: #141414;
-    --color-card: #1F1F1F;
-    --color-border: #2A2A2A;
+    /* Core Color Palette - UPDATED FOR PREMIUM FEEL */
+    --color-bg: #050505; /* Near black for main background */
+    --color-sidebar: #131313; /* Dark gray for header/sidebar */
+    --color-card: #181818; /* Slightly lighter gray for cards */
+    --color-border: #222222; /* Subtle border color */
     --color-text-primary: #FFFFFF;
-    --color-text-secondary: #A0A0A0;
+    --color-text-secondary: #999999; /* Softer, more subtle gray for subtitles */
     --color-text-placeholder: #6B7280;
 
     /* Accent Colors */
