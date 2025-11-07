@@ -181,7 +181,7 @@ const formatTime = (seconds: number): string => {
 };
 
 // ============================================================================
-// SUB-COMPONENTS
+// SUB-COMPONENTS (UNCHANGED)
 // ============================================================================
 const GradientProgressBar = ({ progress = 0, active = true }) => (
   <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
@@ -566,227 +566,6 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
     {String(children).replace(/\n$/, '')}
   </SyntaxHighlighter>
 ));
-
-const HomeView = ({
-  onNewBook,
-  onShowList,
-  hasApiKey,
-  bookCount,
-}: {
-  onNewBook: () => void;
-  onShowList: () => void;
-  hasApiKey: boolean;
-  bookCount: number;
-}) => (
-  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
-    <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
-    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up">
-      <div className="relative w-28 h-28 mx-auto mb-6">
-        <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
-        <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28 relative" />
-      </div>
-      <h1 className="text-5xl font-bold mb-4 text-white">Turn Ideas into Books</h1>
-      <p className="text-xl text-[var(--color-text-secondary)] mb-10">
-        Pustakam is an AI-powered engine that transforms your concepts into fully-structured
-        digital books.
-      </p>
-      {hasApiKey ? (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
-            onClick={onNewBook}
-            className="btn btn-primary btn-lg shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 w-full sm:w-auto"
-          >
-            <Sparkles className="w-5 h-5" />
-            Create New Book
-          </button>
-          {bookCount > 0 && (
-            <button onClick={onShowList} className="btn btn-secondary w-full sm:w-auto">
-              <List className="w-4 h-4" />
-              View My Books
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="content-card p-6 max-w-md mx-auto">
-          <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
-          <h3 className="font-semibold mb-2">API Key Required</h3>
-          <p className="text-sm text-gray-400">
-            Please configure your API key in Settings to begin.
-          </p>
-        </div>
-      )}
-    </div>
-  </div>
-);
-
-const BookListGrid = ({
-  books,
-  onSelectBook,
-  onDeleteBook,
-  setView,
-  setShowListInMain,
-}: {
-  books: BookProject[];
-  onSelectBook: (id: string) => void;
-  onDeleteBook: (id: string) => void;
-  setView: (view: AppView) => void;
-  setShowListInMain: (show: boolean) => void;
-}) => {
-  const getStatusIcon = (status: BookProject['status']) => {
-    const iconMap: Record<BookProject['status'], React.ElementType> = {
-      planning: Clock,
-      generating_roadmap: Loader2,
-      roadmap_completed: ListChecks,
-      generating_content: Loader2,
-      assembling: Box,
-      completed: CheckCircle,
-      error: AlertCircle,
-    };
-    const Icon = iconMap[status] || Loader2;
-    const colorClass =
-      status === 'completed'
-        ? 'text-green-500'
-        : status === 'error'
-        ? 'text-red-500'
-        : 'text-blue-500';
-    const animateClass = ['generating_roadmap', 'generating_content', 'assembling'].includes(
-      status
-    )
-      ? 'animate-spin'
-      : '';
-    return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
-  };
-  const getStatusText = (status: BookProject['status']) =>
-    ({
-      planning: 'Planning',
-      generating_roadmap: 'Creating Roadmap',
-      roadmap_completed: 'Ready to Write',
-      generating_content: 'Writing Chapters',
-      assembling: 'Finalizing Book',
-      completed: 'Completed',
-      error: 'Error',
-    }[status] || 'Unknown');
-  return (
-    <div className="flex-1 flex flex-col h-full">
-      <div className="p-6 border-b border-[var(--color-border)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">My Books</h1>
-            <p className="text-gray-400">{books.length} projects</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => {
-                setView('create');
-                setShowListInMain(false);
-              }}
-              className="btn btn-primary"
-            >
-              <Plus className="w-4 h-4" /> New Book
-            </button>
-            <button onClick={() => setShowListInMain(false)} className="btn btn-secondary">
-              <ArrowLeft className="w-4 h-4" /> Back to Home
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid gap-4 sm:gap-6">
-          {books.map((book) => (
-            <div
-              key={book.id}
-              className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 sm:p-6 transition-all hover:border-gray-600 hover:shadow-lg cursor-pointer group"
-              onClick={() => onSelectBook(book.id)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    {getStatusIcon(book.status)}
-                    <h3 className="text-lg font-semibold text-white truncate group-hover:text-blue-300 transition-colors">
-                      {book.title}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-gray-400 mb-3 line-clamp-2">{book.goal}</p>
-                  <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(book.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <span className="capitalize">{getStatusText(book.status)}</span>
-                    {book.status !== 'completed' && book.status !== 'error' && (
-                      <span>{Math.round(book.progress)}%</span>
-                    )}
-                    {book.modules.length > 0 && <span>{book.modules.length} modules</span>}
-                  </div>
-                  {book.status !== 'completed' && book.status !== 'error' && (
-                    <div className="mt-3">
-                      <div className="w-full bg-gray-800/50 rounded-full h-2.5 overflow-hidden border border-gray-700">
-                        <div
-                          className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out relative"
-                          style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 ml-4">
-                  {book.status === 'completed' && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        bookService.downloadAsMarkdown(book);
-                      }}
-                      className="btn-ghost p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Download"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteBook(book.id);
-                    }}
-                    className="btn-ghost p-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const DetailTabButton = ({
-  label,
-  Icon,
-  isActive,
-  onClick,
-}: {
-  label: ReactNode;
-  Icon: React.ElementType;
-  isActive: boolean;
-  onClick: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-      isActive
-        ? 'bg-[var(--color-card)] text-[var(--color-text-primary)] shadow-sm'
-        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-card)] hover:text-white'
-    }`}
-  >
-    <Icon className="w-4 h-4" />
-    {label}
-  </button>
-);
 
 const ReadingMode: React.FC<ReadingModeProps> = ({
   content,
@@ -1180,6 +959,246 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 };
 
 // ============================================================================
+// REDESIGNED SUB-COMPONENTS
+// ============================================================================
+
+// IMPROVEMENT: Encapsulated the home view for better structure and to apply Claude-like centered layout.
+const HomeView = ({
+  onNewBook,
+  onShowList,
+  hasApiKey,
+  bookCount,
+}: {
+  onNewBook: () => void;
+  onShowList: () => void;
+  hasApiKey: boolean;
+  bookCount: number;
+}) => (
+  // IMPROVEMENT: Added a main container with vertical padding for breathing room.
+  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
+    <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
+    {/* IMPROVEMENT: Constrained the content width for a more focused and calm presentation, a key aspect of the Claude UI. */}
+    <div className="relative z-10 max-w-3xl mx-auto animate-fade-in-up">
+      <div className="relative w-28 h-28 mx-auto mb-8">
+        <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
+        <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28 relative" />
+      </div>
+       {/* IMPROVEMENT: Increased vertical spacing (mb-6, mb-12) to create a more relaxed visual flow. */}
+      <h1 className="text-5xl font-bold mb-6 text-white">Turn Ideas into Books</h1>
+      <p className="text-xl text-[var(--color-text-secondary)] mb-12">
+        Pustakam is an AI-powered engine that transforms your concepts into fully-structured
+        digital books.
+      </p>
+      {hasApiKey ? (
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button
+            onClick={onNewBook}
+            className="btn btn-primary btn-lg shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 w-full sm:w-auto"
+          >
+            <Sparkles className="w-5 h-5" />
+            Create New Book
+          </button>
+          {bookCount > 0 && (
+            <button onClick={onShowList} className="btn btn-secondary w-full sm:w-auto">
+              <List className="w-4 h-4" />
+              View My Books
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="bg-[var(--color-card)] p-8 rounded-xl max-w-md mx-auto">
+          <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
+          <h3 className="font-semibold mb-2">API Key Required</h3>
+          <p className="text-sm text-gray-400">
+            Please configure your API key in Settings to begin.
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// IMPROVEMENT: Redesigned book list for a cleaner, more spacious presentation.
+const BookListGrid = ({
+  books,
+  onSelectBook,
+  onDeleteBook,
+  setView,
+  setShowListInMain,
+}: {
+  books: BookProject[];
+  onSelectBook: (id: string) => void;
+  onDeleteBook: (id: string) => void;
+  setView: (view: AppView) => void;
+  setShowListInMain: (show: boolean) => void;
+}) => {
+  const getStatusIcon = (status: BookProject['status']) => {
+    const iconMap: Record<BookProject['status'], React.ElementType> = {
+      planning: Clock,
+      generating_roadmap: Loader2,
+      roadmap_completed: ListChecks,
+      generating_content: Loader2,
+      assembling: Box,
+      completed: CheckCircle,
+      error: AlertCircle,
+    };
+    const Icon = iconMap[status] || Loader2;
+    const colorClass =
+      status === 'completed'
+        ? 'text-green-500'
+        : status === 'error'
+        ? 'text-red-500'
+        : 'text-blue-500';
+    const animateClass = ['generating_roadmap', 'generating_content', 'assembling'].includes(
+      status
+    )
+      ? 'animate-spin'
+      : '';
+    return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
+  };
+  const getStatusText = (status: BookProject['status']) =>
+    ({
+      planning: 'Planning',
+      generating_roadmap: 'Creating Roadmap',
+      roadmap_completed: 'Ready to Write',
+      generating_content: 'Writing Chapters',
+      assembling: 'Finalizing Book',
+      completed: 'Completed',
+      error: 'Error',
+    }[status] || 'Unknown');
+
+  return (
+    // IMPROVEMENT: Main container uses max-width and centered layout for focus. Generous padding (py-12) adds vertical whitespace.
+    <div className="w-full max-w-4xl mx-auto px-6 py-12">
+      <div className="flex items-center justify-between mb-10">
+        <div>
+          <h1 className="text-3xl font-bold">My Books</h1>
+          <p className="text-gray-400 mt-1">{books.length} projects</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setShowListInMain(false)} className="btn btn-secondary">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </button>
+          <button
+            onClick={() => {
+              setView('create');
+              setShowListInMain(false);
+            }}
+            className="btn btn-primary"
+          >
+            <Plus className="w-4 h-4" /> New Book
+          </button>
+        </div>
+      </div>
+      {/* IMPROVEMENT: A vertical gap (space-y-4) is used for the list, which is cleaner than a grid for this type of content. */}
+      <div className="space-y-4">
+        {books.map((book) => (
+          <div
+            key={book.id}
+            className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg transition-all hover:border-gray-600 hover:shadow-lg cursor-pointer group"
+            onClick={() => onSelectBook(book.id)}
+          >
+            {/* IMPROVEMENT: Increased padding (p-6) inside each card for more breathing room. */}
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-6">
+                <div className="flex-1 min-w-0">
+                  {/* IMPROVEMENT: Clearer visual hierarchy. Title is larger, and metadata is grouped below it with more space. */}
+                  <h3 className="text-xl font-semibold text-white truncate group-hover:text-blue-300 transition-colors mb-2">
+                    {book.title}
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-4 line-clamp-2">{book.goal}</p>
+                  
+                  {/* IMPROVEMENT: Metadata is cleanly organized in a flex container with consistent gaps. */}
+                  <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-gray-400">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(book.status)}
+                      <span className="capitalize">{getStatusText(book.status)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <Clock className="w-4 h-4" />
+                       <span>{new Date(book.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {book.modules.length > 0 && 
+                      <div className="flex items-center gap-2">
+                        <ListChecks className="w-4 h-4" />
+                        <span>{book.modules.length} modules</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {book.status === 'completed' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        bookService.downloadAsMarkdown(book);
+                      }}
+                      className="btn-ghost p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Download"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteBook(book.id);
+                    }}
+                    className="btn-ghost p-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              {book.status !== 'completed' && book.status !== 'error' && (
+                <div className="mt-4">
+                  <div className="w-full bg-gray-800/50 rounded-full h-2 overflow-hidden border border-gray-700">
+                    <div
+                      className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out relative"
+                      style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// IMPROVEMENT: Redesigned tab buttons for a more minimal, less distracting look.
+const DetailTabButton = ({
+  label,
+  Icon,
+  isActive,
+  onClick,
+}: {
+  label: ReactNode;
+  Icon: React.ElementType;
+  isActive: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    // IMPROVEMENT: Tabs are now simpler text with an icon, relying on color and a subtle bottom border for the active state.
+    className={`flex items-center gap-2 px-1 py-3 text-sm font-semibold transition-all duration-200 border-b-2 ${
+      isActive
+        ? 'border-white text-white'
+        : 'border-transparent text-[var(--color-text-secondary)] hover:text-white'
+    }`}
+  >
+    <Icon className="w-4 h-4" />
+    {label}
+  </button>
+);
+
+
+// ============================================================================
 // MAIN BOOKVIEW COMPONENT
 // ============================================================================
 export function BookView({
@@ -1398,162 +1417,156 @@ export function BookView({
   }
   if (view === 'create') {
     return (
-      <div className="flex-1 flex flex-col h-full">
-        <div className="p-6 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => {
-                setView('list');
-                setShowListInMain(false);
-              }}
-              className="btn-ghost p-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold">Create New Book</h1>
-              <p className="text-gray-400">Define your learning goal and let AI do the rest.</p>
-            </div>
+      // IMPROVEMENT: Centered, max-width container for the creation form.
+      <div className="w-full max-w-2xl mx-auto px-6 py-12">
+        <div className="flex items-center gap-4 mb-10">
+          <button
+            onClick={() => {
+              setView('list');
+              setShowListInMain(false);
+            }}
+            className="btn-ghost p-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold">Create New Book</h1>
+            <p className="text-gray-400 mt-1">Define your learning goal and let AI do the rest.</p>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="content-card p-6">
-              <div className="space-y-6">
-                <div>
-                  <label className="flex items-center gap-2 text-lg font-semibold mb-2">
-                    <Target size={18} className="text-blue-400" />
-                    Learning Goal
+        {/* IMPROVEMENT: Increased spacing (space-y-8) between form elements for a less cramped feel. */}
+        <div className="space-y-8">
+          <div>
+            <label className="flex items-center gap-2 text-lg font-semibold mb-3">
+              <Target size={18} className="text-blue-400" />
+              Learning Goal
+            </label>
+            <textarea
+              value={formData.goal}
+              onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
+              placeholder="e.g., Learn Python for Data Science..."
+              className="textarea-style focus:ring-blue-500/50"
+              rows={3}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label className="flex items-center gap-2 font-semibold mb-3">
+                <Users size={16} className="text-green-400" />
+                Target Audience
+              </label>
+              <input
+                type="text"
+                value={formData.targetAudience}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, targetAudience: e.target.value }))
+                }
+                placeholder="e.g., Beginners, Professionals..."
+                className="input-style focus:ring-green-500/50"
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-2 font-semibold mb-3">
+                <Brain size={16} className="text-yellow-400" />
+                Complexity
+              </label>
+              <CustomSelect
+                value={formData.complexityLevel || 'intermediate'}
+                onChange={(val) =>
+                  setFormData((p) => ({ ...p, complexityLevel: val as any }))
+                }
+                options={[
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' },
+                ]}
+              />
+            </div>
+          </div>
+          <div className="border-t border-[var(--color-border)] pt-6">
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center justify-between w-full text-left font-semibold text-gray-400 hover:text-white transition-colors"
+            >
+              <span>Advanced Options</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  showAdvanced ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+          </div>
+
+          {showAdvanced && (
+              <div className="animate-fade-in-up -mt-2">
+                  <label className="flex items-center gap-2 font-semibold mb-3">
+                  <Sparkles size={16} className="text-purple-400" />
+                  Reasoning (Optional)
                   </label>
                   <textarea
-                    value={formData.goal}
-                    onChange={(e) => setFormData((p) => ({ ...p, goal: e.target.value }))}
-                    placeholder="e.g., Learn Python for Data Science..."
-                    className="textarea-style focus:ring-blue-500/50"
-                    rows={3}
-                    required
+                  value={formData.reasoning}
+                  onChange={(e) => setFormData((p) => ({ ...p, reasoning: e.target.value }))}
+                  placeholder="e.g., Why is this book being created? What problem does it solve or what unique perspective does it offer?"
+                  className="textarea-style focus:ring-purple-500/50"
+                  rows={3}
                   />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="flex items-center gap-2 font-semibold mb-2">
-                      <Users size={16} className="text-green-400" />
-                      Target Audience
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.targetAudience}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, targetAudience: e.target.value }))
-                      }
-                      placeholder="e.g., Beginners, Professionals..."
-                      className="input-style focus:ring-green-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-2 font-semibold mb-2">
-                      <Brain size={16} className="text-yellow-400" />
-                      Complexity
-                    </label>
-                    <CustomSelect
-                      value={formData.complexityLevel || 'intermediate'}
-                      onChange={(val) =>
-                        setFormData((p) => ({ ...p, complexityLevel: val as any }))
-                      }
-                      options={[
-                        { value: 'beginner', label: 'Beginner' },
-                        { value: 'intermediate', label: 'Intermediate' },
-                        { value: 'advanced', label: 'Advanced' },
-                      ]}
-                    />
-                  </div>
-                </div>
-                <div className="border-t border-[var(--color-border)] pt-4">
-                  <button
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center justify-between w-full text-left text-sm font-semibold text-gray-400 hover:text-white transition-colors"
-                  >
-                    <span>Advanced Options</span>
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        showAdvanced ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {showAdvanced && (
-                    <div className="animate-fade-in-up">
-                        <label className="flex items-center gap-2 font-semibold mb-2">
-                        <Sparkles size={16} className="text-purple-400" />
-                        Reasoning (Optional)
-                        </label>
-                        <textarea
-                        value={formData.reasoning}
-                        onChange={(e) => setFormData((p) => ({ ...p, reasoning: e.target.value }))}
-                        placeholder="e.g., Why is this book being created? What problem does it solve or what unique perspective does it offer?"
-                        className="textarea-style focus:ring-purple-500/50"
-                        rows={3}
-                        />
-                    </div>
-                )}
-                <div>
-                  <label className="font-semibold mb-3 block">Preferences</label>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.preferences?.includeExamples}
-                        onChange={(e) =>
-                          setFormData((p) => ({
-                            ...p,
-                            preferences: { ...p.preferences!, includeExamples: e.target.checked },
-                          }))
-                        }
-                        className="w-4 h-4 accent-blue-500"
-                      />
-                      Include Examples
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.preferences?.includePracticalExercises}
-                        onChange={(e) =>
-                          setFormData((p) => ({
-                            ...p,
-                            preferences: {
-                              ...p.preferences!,
-                              includePracticalExercises: e.target.checked,
-                            },
-                          }))
-                        }
-                        className="w-4 h-4 accent-blue-500"
-                      />
-                      Include Exercises
-                    </label>
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <button
-                    onClick={handleCreateRoadmap}
-                    disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
-                    className="btn btn-primary btn-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {localIsGenerating ? (
-                      <>
-                        <Loader2 className="animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles />
-                        Create Roadmap
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
+          )}
+          <div>
+            <label className="font-semibold mb-4 block">Preferences</label>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+                <input
+                  type="checkbox"
+                  checked={formData.preferences?.includeExamples}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      preferences: { ...p.preferences!, includeExamples: e.target.checked },
+                    }))
+                  }
+                  className="w-4 h-4 accent-blue-500"
+                />
+                Include Examples
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+                <input
+                  type="checkbox"
+                  checked={formData.preferences?.includePracticalExercises}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      preferences: {
+                        ...p.preferences!,
+                        includePracticalExercises: e.target.checked,
+                      },
+                    }))
+                  }
+                  className="w-4 h-4 accent-blue-500"
+                />
+                Include Exercises
+              </label>
             </div>
+          </div>
+          <div className="pt-4">
+            <button
+              onClick={handleCreateRoadmap}
+              disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
+              className="btn btn-primary btn-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {localIsGenerating ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles />
+                  Create Roadmap
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -1568,33 +1581,34 @@ export function BookView({
     const completedModules = currentBook.modules.filter((m) => m.status === 'completed');
     const isPaused = generationStatus?.status === 'paused';
     return (
-      <div className="flex-1 flex flex-col h-full">
-        <div className="p-4 sm:p-6 border-b border-[var(--color-border)]">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setView('list');
-                  onSelectBook(null);
-                  setShowListInMain(true);
-                }}
-                className="btn-ghost p-2"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{currentBook.title}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex items-center gap-1.5 text-sm font-medium">
-                    {getStatusIcon(currentBook.status)}
-                    {getStatusText(currentBook.status)}
-                  </div>
-                </div>
-              </div>
+      // IMPROVEMENT: The entire detail view is wrapped in a centered container with generous padding.
+      <div className="w-full max-w-4xl mx-auto px-6 py-12">
+        {/* IMPROVEMENT: Header structure is cleaner, with title and status given more prominence and space. */}
+        <div className="mb-10">
+          <button
+            onClick={() => {
+              setView('list');
+              onSelectBook(null);
+              setShowListInMain(true);
+            }}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to My Books
+          </button>
+          <h1 className="text-4xl font-bold text-white mb-2">{currentBook.title}</h1>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-sm font-medium">
+              {getStatusIcon(currentBook.status)}
+              {getStatusText(currentBook.status)}
             </div>
           </div>
-          {currentBook.status === 'completed' && (
-            <div className="mt-4 flex items-center gap-2">
+        </div>
+
+        {/* IMPROVEMENT: Tab navigation is now visually separated from the content below it. */}
+        {currentBook.status === 'completed' && (
+          <div className="border-b border-[var(--color-border)] mb-10">
+            <div className="flex items-center gap-8">
               <DetailTabButton
                 label="Overview"
                 Icon={ListChecks}
@@ -1614,144 +1628,139 @@ export function BookView({
                 onClick={() => setDetailTab('read')}
               />
             </div>
-          )}
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <div className={detailTab === 'read' ? '' : 'p-4 sm:p-6'}>
-            <div className={detailTab === 'read' ? '' : 'max-w-4xl mx-auto'}>
-              {detailTab === 'analytics' && currentBook.status === 'completed' ? (
-                <BookAnalytics book={currentBook} />
-              ) : detailTab === 'read' && currentBook.status === 'completed' ? (
-                <div className="px-4 sm:px-6 py-6">
-                  <ReadingMode
-                    content={currentBook.finalBook || ''}
-                    isEditing={isEditing}
-                    editedContent={editedContent}
-                    onEdit={handleStartEditing}
-                    onSave={handleSaveChanges}
-                    onCancel={handleCancelEditing}
-                    onContentChange={setEditedContent}
+          </div>
+        )}
+        
+        {/* IMPROVEMENT: Content area now has consistent vertical spacing for all states. */}
+        <div className="space-y-8">
+            {detailTab === 'analytics' && currentBook.status === 'completed' ? (
+              <BookAnalytics book={currentBook} />
+            ) : detailTab === 'read' && currentBook.status === 'completed' ? (
+              <ReadingMode
+                content={currentBook.finalBook || ''}
+                isEditing={isEditing}
+                editedContent={editedContent}
+                onEdit={handleStartEditing}
+                onSave={handleSaveChanges}
+                onCancel={handleCancelEditing}
+                onContentChange={setEditedContent}
+              />
+            ) : (
+              <>
+                {(isGenerating || isPaused || generationStatus?.status === 'waiting_retry') &&
+                  currentBook.status !== 'completed' &&
+                      generationStatus &&
+                      generationStats && (
+                            <EmbeddedProgressPanel
+                            generationStatus={generationStatus}
+                              stats={generationStats}
+                              onCancel={() => {
+                              if (window.confirm('Cancel generation? Progress will be saved.')) {
+                            bookService.cancelActiveRequests(currentBook.id);
+                            }
+                          }}
+                        onPause={handlePause}
+                        onResume={handleResume}
+                        onRetryDecision={onRetryDecision}
+                    availableModels={availableModels}
                   />
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {(isGenerating || isPaused || generationStatus?.status === 'waiting_retry') &&
-                    currentBook.status !== 'completed' &&
-                        generationStatus &&
-                        generationStats && (
-                              <EmbeddedProgressPanel
-                              generationStatus={generationStatus}
-                                stats={generationStats}
-                                onCancel={() => {
-                                if (window.confirm('Cancel generation? Progress will be saved.')) {
-                              bookService.cancelActiveRequests(currentBook.id);
-                              }
-                            }}
-                          onPause={handlePause}
-                          onResume={handleResume}
-                         onRetryDecision={onRetryDecision}
-                      availableModels={availableModels}
-                    />
-                  )}
-                  {currentBook.status === 'roadmap_completed' &&
-                    !areAllModulesDone &&
-                    !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry' && (
-                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 flex items-center justify-center bg-blue-500/10 rounded-lg">
-                            <Play className="w-6 h-6 text-blue-500" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">
-                              Ready to Generate Content
-                            </h3>
-                            <p className="text-sm text-gray-400">
-                              {completedModules.length > 0
-                                ? `Resume from ${completedModules.length} completed modules`
-                                : 'Start generating all modules'}
-                            </p>
-                          </div>
+                )}
+                {currentBook.status === 'roadmap_completed' &&
+                  !areAllModulesDone &&
+                  !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry' && (
+                    // IMPROVEMENT: Call-to-action cards have increased padding and spacing for emphasis.
+                    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-8">
+                      <div className="flex items-center gap-4 mb-5">
+                        <div className="w-12 h-12 flex items-center justify-center bg-blue-500/10 rounded-lg">
+                          <Play className="w-6 h-6 text-blue-500" />
                         </div>
-                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 mb-4">
-                          <div className="flex items-start gap-3">
-                            <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                            <div className="text-sm text-gray-300">
-                              <p className="font-medium text-white mb-2">Smart Recovery Enabled</p>
-                              <ul className="space-y-1 text-xs text-gray-400">
-                                <li>✓ Progress is saved automatically</li>
-                                <li>✓ Failed modules will be retried with smart options</li>
-                                <li>✓ You can safely close and resume later</li>
-                              </ul>
-                            </div>
-                          </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-white">
+                            Ready to Generate Content
+                          </h3>
+                          <p className="text-sm text-gray-400 mt-1">
+                            {completedModules.length > 0
+                              ? `Resume from ${completedModules.length} completed modules`
+                              : 'Start generating all modules'}
+                          </p>
                         </div>
-                        <button
-                          onClick={handleStartGeneration}
-                          disabled={localIsGenerating}
-                          className="btn btn-primary w-full"
-                        >
-                          {localIsGenerating ? (
-                            <>
-                              <Loader2 className="animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-4 h-4" />
-                              {completedModules.length > 0
-                                ? 'Resume Generation'
-                                : 'Generate All Modules'}
-                            </>
-                          )}
-                        </button>
                       </div>
-                    )}
-                  {areAllModulesDone && currentBook.status !== 'completed' && !localIsGenerating && (
-                    <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-6 space-y-6 animate-fade-in-up">
-                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 flex items-center justify-center bg-green-500/10 rounded-lg">
-                            <CheckCircle className="w-7 h-7 text-green-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
-                            <p className="text-sm text-gray-400">
-                              All chapters written. Ready to assemble.
-                            </p>
+                      <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 mb-6">
+                        <div className="flex items-start gap-3">
+                          <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                          <div className="text-sm text-gray-300">
+                            <p className="font-medium text-white mb-2">Smart Recovery Enabled</p>
+                            <ul className="space-y-1 text-xs text-gray-400">
+                              <li>✓ Progress is saved automatically</li>
+                              <li>✓ Failed modules will be retried with smart options</li>
+                              <li>✓ You can safely close and resume later</li>
+                            </ul>
                           </div>
                         </div>
                       </div>
-                      <button onClick={handleStartAssembly} className="btn btn-primary w-full btn-lg">
-                        <Box className="w-5 h-5" />
-                        Assemble Final Book
+                      <button
+                        onClick={handleStartGeneration}
+                        disabled={localIsGenerating}
+                        className="btn btn-primary w-full btn-lg"
+                      >
+                        {localIsGenerating ? (
+                          <>
+                            <Loader2 className="animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4" />
+                            {completedModules.length > 0
+                              ? 'Resume Generation'
+                              : 'Generate All Modules'}
+                          </>
+                        )}
                       </button>
                     </div>
                   )}
-                  {currentBook.status === 'completed' && (
-                    <div className="space-y-6">
-                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-6">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6 text-green-400" />
+                {areAllModulesDone && currentBook.status !== 'completed' && !localIsGenerating && (
+                  <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-8 space-y-6 animate-fade-in-up">
+                    <div className="text-center">
+                      <div className="w-16 h-16 flex items-center justify-center bg-green-500/10 rounded-full mx-auto mb-4">
+                        <CheckCircle className="w-8 h-8 text-green-400" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white">Generation Complete!</h3>
+                      <p className="text-base text-gray-400 mt-2">
+                        All chapters written. Ready to assemble the final book.
+                      </p>
+                    </div>
+                    <button onClick={handleStartAssembly} className="btn btn-primary w-full btn-lg">
+                      <Box className="w-5 h-5" />
+                      Assemble Final Book
+                    </button>
+                  </div>
+                )}
+                {currentBook.status === 'completed' && (
+                    <div className="space-y-8">
+                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-8">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="w-14 h-14 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <CheckCircle2 className="w-7 h-7 text-green-400" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-white">Generation Complete</h3>
-                            <p className="text-sm text-gray-400">
-                              Your book is ready to read and download
+                            <h3 className="text-xl font-semibold text-white">Generation Complete</h3>
+                            <p className="text-sm text-gray-400 mt-1">
+                              Your book is ready to read and download.
                             </p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <button
                             onClick={() => setDetailTab('read')}
-                            className="btn btn-primary justify-center"
+                            className="btn btn-primary justify-center py-3"
                           >
                             <Eye className="w-4 h-4" />
                             Read Book
                           </button>
                           <button
                             onClick={() => bookService.downloadAsMarkdown(currentBook)}
-                            className="btn btn-secondary justify-center"
+                            className="btn btn-secondary justify-center py-3"
                           >
                             <Download className="w-4 h-4" />
                             Download .MD
@@ -1759,137 +1768,132 @@ export function BookView({
                           <button
                             onClick={handleDownloadPdf}
                             disabled={pdfProgress > 0}
-                            className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all"
+                            className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all py-3"
                           >
                             {pdfProgress > 0 ? (
                               <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                <span className="hidden sm:inline">PDF ({pdfProgress}%)</span>
-                                <span className="sm:hidden">{pdfProgress}%</span>
+                                <span>Generating PDF ({pdfProgress}%)</span>
                               </>
                             ) : (
                               <>
                                 <Download className="w-4 h-4" />
-                                <span className="hidden sm:inline">Download PDF</span>
-                                <span className="sm:hidden">PDF</span>
+                                <span>Download PDF</span>
                               </>
                             )}
                           </button>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-                          <div className="text-2xl font-bold text-white mb-1">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
+                          <div className="text-3xl font-bold text-white mb-1">
                             {currentBook.modules.length}
                           </div>
-                          <div className="text-xs text-gray-400">Chapters</div>
+                          <div className="text-sm text-gray-400">Chapters</div>
                         </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-                          <div className="text-2xl font-bold text-white mb-1">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
+                          <div className="text-3xl font-bold text-white mb-1">
                             {(currentBook.totalWords || 0).toLocaleString()}
                           </div>
-                          <div className="text-xs text-gray-400">Words</div>
+                          <div className="text-sm text-gray-400">Words</div>
                         </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-                          <div className="text-2xl font-bold text-white mb-1">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
+                          <div className="text-3xl font-bold text-white mb-1">
                             {currentBook.roadmap?.estimatedReadingTime || 'N/A'}
                           </div>
-                          <div className="text-xs text-gray-400">Est. Reading</div>
+                          <div className="text-sm text-gray-400">Est. Reading</div>
                         </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
-                          <div className="text-2xl font-bold text-white mb-1 capitalize">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
+                          <div className="text-3xl font-bold text-white mb-1 capitalize">
                             {currentBook.roadmap?.difficultyLevel || 'N/A'}
                           </div>
-                          <div className="text-xs text-gray-400">Level</div>
+                          <div className="text-sm text-gray-400">Level</div>
                         </div>
                       </div>
                     </div>
                   )}
-                  {currentBook.status === 'assembling' && (
-                    <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow">
-                      <div className="flex flex-col items-center text-center gap-4">
-                        <div className="relative w-16 h-16">
-                          <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
-                          <div className="relative w-16 h-16 flex items-center justify-center bg-green-500/10 rounded-full">
-                            <Box className="w-8 h-8 text-green-400" />
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-white">Assembling Your Book</h3>
-                          <p className="text-gray-400 mt-2 max-w-md mx-auto">
-                            Finalizing chapters and preparing for download...
-                          </p>
+                {currentBook.status === 'assembling' && (
+                  <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-10 space-y-8 animate-assembling-glow text-center">
+                      <div className="relative w-16 h-16 mx-auto">
+                        <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
+                        <div className="relative w-16 h-16 flex items-center justify-center bg-green-500/10 rounded-full">
+                          <Box className="w-8 h-8 text-green-400" />
                         </div>
                       </div>
-                      <div className="w-full bg-black/30 rounded-full h-2.5 overflow-hidden border border-white/10">
-                        <div className="h-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 rounded-full animate-slide-in-out"></div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white">Assembling Your Book</h3>
+                        <p className="text-gray-400 mt-2 max-w-md mx-auto">
+                          Finalizing chapters and preparing for download...
+                        </p>
                       </div>
+                    <div className="w-full bg-black/30 rounded-full h-2.5 overflow-hidden border border-white/10">
+                      <div className="h-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 rounded-full animate-slide-in-out"></div>
                     </div>
-                  )}
-                  {currentBook.roadmap &&
-                    (currentBook.status !== 'completed' && !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry') && (
-                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6">
-                        <div className="flex items-center gap-3 mb-6">
-                          <ListChecks className="w-5 h-5 text-purple-400" />
-                          <h3 className="text-xl font-bold">Learning Roadmap</h3>
-                        </div>
-                        <div className="space-y-4">
-                          {currentBook.roadmap.modules.map((module, index) => {
-                            const completedModule = currentBook.modules.find(
-                              (m) => m.roadmapModuleId === module.id
-                            );
-                            const isActive =
-                              generationStatus?.currentModule?.id === module.id;
-                            return (
+                  </div>
+                )}
+                {currentBook.roadmap &&
+                  (currentBook.status !== 'completed' && !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry') && (
+                    <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-8">
+                      <div className="flex items-center gap-3 mb-6">
+                        <ListChecks className="w-5 h-5 text-purple-400" />
+                        <h3 className="text-xl font-bold">Learning Roadmap</h3>
+                      </div>
+                      <div className="space-y-4">
+                        {currentBook.roadmap.modules.map((module, index) => {
+                          const completedModule = currentBook.modules.find(
+                            (m) => m.roadmapModuleId === module.id
+                          );
+                          const isActive =
+                            generationStatus?.currentModule?.id === module.id;
+                          return (
+                            // IMPROVEMENT: Each roadmap item has more padding and better alignment for readability.
+                            <div
+                              key={module.id}
+                              className={`flex items-start gap-4 p-4 rounded-lg border transition-all ${
+                                isActive
+                                  ? 'bg-blue-500/10 border-blue-500/40'
+                                  : completedModule?.status === 'completed'
+                                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                                  : completedModule?.status === 'error'
+                                  ? 'border-red-500/30 bg-red-500/5'
+                                  : 'bg-zinc-800/30 border-zinc-800/50'
+                              }`}
+                            >
                               <div
-                                key={module.id}
-                                className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
-                                  isActive
-                                    ? 'bg-blue-500/10 border-blue-500/40'
-                                    : completedModule?.status === 'completed'
-                                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-all mt-1 ${
+                                  completedModule?.status === 'completed'
+                                    ? 'bg-emerald-500 text-white'
                                     : completedModule?.status === 'error'
-                                    ? 'border-red-500/30 bg-red-500/5'
-                                    : 'bg-zinc-800/30 border-zinc-800/50'
+                                    ? 'bg-red-500 text-white'
+                                    : isActive
+                                    ? 'bg-blue-500 text-white animate-pulse'
+                                    : 'bg-zinc-700 text-zinc-500'
                                 }`}
                               >
-                                <div
-                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
-                                    completedModule?.status === 'completed'
-                                      ? 'bg-emerald-500 text-white'
-                                      : completedModule?.status === 'error'
-                                      ? 'bg-red-500 text-white'
-                                      : isActive
-                                      ? 'bg-blue-500 text-white animate-pulse'
-                                      : 'bg-zinc-700 text-zinc-500'
-                                  }`}
-                                >
-                                  {completedModule?.status === 'completed' ? (
-                                    <Check size={12} />
-                                  ) : completedModule?.status === 'error' ? (
-                                    <X size={12} />
-                                  ) : isActive ? (
-                                    <Loader2 size={12} className="animate-spin" />
-                                  ) : (
-                                    index + 1
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0 pt-0.5">
-                                  <h4 className="font-medium text-sm truncate text-white">
-                                    {module.title}
-                                  </h4>
-                                  <p className="text-xs text-zinc-500">{module.estimatedTime}</p>
-                                </div>
+                                {completedModule?.status === 'completed' ? (
+                                  <Check size={16} />
+                                ) : completedModule?.status === 'error' ? (
+                                  <X size={16} />
+                                ) : isActive ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  index + 1
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-base text-white">
+                                  {module.title}
+                                </h4>
+                                <p className="text-sm text-zinc-400 mt-1">{module.estimatedTime}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    )}
-                </div>
-              )}
-            </div>
-          </div>
+                    </div>
+                  )}
+              </>
+            )}
         </div>
       </div>
     );
