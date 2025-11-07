@@ -104,17 +104,24 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
       <div className="fixed inset-0 z-0 bg-[#0a0a0a] overflow-hidden pointer-events-none">
         <div className="absolute inset-0" style={{
           backgroundImage: `
-            radial-gradient(2px 2px at 20% 30%, white, transparent),
-            radial-gradient(2px 2px at 60% 70%, white, transparent),
-            radial-gradient(1px 1px at 50% 50%, white, transparent),
-            radial-gradient(1px 1px at 80% 10%, white, transparent),
-            radial-gradient(2px 2px at 90% 60%, white, transparent),
-            radial-gradient(1px 1px at 33% 85%, white, transparent),
-            radial-gradient(1px 1px at 75% 25%, white, transparent)
+            radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px),
+            radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px),
+            radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px),
+            radial-gradient(circle, rgba(255,255,255,0.7) 0.5px, transparent 0.5px),
+            radial-gradient(circle, rgba(255,255,255,0.5) 0.5px, transparent 0.5px),
+            radial-gradient(circle, rgba(255,255,255,0.3) 0.5px, transparent 0.5px)
           `,
-          backgroundSize: '200px 200px, 300px 300px, 150px 150px, 250px 250px, 180px 180px, 220px 220px, 280px 280px',
-          backgroundPosition: '0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px, 200px 180px, 90px 220px',
-          opacity: 0.4
+          backgroundSize: '200px 200px, 250px 250px, 300px 300px, 150px 150px, 180px 180px, 220px 220px',
+          backgroundPosition: '0 0, 50px 60px, 100px 120px, 75px 40px, 120px 80px, 30px 110px'
+        }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            radial-gradient(circle, rgba(255,255,255,0.2) 0.5px, transparent 0.5px),
+            radial-gradient(circle, rgba(255,255,255,0.15) 0.5px, transparent 0.5px),
+            radial-gradient(circle, rgba(255,255,255,0.25) 0.5px, transparent 0.5px)
+          `,
+          backgroundSize: '100px 100px, 130px 130px, 160px 160px',
+          backgroundPosition: '25px 25px, 65px 85px, 40px 120px'
         }} />
       </div>
 
@@ -124,16 +131,6 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
           <div className="hidden md:block">
             <h1 className="text-lg font-bold tracking-tight text-white">Pustakam</h1>
             <p className="text-xs text-gray-500 -mt-1">injin</p>
-          </div>
-        </div>
-
-        <div className="flex-1" />
-
-        <div className="hidden md:flex items-center justify-center w-full max-w-2xl">
-          <div className="px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg">
-            <p className="text-sm text-gray-400 text-center">
-              📚 <span className="text-gray-200">Learn anything, create knowledge books</span> - AI-powered learning companion
-            </p>
           </div>
         </div>
 
