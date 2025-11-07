@@ -6,7 +6,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { useGenerationStats } from './components/GenerationProgressPanel';
 import { APISettings, ModelProvider } from './types';
 import { usePWA } from './hooks/usePWA';
-import { WifiOff, CheckCircle2, Settings as SettingsIcon } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { storageUtils } from './utils/storage';
 import { bookService } from './services/bookService';
 import { BookView } from './components/BookView';
@@ -160,30 +160,14 @@ function App() {
   };
   
   const handleCreateBookRoadmap = async (session: BookSession) => {
-    if (!session.goal.trim()) {
-      alert('Please enter a learning goal');
-      return;
-    }
-
-    if (!hasApiKey) {
-      alert('Please configure an API key in Settings first');
-      setSettingsOpen(true);
-      return;
-    }
+    if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
+    if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
 
     const bookId = generateId();
     const newBook: BookProject = {
-      id: bookId,
-      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
-      goal: session.goal,
-      language: 'en',
-      status: 'planning',
-      progress: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      modules: [],
-      category: 'general',
-      reasoning: session.reasoning
+      id: bookId, title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
+      goal: session.goal, language: 'en', status: 'planning', progress: 0, createdAt: new Date(), updatedAt: new Date(),
+      modules: [], category: 'general', reasoning: session.reasoning
     };
 
     setBooks(prev => [...prev, newBook]);
@@ -191,156 +175,86 @@ function App() {
     setView('detail');
 
     try {
-      console.log('🚀 Starting roadmap generation for:', session.goal);
       const roadmap = await bookService.generateRoadmap(session, bookId);
-      console.log('✅ Roadmap generated successfully:', roadmap);
-      
       setBooks(prev => prev.map(book => 
         book.id === bookId 
           ? { ...book, roadmap, status: 'roadmap_completed', progress: 10, title: roadmap.modules[0]?.title.includes('Module') ? session.goal : roadmap.modules[0]?.title || session.goal }
           : book
       ));
     } catch (error) {
-      console.error('❌ Roadmap generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { ...book, status: 'error', error: errorMessage }
-          : book
-      ));
-      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check:\n1. Your API key is correct\n2. You have internet connection\n3. The selected AI model is available`);
+      setBooks(prev => prev.map(book => book.id === bookId ? { ...book, status: 'error', error: errorMessage } : book));
+      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
     }
   };
   
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) {
-      alert('No roadmap available. Please generate a roadmap first.');
-      return;
-    }
-
-    console.log('🚀 Starting module generation for:', book.title);
+    if (!book.roadmap) { alert('No roadmap available.'); return; }
     setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating',
-      totalProgress: 0,
-      logMessage: 'Starting generation...',
-      totalWordsGenerated: 0
-    });
-
+    setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
     try {
       await bookService.generateAllModulesWithRecovery(book, session);
-      console.log('✅ All modules generated successfully');
     } catch (error) {
-      console.error('❌ Module generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
-      
       if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({
-          status: 'error',
-          totalProgress: 0,
-          logMessage: `Generation failed: ${errorMessage}`
-        });
+        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Generation failed: ${errorMessage}` });
         alert(`Generation failed: ${errorMessage}`);
       }
     }
   };
 
   const handlePauseGeneration = (bookId: string) => {
-    console.log('⏸ Pausing generation for:', bookId);
     bookService.pauseGeneration(bookId);
     setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
   };
 
   const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) {
-      alert('No roadmap available');
-      return;
-    }
-
-    console.log('▶ Resuming generation for:', book.title);
+    if (!book.roadmap) { alert('No roadmap available'); return; }
     bookService.resumeGeneration(book.id);
     setGenerationStartTime(new Date());
     setGenerationStatus({
-      status: 'generating',
-      totalProgress: 0,
-      logMessage: 'Resuming generation...',
+      status: 'generating', totalProgress: 0, logMessage: 'Resuming generation...',
       totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
     });
-
     try {
       await bookService.generateAllModulesWithRecovery(book, session);
-      console.log('✅ Generation resumed and completed');
     } catch (error) {
-      console.error('❌ Resume generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Resume failed';
-      
       if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({
-          status: 'error',
-          totalProgress: 0,
-          logMessage: `Resume failed: ${errorMessage}`
-        });
+        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Resume failed: ${errorMessage}`});
       }
     }
   };
 
   const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
     const failedModules = book.modules.filter(m => m.status === 'error');
-    
-    if (failedModules.length === 0) {
-      alert('No failed modules to retry');
-      return;
-    }
-
-    console.log('🔄 Retrying', failedModules.length, 'failed modules');
+    if (failedModules.length === 0) { alert('No failed modules to retry'); return; }
     setGenerationStartTime(new Date());
     setGenerationStatus({
-      status: 'generating',
-      totalProgress: 0,
-      logMessage: `Retrying ${failedModules.length} failed modules...`,
+      status: 'generating', totalProgress: 0, logMessage: `Retrying ${failedModules.length} failed modules...`,
       totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
     });
-
     try {
       await bookService.retryFailedModules(book, session);
-      console.log('✅ Failed modules retry completed');
     } catch (error) {
-      console.error('❌ Retry failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Retry failed';
-      setGenerationStatus({
-        status: 'error',
-        totalProgress: 0,
-        logMessage: `Retry failed: ${errorMessage}`
-      });
+      setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Retry failed: ${errorMessage}` });
     }
   };
 
   const handleAssembleBook = async (book: BookProject, session: BookSession) => {
-    console.log('📦 Assembling final book:', book.title);
-    
     try {
       await bookService.assembleFinalBook(book, session);
-      console.log('✅ Book assembled successfully');
-      setGenerationStatus({
-        status: 'completed',
-        totalProgress: 100,
-        logMessage: '✅ Book completed!'
-      });
+      setGenerationStatus({ status: 'completed', totalProgress: 100, logMessage: '✅ Book completed!' });
     } catch (error) {
-      console.error('❌ Book assembly failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
       alert(`Failed to assemble book: ${errorMessage}`);
-      setBooks(prev => prev.map(b => 
-        b.id === book.id 
-          ? { ...b, status: 'error', error: errorMessage }
-          : b
-      ));
+      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, status: 'error', error: errorMessage } : b));
     }
   };
 
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      console.log('🗑️ Deleting book:', id);
       setBooks(prev => prev.filter(b => b.id !== id));
       if (currentBookId === id) {
         setCurrentBookId(null);
@@ -349,33 +263,25 @@ function App() {
       try {
         localStorage.removeItem(`checkpoint_${id}`);
         localStorage.removeItem(`pause_flag_${id}`);
-      } catch (e) {
-        console.warn('Failed to clear storage:', e);
-      }
+      } catch (e) { console.warn('Failed to clear storage:', e); }
     }
   };
   
   const handleSaveSettings = (newSettings: APISettings) => {
-    console.log('💾 Saving settings');
     setSettings(newSettings);
     storageUtils.saveSettings(newSettings);
     setSettingsOpen(false);
   };
   
   const handleModelChange = (model: string, provider: ModelProvider) => {
-    console.log('🔄 Changing model:', provider, model);
     const newSettings = { ...settings, selectedModel: model, selectedProvider: provider };
     setSettings(newSettings);
     storageUtils.saveSettings(newSettings);
   };
 
-  const handleInstallApp = async () => { 
-    const success = await installApp(); 
-    if (success) console.log('✅ App installed successfully');
-  };
+  const handleInstallApp = async () => { await installApp(); };
   
   const handleUpdateBookContent = (bookId: string, newContent: string) => {
-    console.log('📝 Updating book content:', bookId);
     setBooks(prev => prev.map(book => 
       book.id === bookId 
         ? { ...book, finalBook: newContent, updatedAt: new Date() }
@@ -388,7 +294,7 @@ function App() {
       <TopHeader
         settings={settings}
         books={books}
-        currentBook={currentBook} {/* Pass the full book object */}
+        currentBook={currentBook}
         onModelChange={handleModelChange}
         onOpenSettings={() => setSettingsOpen(true)}
         onSelectBook={handleSelectBook}
@@ -446,9 +352,7 @@ function App() {
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
             <h3 className="text-xl font-bold mb-4">Switch AI Model</h3>
-            <p className="text-sm text-gray-400 mb-6">
-              Select an alternative model to continue generation:
-            </p>
+            <p className="text-sm text-gray-400 mb-6">Select an alternative model to continue generation:</p>
             <div className="space-y-3 mb-6">
               {modelSwitchOptions.map((option) => (
                 <button
@@ -461,12 +365,7 @@ function App() {
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowModelSwitch(false)}
-              className="w-full btn btn-secondary"
-            >
-              Cancel
-            </button>
+            <button onClick={() => setShowModelSwitch(false)} className="w-full btn btn-secondary">Cancel</button>
           </div>
         </div>
       )}
