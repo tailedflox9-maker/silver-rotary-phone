@@ -634,14 +634,10 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
 
 const HomeView = ({
   onNewBook,
-  onShowList,
   hasApiKey,
-  bookCount,
 }: {
   onNewBook: () => void;
-  onShowList: () => void;
   hasApiKey: boolean;
-  bookCount: number;
 }) => (
   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0f0f0f]">
     <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up space-y-6">
@@ -657,19 +653,13 @@ const HomeView = ({
       </p>
 
       {hasApiKey ? (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        <div className="flex items-center justify-center pt-4">
           <button
             onClick={onNewBook}
             className="btn bg-white text-black hover:bg-gray-200 text-base px-6 py-3"
           >
             ✨ Create Book
           </button>
-          {bookCount > 0 && (
-            <button onClick={onShowList} className="btn btn-secondary text-base px-6 py-3">
-              <List className="w-4 h-4" />
-              View Library
-            </button>
-          )}
         </div>
       ) : (
         <div className="content-card p-6 max-w-md mx-auto mt-6">
