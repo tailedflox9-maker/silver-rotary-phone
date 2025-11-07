@@ -766,9 +766,9 @@ const HomeView = ({
     <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up">
       <div className="relative w-24 h-24 mx-auto mb-6">
         <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
-        <img src="/white-logo.png" alt="Pustakam Logo" className="w-24 h-24 relative" />
+        <img src="/white-logo.png" alt="Pustakam Logo" className="w-24 h-24 relative logo-img" />
       </div>
-      <h1 className="text-4xl font-bold mb-4 text-white">Turn Ideas into Books</h1>
+      <h1 className="text-4xl font-bold mb-4 text-[var(--color-text-primary)]">Turn Ideas into Books</h1>
       <p className="text-lg text-[var(--color-text-secondary)] mb-10">
         Pustakam is an AI-powered engine that transforms your concepts into fully-structured
         digital books.
@@ -883,7 +883,7 @@ const BookListGrid = ({
             <div className="p-5">
               <div className="flex items-start justify-between gap-5">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-semibold text-white truncate group-hover:text-blue-300 transition-colors mb-1.5">
+                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)] truncate group-hover:text-blue-300 transition-colors mb-1.5">
                     {book.title}
                   </h3>
                   <p className="text-sm text-[var(--color-text-secondary)] mb-3 line-clamp-2">{book.goal}</p>
@@ -965,8 +965,8 @@ const DetailTabButton = ({
     onClick={onClick}
     className={`flex items-center gap-2 px-1 py-3 text-sm font-semibold transition-all duration-200 border-b-2 ${
       isActive
-        ? 'border-white text-white'
-        : 'border-transparent text-[var(--color-text-secondary)] hover:text-white'
+        ? 'border-[var(--color-text-primary)] text-[var(--color-text-primary)]'
+        : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
     }`}
   >
     <Icon className="w-4 h-4" />
@@ -1376,12 +1376,12 @@ export function BookView({
               onSelectBook(null);
               setShowListInMain(true);
             }}
-            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors mb-5"
+            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mb-5"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to My Books
           </button>
-          <h1 className="text-3xl font-bold text-white mb-1.5">{currentBook.title}</h1>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-1.5">{currentBook.title}</h1>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 text-sm font-medium">
               {getStatusIcon(currentBook.status)}
@@ -1457,7 +1457,7 @@ export function BookView({
                           <Play className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">
+                          <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
                             Ready to Generate Content
                           </h3>
                           <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
@@ -1522,7 +1522,7 @@ export function BookView({
                             <CheckCircle2 className="w-6 h-6 text-green-400" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-white">Generation Complete</h3>
+                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Generation Complete</h3>
                             <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
                               Your book is ready to read and download.
                             </p>
@@ -1550,25 +1550,25 @@ export function BookView({
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-white">
+                          <div className="text-2xl font-bold text-[var(--color-text-primary)]">
                             {currentBook.modules.length}
                           </div>
                           <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Chapters</div>
                         </div>
                         <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-white">
+                          <div className="text-2xl font-bold text-[var(--color-text-primary)]">
                             {(currentBook.totalWords || 0).toLocaleString()}
                           </div>
                           <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Words</div>
                         </div>
                         <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-white">
+                          <div className="text-2xl font-bold text-[var(--color-text-primary)]">
                             {currentBook.roadmap?.estimatedReadingTime || 'N/A'}
                           </div>
                           <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Est. Reading</div>
                         </div>
                         <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-white capitalize">
+                          <div className="text-2xl font-bold text-[var(--color-text-primary)] capitalize">
                             {currentBook.roadmap?.difficultyLevel || 'N/A'}
                           </div>
                           <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Level</div>
