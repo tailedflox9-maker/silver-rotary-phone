@@ -1265,7 +1265,780 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
           >
             {content}
           </ReactMarkdown>
-        </article>
+        </article// src/components/BookView.tsx
+import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import {
+  Book,
+  Plus,
+  Download,
+  Trash2,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Target,
+  Users,
+  Brain,
+  Sparkles,
+  BarChart3,
+  ListChecks,
+  Play,
+  Box,
+  ArrowLeft,
+  Check,
+  BookText,
+  RefreshCw,
+  Edit,
+  Save,
+  X,
+  FileText,
+  Maximize2,
+  Minimize2,
+  List,
+  Settings,
+  Moon,
+  ZoomIn,
+  ZoomOut,
+  BookOpen,
+  ChevronUp,
+  RotateCcw,
+  Palette,
+  Hash,
+  Activity,
+  TrendingUp,
+  Zap,
+  Gauge,
+  Terminal,
+  Eye,
+  EyeOff,
+  Search,
+  CheckCircle2,
+  Pause,
+  AlertTriangle,
+  ChevronDown
+} from 'lucide-react';
+import { BookProject, BookSession } from '../types/book';
+import { bookService } from '../services/bookService';
+import { BookAnalytics } from './BookAnalytics';
+import { CustomSelect } from './CustomSelect';
+import { pdfService } from '../services/pdfService';
+
+// ============================================================================
+// TYPES & INTERFACES
+// ============================================================================
+
+type AppView = 'list' | 'create' | 'detail';
+
+interface GenerationStatus {
+  currentModule?: {
+    id: string;
+    title: string;
+    attempt: number;
+    progress: number;
+    generatedText?: string;
+  };
+  totalProgress: number;
+  status: 'idle' | 'generating' | 'completed' | 'error' | 'paused' | 'waiting_retry';
+  logMessage?: string;
+  totalWordsGenerated?: number;
+  aiStage?: 'analyzing' | 'writing' | 'examples' | 'polishing' | 'complete';
+  retryInfo?: {
+    moduleTitle: string;
+    error: string;
+    retryCount: number;
+    maxRetries: number;
+    waitTime?: number;
+  };
+}
+
+interface GenerationStats {
+  startTime: Date;
+  totalModules: number;
+  completedModules: number;
+  failedModules: number;
+  averageTimePerModule: number;
+  estimatedTimeRemaining: number;
+  totalWordsGenerated: number;
+  wordsPerMinute: number;
+}
+
+interface BookViewProps {
+  books: BookProject[];
+  currentBookId: string | null;
+  onCreateBookRoadmap: (session: BookSession) => Promise<void>;
+  onGenerateAllModules: (book: BookProject, session: BookSession) => Promise<void>;
+  onRetryFailedModules: (book: BookProject, session: BookSession) => Promise<void>;
+  onAssembleBook: (book: BookProject, session: BookSession) => Promise<void>;
+  onSelectBook: (id: string | null) => void;
+  onDeleteBook: (id: string) => void;
+  hasApiKey: boolean;
+  view: AppView;
+  setView: React.Dispatch<React.SetStateAction<AppView>>;
+  onUpdateBookContent: (bookId: string, newContent: string) => void;
+  showListInMain: boolean;
+  setShowListInMain: React.Dispatch<React.SetStateAction<boolean>>;
+  isMobile?: boolean;
+  generationStatus?: GenerationStatus;
+  generationStats?: GenerationStats;
+  onPauseGeneration?: (bookId: string) => void;
+  onResumeGeneration?: (book: BookProject, session: BookSession) => void;
+  isGenerating?: boolean;
+  onRetryDecision?: (decision: 'retry' | 'switch' | 'skip') => void;
+  availableModels?: Array<{provider: string; model: string; name: string}>;
+}
+
+interface ReadingModeProps {
+  content: string;
+  isEditing: boolean;
+  editedContent: string;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onContentChange: (content: string) => void;
+}
+
+interface ReadingSettings {
+  fontSize: number;
+  lineHeight: number;
+  fontFamily: 'serif' | 'sans' | 'mono';
+  theme: 'dark' | 'sepia';
+  maxWidth: 'narrow' | 'medium' | 'wide';
+  textAlign: 'left' | 'justify';
+}
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const THEMES = {
+  dark: {
+    bg: '#0F0F0F',
+    contentBg: '#1A1A1A',
+    text: '#E5E5E5',
+    secondary: '#A0A0A0',
+    border: '#333333',
+    accent: '#6B7280',
+  },
+  sepia: {
+    bg: '#F5F1E8',
+    contentBg: '#FAF7F0',
+    text: '#3C2A1E',
+    secondary: '#8B7355',
+    border: '#D4C4A8',
+    accent: '#B45309',
+  },
+};
+
+const FONT_FAMILIES = {
+  serif: 'ui-serif, Georgia, "Times New Roman", serif',
+  sans: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
+  mono: 'ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
+};
+
+const MAX_WIDTHS = {
+  narrow: '65ch',
+  medium: '75ch',
+  wide: '85ch',
+};
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+const formatTime = (seconds: number): string => {
+  if (isNaN(seconds) || seconds < 1) return '--';
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
+  return `${mins}m ${secs}s`;
+};
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+const GradientProgressBar = ({ progress = 0, active = true }) => (
+  <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
+    <div
+      className="absolute inset-0 bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-500 transition-all duration-700 ease-out"
+      style={{
+        width: `${progress}%`,
+        backgroundSize: '200% 100%',
+        animation: active ? 'gradient-flow 3s ease infinite' : 'none',
+      }}
+    />
+  </div>
+);
+
+const PixelAnimation = () => {
+  const [pixels, setPixels] = useState<any[]>([]);
+
+  useEffect(() => {
+    const colors = [
+      'bg-orange-500',
+      'bg-yellow-500',
+      'bg-amber-600',
+      'bg-red-500',
+      'bg-zinc-700',
+      'bg-zinc-600',
+    ];
+
+    const generate = () => {
+      const newPixels = Array(70)
+        .fill(0)
+        .map((_, i) => ({
+          id: i,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          opacity: Math.random() > 0.6 ? 'opacity-100' : 'opacity-30',
+        }));
+      setPixels(newPixels);
+    };
+
+    generate();
+    const interval = setInterval(generate, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-wrap gap-1.5 h-14">
+      {pixels.map((p) => (
+        <div
+          key={p.id}
+          className={`w-1.5 h-1.5 rounded-sm ${p.color} ${p.opacity} transition-all duration-200`}
+        />
+      ))}
+    </div>
+  );
+};
+
+const RetryDecisionPanel = ({
+  retryInfo,
+  onRetry,
+  onSwitchModel,
+  onSkip,
+  availableModels,
+}: {
+  retryInfo: {
+    moduleTitle: string;
+    error: string;
+    retryCount: number;
+    maxRetries: number;
+    waitTime?: number;
+  };
+  onRetry: () => void;
+  onSwitchModel: () => void;
+  onSkip: () => void;
+  availableModels: Array<{provider: string; model: string; name: string}>;
+}) => {
+  const [countdown, setCountdown] = useState(Math.ceil((retryInfo.waitTime || 0) / 1000));
+  
+  useEffect(() => {
+    if (countdown <= 0) return;
+    
+    const timer = setInterval(() => {
+      setCountdown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const isRateLimit = retryInfo.error.toLowerCase().includes('rate limit') || 
+                      retryInfo.error.toLowerCase().includes('429');
+  
+  const isNetworkError = retryInfo.error.toLowerCase().includes('network') ||
+                         retryInfo.error.toLowerCase().includes('connection');
+
+  return (
+    <div className="bg-red-900/20 backdrop-blur-xl border border-red-500/50 rounded-xl overflow-hidden animate-fade-in-up">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 flex items-center justify-center bg-red-500/20 rounded-lg border border-red-500/30">
+              <AlertCircle className="w-6 h-6 text-red-400 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Generation Failed</h3>
+              <p className="text-sm text-gray-400">
+                Attempt {retryInfo.retryCount} of {retryInfo.maxRetries}
+              </p>
+            </div>
+          </div>
+          <div className="px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-full text-xs font-semibold text-red-300">
+            Waiting
+          </div>
+        </div>
+        <div className="mb-4 p-4 bg-black/40 border border-white/10 rounded-lg">
+          <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-blue-400" />
+            {retryInfo.moduleTitle}
+          </h4>
+          <div className="text-sm text-gray-300 mb-3">
+            <span className="text-red-400 font-medium">Error:</span> {retryInfo.error}
+          </div>
+          <div className="flex items-center gap-2">
+            {isRateLimit && (
+              <div className="flex items-center gap-1.5 text-xs bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded-md border border-yellow-500/20">
+                <Clock className="w-3 h-3" />
+                Rate Limit - Wait recommended
+              </div>
+            )}
+            {isNetworkError && (
+              <div className="flex items-center gap-1.5 text-xs bg-orange-500/10 text-orange-400 px-2 py-1 rounded-md border border-orange-500/20">
+                <AlertTriangle className="w-3 h-3" />
+                Network Issue
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="mb-6 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-gray-300">
+              <p className="font-medium text-white mb-2">Recommended Actions:</p>
+              <ul className="space-y-1.5 text-xs text-gray-400">
+                {isRateLimit && (
+                  <>
+                    <li>✓ Wait {countdown > 0 ? `${countdown}s` : 'a moment'} and retry with same model</li>
+                    <li>✓ Or switch to a different AI model immediately</li>
+                  </>
+                )}
+                {isNetworkError && (
+                  <>
+                    <li>✓ Check your internet connection</li>
+                    <li>✓ Retry in a few seconds</li>
+                  </>
+                )}
+                {!isRateLimit && !isNetworkError && (
+                  <>
+                    <li>✓ Try a different AI model</li>
+                    <li>✓ Or retry after a short wait</li>
+                  </>
+                )}
+                <li>⚠️ Skipping will mark this module as failed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <button
+            onClick={onRetry}
+            disabled={countdown > 0}
+            className="w-full btn bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed rounded-lg text-white font-semibold py-3 transition-all shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            {countdown > 0 ? `Retry in ${countdown}s` : 'Retry Same Model'}
+          </button>
+          {availableModels.length > 0 && (
+            <button
+              onClick={onSwitchModel}
+              className="w-full btn bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold py-3 transition-all shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Switch AI Model ({availableModels.length} available)
+            </button>
+          )}
+          <button
+            onClick={onSkip}
+            className="w-full btn border border-zinc-700 hover:bg-zinc-800 rounded-lg text-gray-300 font-medium py-3 transition-all hover:border-red-500/50 hover:text-red-400 flex items-center justify-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            Skip This Module
+          </button>
+        </div>
+        <div className="mt-4 text-xs text-zinc-500 flex items-center gap-1.5 justify-center">
+          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+          <span>Your progress has been saved. You can also close this tab.</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EmbeddedProgressPanel = ({
+  generationStatus,
+  stats,
+  onCancel,
+  onPause,
+  onResume,
+  onRetryDecision,
+  availableModels,
+}: {
+  generationStatus: GenerationStatus;
+  stats: GenerationStats;
+  onCancel?: () => void;
+  onPause?: () => void;
+  onResume?: () => void;
+  onRetryDecision?: (decision: 'retry' | 'switch' | 'skip') => void;
+  availableModels?: Array<{provider: string; model: string; name: string}>;
+}) => {
+  const streamBoxRef = useRef<HTMLDivElement>(null);
+  
+  const isPaused = generationStatus.status === 'paused';
+  const isGenerating = generationStatus.status === 'generating';
+  const isWaitingRetry = generationStatus.status === 'waiting_retry';
+
+  useEffect(() => {
+    if (streamBoxRef.current && generationStatus.currentModule?.generatedText) {
+      streamBoxRef.current.scrollTop = streamBoxRef.current.scrollHeight;
+    }
+  }, [generationStatus.currentModule?.generatedText]);
+
+  const overallProgress = (stats.completedModules / (stats.totalModules || 1)) * 100;
+
+  if (isWaitingRetry && generationStatus.retryInfo && onRetryDecision) {
+    return (
+      <RetryDecisionPanel
+        retryInfo={generationStatus.retryInfo}
+        onRetry={() => onRetryDecision('retry')}
+        onSwitchModel={() => onRetryDecision('switch')}
+        onSkip={() => onRetryDecision('skip')}
+        availableModels={availableModels || []}
+      />
+    );
+  }
+
+  return (
+    <div className={`bg-zinc-900/60 backdrop-blur-xl border rounded-xl overflow-hidden animate-fade-in-up ${
+      isPaused ? 'border-yellow-500/50' : 'border-zinc-800/50'
+    }`}>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {isPaused ? (
+              <div className="w-12 h-12 flex items-center justify-center bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+                <Pause className="w-6 h-6 text-yellow-400" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 flex items-center justify-center bg-blue-500/20 rounded-lg border border-blue-500/30">
+                <Brain className="w-6 h-6 text-blue-400 animate-pulse" />
+              </div>
+            )}
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                {isPaused ? 'Generation Paused' : 'Generating Chapters...'}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {stats.completedModules} of {stats.totalModules} complete
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className={`px-3 py-1.5 border rounded-full text-xs font-semibold ${
+              isPaused 
+                ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300' 
+                : 'bg-blue-500/20 border-blue-500/30 text-blue-300'
+            }`}>
+              {Math.round(overallProgress)}%
+            </div>
+            <div className="text-sm font-mono text-zinc-400">
+              {stats.totalWordsGenerated.toLocaleString()} words
+            </div>
+          </div>
+        </div>
+        <div className="mb-4">
+          <GradientProgressBar
+            progress={overallProgress}
+            active={isGenerating}
+          />
+        </div>
+        {isPaused && (
+          <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Pause className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-yellow-300 mb-1">
+                  Generation Paused
+                </p>
+                <p className="text-xs text-yellow-400/80">
+                  Your progress is saved. You can resume anytime or close this tab safely.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {isGenerating && generationStatus.currentModule && (
+          <>
+            <div className="mt-5 mb-4">
+              <PixelAnimation />
+            </div>
+            {generationStatus.currentModule.generatedText && (
+              <div className="bg-black/40 border border-zinc-800/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-white flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    {generationStatus.currentModule.title}
+                  </h4>
+                  {generationStatus.currentModule.attempt > 1 && (
+                    <div className="flex items-center gap-1.5 text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-md border border-yellow-500/20">
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Attempt {generationStatus.currentModule.attempt}</span>
+                    </div>
+                  )}
+                </div>
+                <div
+                  ref={streamBoxRef}
+                  className="text-sm text-zinc-300 leading-relaxed max-h-32 overflow-y-auto font-mono streaming-text-box"
+                >
+                  {generationStatus.currentModule.generatedText}
+                  <span className="inline-block w-2 h-4 bg-blue-400 animate-pulse ml-1" />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        <div className="mt-6 pt-4 border-t border-zinc-800/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-zinc-400">
+              <Clock className="w-4 h-4 text-yellow-500" />
+              <span>
+                {isPaused 
+                  ? `Paused • ${stats.completedModules}/${stats.totalModules} done`
+                  : `${formatTime(stats.estimatedTimeRemaining)} remaining`
+                }
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {(isGenerating || isPaused) && onCancel && (
+                <button onClick={onCancel} className="px-4 py-2 border border-zinc-700 hover:bg-zinc-800 rounded-lg text-sm font-medium transition-all hover:border-red-500/50 hover:text-red-400" title="Stop generation and save progress" >
+                  <X className="w-4 h-4 inline mr-1.5" /> Cancel
+                </button>
+              )}
+              {isPaused ? (
+                onResume && (
+                  <button onClick={onResume} className="px-5 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-white font-semibold transition-all shadow-lg hover:shadow-green-500/30 flex items-center gap-2" title="Resume generation from where you left off" >
+                    <Play className="w-4 h-4" /> Resume Generation
+                  </button>
+                )
+              ) : isGenerating && onPause && (
+                <button onClick={onPause} className="px-5 py-2.5 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-semibold transition-all shadow-lg hover:shadow-yellow-500/30 flex items-center gap-2" title="Pause and save progress" >
+                  <Pause className="w-4 h-4" /> Pause
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-zinc-500 flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>
+              {isPaused 
+                ? 'Progress is saved. You can close this tab safely.'
+                : 'You can pause anytime. Progress will be saved automatically.'
+              }
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CodeBlock = React.memo(({ children, language, theme }: any) => (
+  <SyntaxHighlighter
+    style={vscDarkPlus}
+    language={language}
+    PreTag="div"
+    className={`!rounded-xl !my-6 !text-sm border ${
+      theme === 'dark'
+        ? '!bg-[#0D1117] border-gray-700'
+        : '!bg-[#F0EAD6] border-[#D4C4A8] !text-gray-800'
+    }`}
+    customStyle={{
+      padding: '1.5rem',
+      fontSize: '0.875rem',
+      lineHeight: '1.5',
+    }}
+  >
+    {String(children).replace(/\n$/, '')}
+  </SyntaxHighlighter>
+));
+
+const HomeView = ({
+  onNewBook,
+  hasApiKey,
+}: {
+  onNewBook: () => void;
+  hasApiKey: boolean;
+}) => (
+  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#0f0f0f]">
+    <div className="relative z-10 max-w-2xl mx-auto animate-fade-in-up space-y-6">
+      <div className="flex justify-center items-center gap-4">
+          <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28" />
+          <h1 className="text-6xl font-extrabold text-white">Pustakam</h1>
+      </div>
+      
+      <h2 className="text-5xl font-bold text-white tracking-tight">Turn Ideas into Books</h2>
+      
+      <p className="text-lg text-[var(--color-text-secondary)] max-w-xl mx-auto">
+        Pustakam uses AI to transform your concepts into fully-structured digital books. Private, local-first, and completely under your control.
+      </p>
+
+      {hasApiKey ? (
+        <div className="flex items-center justify-center pt-4">
+          <button
+            onClick={onNewBook}
+            className="btn bg-white text-black hover:bg-gray-200 text-base px-6 py-3"
+          >
+            ✨ Create Book
+          </button>
+        </div>
+      ) : (
+        <div className="content-card p-6 max-w-md mx-auto mt-6">
+          <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
+          <h3 className="font-semibold mb-2">API Key Required</h3>
+          <p className="text-sm text-gray-400">
+            Please add your API key in Settings to begin creating books.
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const BookListGrid = ({
+  books,
+  onSelectBook,
+  onDeleteBook,
+  setView,
+  setShowListInMain,
+}: {
+  books: BookProject[];
+  onSelectBook: (id: string) => void;
+  onDeleteBook: (id: string) => void;
+  setView: (view: AppView) => void;
+  setShowListInMain: (show: boolean) => void;
+}) => {
+  const getStatusIcon = (status: BookProject['status']) => {
+    const iconMap: Record<BookProject['status'], React.ElementType> = {
+      planning: Clock,
+      generating_roadmap: Loader2,
+      roadmap_completed: ListChecks,
+      generating_content: Loader2,
+      assembling: Box,
+      completed: CheckCircle,
+      error: AlertCircle,
+    };
+    const Icon = iconMap[status] || Loader2;
+    const colorClass =
+      status === 'completed'
+        ? 'text-green-500'
+        : status === 'error'
+        ? 'text-red-500'
+        : 'text-blue-500';
+    const animateClass = ['generating_roadmap', 'generating_content', 'assembling'].includes(
+      status
+    )
+      ? 'animate-spin'
+      : '';
+    return <Icon className={`w-5 h-5 ${colorClass} ${animateClass}`} />;
+  };
+
+  const getStatusText = (status: BookProject['status']) =>
+    ({
+      planning: 'Planning',
+      generating_roadmap: 'Creating Roadmap',
+      roadmap_completed: 'Ready to Write',
+      generating_content: 'Writing Chapters',
+      assembling: 'Finalizing Book',
+      completed: 'Completed',
+      error: 'Error',
+    }[status] || 'Unknown');
+
+  return (
+    <div className="flex-1 flex flex-col h-full">
+      <div className="p-6 border-b border-[var(--color-border)]">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">My Books</h1>
+            <p className="text-gray-400">{books.length} projects</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setView('create');
+                setShowListInMain(false);
+              }}
+              className="btn btn-primary"
+            >
+              <Plus className="w-4 h-4" /> New Book
+            </button>
+            <button onClick={() => setShowListInMain(false)} className="btn btn-secondary">
+              <ArrowLeft className="w-4 h-4" /> Back to Home
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="grid gap-4 sm:gap-6">
+          {books.map((book) => (
+            <div
+              key={book.id}
+              className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4 sm:p-6 transition-all hover:border-gray-600 hover:shadow-lg cursor-pointer group"
+              onClick={() => onSelectBook(book.id)}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    {getStatusIcon(book.status)}
+                    <h3 className="text-lg font-semibold text-white truncate group-hover:text-blue-300 transition-colors">
+                      {book.title}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-3 line-clamp-2">{book.goal}</p>
+                  <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{new Date(book.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <span className="capitalize">{getStatusText(book.status)}</span>
+                    {book.status !== 'completed' && book.status !== 'error' && (
+                      <span>{Math.round(book.progress)}%</span>
+                    )}
+                    {book.modules.length > 0 && <span>{book.modules.length} modules</span>}
+                  </div>
+                  {book.status !== 'completed' && book.status !== 'error' && (
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-800/50 rounded-full h-2.5 overflow-hidden border border-gray-700">
+                        <div
+                          className="bg-gradient-to-r from-green-500 via-green-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out relative"
+                          style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 ml-4">
+                  {book.status === 'completed' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        bookService.downloadAsMarkdown(book);
+                      }}
+                      className="btn-ghost p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteBook(book.id);
+                    }}
+                    className="btn-ghost p-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
