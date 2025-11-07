@@ -78,12 +78,12 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
   }, [settings.selectedProvider, settings.selectedModel]);
 
   return (
-    <header className="relative flex-shrink-0 w-full h-16 bg-[#181818] border-b border-[var(--color-border)] flex items-center px-4 md:px-6 z-30">
+    <header className="relative flex-shrink-0 w-full h-16 bg-[var(--color-sidebar)] border-b border-[var(--color-border)] flex items-center px-4 md:px-6 z-30">
       <div className="flex items-center gap-2.5">
         <img src="/white-logo.png" alt="Logo" className="w-8 h-8" />
         <div className="hidden md:block">
           <h1 className="text-lg font-bold">Pustakam</h1>
-          <p className="text-xs text-gray-500 -mt-1.5">injin</p>
+          <p className="text-xs text-[var(--color-text-secondary)] -mt-1.5">injin</p>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
       <div className="hidden md:flex items-center relative w-full max-w-lg">
         <Search className="absolute left-3 w-5 h-5 text-gray-500" />
-        <input type="text" placeholder="Search anything..." className="w-full bg-[#282828] border-transparent rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
+        <input type="text" placeholder="Search anything..." className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
       </div>
 
       <div className="flex-1" />
@@ -99,7 +99,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
       <div className="flex items-center gap-2">
         {/* --- Model Selector --- */}
         <div className="relative">
-          <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2 px-3 py-2 bg-[#282828] rounded-lg hover:bg-gray-700 transition-colors">
+          <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2 px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-card)] transition-colors">
             {currentProvider ? <currentProvider.icon /> : <Brain size={20} />}
             <span className="hidden md:inline text-sm font-medium">{currentModel?.name || "Select Model"}</span>
             <ChevronDown size={16} className={`transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
@@ -136,7 +136,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
         {/* --- Library Dropdown --- */}
         <div className="relative">
-          <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-[#282828] rounded-lg hover:bg-gray-700 transition-colors" title="Library & Settings">
+          <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-card)] transition-colors" title="Library & Settings">
             <BookOpen size={20} />
           </button>
           {libraryOpen && (
