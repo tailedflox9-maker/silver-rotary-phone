@@ -278,7 +278,7 @@ const RetryDecisionPanel = ({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">Generation Failed</h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-[var(--color-text-secondary)]">
                 Attempt {retryInfo.retryCount} of {retryInfo.maxRetries}
               </p>
             </div>
@@ -315,7 +315,7 @@ const RetryDecisionPanel = ({
             <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
             <div className="text-sm text-gray-300">
               <p className="font-medium text-white mb-2">Recommended Actions:</p>
-              <ul className="space-y-1.5 text-xs text-gray-400">
+              <ul className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
                 {isRateLimit && (
                   <>
                     <li>✓ Wait {countdown > 0 ? `${countdown}s` : 'a moment'} and retry with same model</li>
@@ -433,7 +433,7 @@ const EmbeddedProgressPanel = ({
               <h3 className="text-lg font-semibold text-white">
                 {isPaused ? 'Generation Paused' : 'Generating Chapters...'}
               </h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-[var(--color-text-secondary)]">
                 {stats.completedModules} of {stats.totalModules} complete
               </p>
             </div>
@@ -962,7 +962,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 // REDESIGNED SUB-COMPONENTS
 // ============================================================================
 
-// IMPROVEMENT: Encapsulated the home view for better structure and to apply Claude-like centered layout.
 const HomeView = ({
   onNewBook,
   onShowList,
@@ -974,16 +973,13 @@ const HomeView = ({
   hasApiKey: boolean;
   bookCount: number;
 }) => (
-  // IMPROVEMENT: Added a main container with vertical padding for breathing room.
   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
     <div className="absolute inset-0 bg-black [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
-    {/* IMPROVEMENT: Constrained the content width for a more focused and calm presentation, a key aspect of the Claude UI. */}
     <div className="relative z-10 max-w-3xl mx-auto animate-fade-in-up">
       <div className="relative w-28 h-28 mx-auto mb-8">
         <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-30 animate-subtle-glow"></div>
         <img src="/white-logo.png" alt="Pustakam Logo" className="w-28 h-28 relative" />
       </div>
-       {/* IMPROVEMENT: Increased vertical spacing (mb-6, mb-12) to create a more relaxed visual flow. */}
       <h1 className="text-5xl font-bold mb-6 text-white">Turn Ideas into Books</h1>
       <p className="text-xl text-[var(--color-text-secondary)] mb-12">
         Pustakam is an AI-powered engine that transforms your concepts into fully-structured
@@ -1009,7 +1005,7 @@ const HomeView = ({
         <div className="bg-[var(--color-card)] p-8 rounded-xl max-w-md mx-auto">
           <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
           <h3 className="font-semibold mb-2">API Key Required</h3>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-[var(--color-text-secondary)]">
             Please configure your API key in Settings to begin.
           </p>
         </div>
@@ -1018,7 +1014,6 @@ const HomeView = ({
   </div>
 );
 
-// IMPROVEMENT: Redesigned book list for a cleaner, more spacious presentation.
 const BookListGrid = ({
   books,
   onSelectBook,
@@ -1068,12 +1063,11 @@ const BookListGrid = ({
     }[status] || 'Unknown');
 
   return (
-    // IMPROVEMENT: Main container uses max-width and centered layout for focus. Generous padding (py-12) adds vertical whitespace.
     <div className="w-full max-w-4xl mx-auto px-6 py-12">
       <div className="flex items-center justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold">My Books</h1>
-          <p className="text-gray-400 mt-1">{books.length} projects</p>
+          <p className="text-[var(--color-text-secondary)] mt-1">{books.length} projects</p>
         </div>
         <div className="flex items-center gap-4">
           <button onClick={() => setShowListInMain(false)} className="btn btn-secondary">
@@ -1090,7 +1084,6 @@ const BookListGrid = ({
           </button>
         </div>
       </div>
-      {/* IMPROVEMENT: A vertical gap (space-y-4) is used for the list, which is cleaner than a grid for this type of content. */}
       <div className="space-y-4">
         {books.map((book) => (
           <div
@@ -1098,18 +1091,15 @@ const BookListGrid = ({
             className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg transition-all hover:border-gray-600 hover:shadow-lg cursor-pointer group"
             onClick={() => onSelectBook(book.id)}
           >
-            {/* IMPROVEMENT: Increased padding (p-6) inside each card for more breathing room. */}
             <div className="p-6">
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1 min-w-0">
-                  {/* IMPROVEMENT: Clearer visual hierarchy. Title is larger, and metadata is grouped below it with more space. */}
                   <h3 className="text-xl font-semibold text-white truncate group-hover:text-blue-300 transition-colors mb-2">
                     {book.title}
                   </h3>
-                  <p className="text-sm text-gray-400 mb-4 line-clamp-2">{book.goal}</p>
+                  <p className="text-sm text-[var(--color-text-secondary)] mb-4 line-clamp-2">{book.goal}</p>
                   
-                  {/* IMPROVEMENT: Metadata is cleanly organized in a flex container with consistent gaps. */}
-                  <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-gray-400">
+                  <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--color-text-secondary)]">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(book.status)}
                       <span className="capitalize">{getStatusText(book.status)}</span>
@@ -1171,7 +1161,6 @@ const BookListGrid = ({
   );
 };
 
-// IMPROVEMENT: Redesigned tab buttons for a more minimal, less distracting look.
 const DetailTabButton = ({
   label,
   Icon,
@@ -1185,7 +1174,6 @@ const DetailTabButton = ({
 }) => (
   <button
     onClick={onClick}
-    // IMPROVEMENT: Tabs are now simpler text with an icon, relying on color and a subtle bottom border for the active state.
     className={`flex items-center gap-2 px-1 py-3 text-sm font-semibold transition-all duration-200 border-b-2 ${
       isActive
         ? 'border-white text-white'
@@ -1417,7 +1405,6 @@ export function BookView({
   }
   if (view === 'create') {
     return (
-      // IMPROVEMENT: Centered, max-width container for the creation form.
       <div className="w-full max-w-2xl mx-auto px-6 py-12">
         <div className="flex items-center gap-4 mb-10">
           <button
@@ -1431,10 +1418,9 @@ export function BookView({
           </button>
           <div>
             <h1 className="text-3xl font-bold">Create New Book</h1>
-            <p className="text-gray-400 mt-1">Define your learning goal and let AI do the rest.</p>
+            <p className="text-[var(--color-text-secondary)] mt-1">Define your learning goal and let AI do the rest.</p>
           </div>
         </div>
-        {/* IMPROVEMENT: Increased spacing (space-y-8) between form elements for a less cramped feel. */}
         <div className="space-y-8">
           <div>
             <label className="flex items-center gap-2 text-lg font-semibold mb-3">
@@ -1581,9 +1567,7 @@ export function BookView({
     const completedModules = currentBook.modules.filter((m) => m.status === 'completed');
     const isPaused = generationStatus?.status === 'paused';
     return (
-      // IMPROVEMENT: The entire detail view is wrapped in a centered container with generous padding.
       <div className="w-full max-w-4xl mx-auto px-6 py-12">
-        {/* IMPROVEMENT: Header structure is cleaner, with title and status given more prominence and space. */}
         <div className="mb-10">
           <button
             onClick={() => {
@@ -1591,7 +1575,7 @@ export function BookView({
               onSelectBook(null);
               setShowListInMain(true);
             }}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6"
+            className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-white transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to My Books
@@ -1605,7 +1589,6 @@ export function BookView({
           </div>
         </div>
 
-        {/* IMPROVEMENT: Tab navigation is now visually separated from the content below it. */}
         {currentBook.status === 'completed' && (
           <div className="border-b border-[var(--color-border)] mb-10">
             <div className="flex items-center gap-8">
@@ -1631,7 +1614,6 @@ export function BookView({
           </div>
         )}
         
-        {/* IMPROVEMENT: Content area now has consistent vertical spacing for all states. */}
         <div className="space-y-8">
             {detailTab === 'analytics' && currentBook.status === 'completed' ? (
               <BookAnalytics book={currentBook} />
@@ -1668,7 +1650,6 @@ export function BookView({
                 {currentBook.status === 'roadmap_completed' &&
                   !areAllModulesDone &&
                   !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry' && (
-                    // IMPROVEMENT: Call-to-action cards have increased padding and spacing for emphasis.
                     <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-8">
                       <div className="flex items-center gap-4 mb-5">
                         <div className="w-12 h-12 flex items-center justify-center bg-blue-500/10 rounded-lg">
@@ -1678,7 +1659,7 @@ export function BookView({
                           <h3 className="text-xl font-semibold text-white">
                             Ready to Generate Content
                           </h3>
-                          <p className="text-sm text-gray-400 mt-1">
+                          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
                             {completedModules.length > 0
                               ? `Resume from ${completedModules.length} completed modules`
                               : 'Start generating all modules'}
@@ -1690,7 +1671,7 @@ export function BookView({
                           <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                           <div className="text-sm text-gray-300">
                             <p className="font-medium text-white mb-2">Smart Recovery Enabled</p>
-                            <ul className="space-y-1 text-xs text-gray-400">
+                            <ul className="space-y-1 text-xs text-[var(--color-text-secondary)]">
                               <li>✓ Progress is saved automatically</li>
                               <li>✓ Failed modules will be retried with smart options</li>
                               <li>✓ You can safely close and resume later</li>
@@ -1726,7 +1707,7 @@ export function BookView({
                         <CheckCircle className="w-8 h-8 text-green-400" />
                       </div>
                       <h3 className="text-2xl font-bold text-white">Generation Complete!</h3>
-                      <p className="text-base text-gray-400 mt-2">
+                      <p className="text-base text-[var(--color-text-secondary)] mt-2">
                         All chapters written. Ready to assemble the final book.
                       </p>
                     </div>
@@ -1745,7 +1726,7 @@ export function BookView({
                           </div>
                           <div>
                             <h3 className="text-xl font-semibold text-white">Generation Complete</h3>
-                            <p className="text-sm text-gray-400 mt-1">
+                            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
                               Your book is ready to read and download.
                             </p>
                           </div>
@@ -1784,30 +1765,31 @@ export function BookView({
                           </button>
                         </div>
                       </div>
+                      {/* --- UPDATED & COMPACT STATS CARDS --- */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
-                          <div className="text-3xl font-bold text-white mb-1">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-white">
                             {currentBook.modules.length}
                           </div>
-                          <div className="text-sm text-gray-400">Chapters</div>
+                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Chapters</div>
                         </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
-                          <div className="text-3xl font-bold text-white mb-1">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-white">
                             {(currentBook.totalWords || 0).toLocaleString()}
                           </div>
-                          <div className="text-sm text-gray-400">Words</div>
+                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Words</div>
                         </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
-                          <div className="text-3xl font-bold text-white mb-1">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-white">
                             {currentBook.roadmap?.estimatedReadingTime || 'N/A'}
                           </div>
-                          <div className="text-sm text-gray-400">Est. Reading</div>
+                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Est. Reading</div>
                         </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-5 text-center">
-                          <div className="text-3xl font-bold text-white mb-1 capitalize">
+                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
+                          <div className="text-2xl font-bold text-white capitalize">
                             {currentBook.roadmap?.difficultyLevel || 'N/A'}
                           </div>
-                          <div className="text-sm text-gray-400">Level</div>
+                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Level</div>
                         </div>
                       </div>
                     </div>
@@ -1822,7 +1804,7 @@ export function BookView({
                       </div>
                       <div>
                         <h3 className="text-2xl font-bold text-white">Assembling Your Book</h3>
-                        <p className="text-gray-400 mt-2 max-w-md mx-auto">
+                        <p className="text-[var(--color-text-secondary)] mt-2 max-w-md mx-auto">
                           Finalizing chapters and preparing for download...
                         </p>
                       </div>
@@ -1846,7 +1828,6 @@ export function BookView({
                           const isActive =
                             generationStatus?.currentModule?.id === module.id;
                           return (
-                            // IMPROVEMENT: Each roadmap item has more padding and better alignment for readability.
                             <div
                               key={module.id}
                               className={`flex items-start gap-4 p-4 rounded-lg border transition-all ${
@@ -1884,7 +1865,7 @@ export function BookView({
                                 <h4 className="font-semibold text-base text-white">
                                   {module.title}
                                 </h4>
-                                <p className="text-sm text-zinc-400 mt-1">{module.estimatedTime}</p>
+                                <p className="text-sm text-[var(--color-text-secondary)] mt-1">{module.estimatedTime}</p>
                               </div>
                             </div>
                           );
