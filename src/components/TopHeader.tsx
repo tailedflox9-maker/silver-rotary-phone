@@ -1,7 +1,7 @@
 // src/components/TopHeader.tsx
 import React, { useState, useMemo } from 'react';
-import { Settings, Search, Brain, Check, AlertCircle, ChevronDown, Menu, BookOpen, Trash2, Plus, User } from 'lucide-react';
-import { APISettings, ModelProvider, BookProject, BookCategory } from '../types';
+import { Settings, Brain, Check, AlertCircle, ChevronDown, BookOpen, Trash2, Plus, Search } from 'lucide-react';
+import { APISettings, ModelProvider, BookProject } from '../types';
 
 // --- Helper Icons & Configs ---
 
@@ -89,9 +89,12 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
       <div className="flex-1" />
 
-      <div className="hidden md:flex items-center relative w-full max-w-md">
-        <Search className="absolute left-3.5 w-4 h-4 text-gray-500" />
-        <input type="text" placeholder="Search anything..." className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 transition-colors" />
+      <div className="hidden md:flex items-center justify-center w-full max-w-2xl">
+        <div className="px-4 py-2 bg-[var(--color-bg)]/50 border border-[var(--color-border)]/50 rounded-lg">
+          <p className="text-sm text-gray-400 text-center">
+            ✨ <span className="text-gray-300">Start writing your next chapter</span> - AI-powered book creation
+          </p>
+        </div>
       </div>
 
       <div className="flex-1" />
