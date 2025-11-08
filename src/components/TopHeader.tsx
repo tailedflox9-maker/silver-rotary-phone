@@ -5,14 +5,19 @@ import { APISettings, ModelProvider, BookProject } from '../types';
 
 // --- Helper Icons & Configs ---
 
-const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5" />;
-const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5" />;
-const ZhipuIcon = () => <img src="/zhipu.svg" alt="ZhipuAI" className="w-5 h-5" />;
-const GroqIcon = () => <img src="/groq.svg" alt="Groq" className="w-5 h-5" />;
+// UPDATED: Import SVGs as React components instead of using <img> tags.
+// This allows them to inherit color and be styled consistently with the theme.
+import GeminiIcon from '/gemini.svg?react';
+import MistralIcon from '/mistral.svg?react';
+import ZhipuIcon from '/zhipu.svg?react';
+import GroqIcon from '/groq.svg?react';
 
 const modelConfig = {
   google: {
-    name: "Google AI", icon: GoogleIcon, models: [
+    name: "Google AI",
+    // UPDATED: Use the imported component directly.
+    icon: GeminiIcon,
+    models: [
       { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', description: 'Fast, lightweight model' },
       { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', description: 'Enhanced lightweight model' },
       { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Balanced speed and capability' },
@@ -22,16 +27,24 @@ const modelConfig = {
     ]
   },
   mistral: {
-    name: "Mistral AI", icon: MistralIcon, models: [
+    name: "Mistral AI",
+    icon: MistralIcon,
+    models: [
       { id: 'mistral-small-latest', name: 'Mistral Small', description: 'Fast and cost-effective' },
       { id: 'mistral-medium-latest', name: 'Mistral Medium', description: 'Balanced performance' },
       { id: 'mistral-large-latest', name: 'Mistral Large', description: 'Most powerful model' },
       { id: 'pixtral-large-latest', name: 'Pixtral Large', description: 'Multimodal capabilities' },
     ]
   },
-  zhipu: { name: "ZhipuAI", icon: ZhipuIcon, models: [{ id: 'glm-4.5-flash', name: 'GLM 4.5 Flash', description: 'Chinese AI model' }] },
+  zhipu: {
+    name: "ZhipuAI",
+    icon: ZhipuIcon,
+    models: [{ id: 'glm-4.5-flash', name: 'GLM 4.5 Flash', description: 'Chinese AI model' }]
+  },
   groq: {
-    name: "Groq", icon: GroqIcon, models: [
+    name: "Groq",
+    icon: GroqIcon,
+    models: [
       { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Powerful & versatile' },
       { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', description: 'Large open-source model' },
       { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', description: 'Medium open-source model' },
@@ -60,7 +73,6 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update time every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -81,8 +93,9 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
   const { provider: currentProvider, model: currentModel } = useMemo(() => {
     const providerKey = settings.selectedProvider as ModelProvider;
-    const provider = modelConfig[providerKey];
-    const model = provider?.models.find(m => m.id === settings.selectedModel);
+    // UPDATED: Cast the config to `any` to satisfy TypeScript, as we know the structure is correct.
+    const provider = (modelConfig as any)[providerKey];
+    const model = provider?.models.find((m: any) => m.id === settings.selectedModel);
     return { provider, model };
   }, [settings.selectedProvider, settings.selectedModel]);
 
@@ -100,6 +113,9 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
     return `${dayName} ${monthName} ${day} ${formattedHours}:${formattedMinutes} ${ampm}`;
   };
 
+  // UPDATED: Store the icon component in a variable for cleaner rendering.
+  const CurrentIcon = currentProvider?.icon;
+
   return (
     <>
       <header className="relative flex-shrink-0 w-full h-16 bg-[var(--color-sidebar)]/80 backdrop-blur-xl border-b border-[var(--color-border)] flex items-center px-6 md:px-8 z-30">
@@ -114,57 +130,61 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
-          {/* --- Theme Toggle --- */}
           <button onClick={onToggleTheme} className="flex items-center justify-center w-9 h-9 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button" title="Toggle Theme">
             {theme === 'dark' ? <Sun size={18} className="text-gray-300" /> : <Moon size={18} className="text-gray-500" />}
           </button>
 
-          {/* --- Time Display --- */}
           <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg top-header-button">
             <Clock size={16} className="text-[var(--color-text-secondary)]" />
             <span className="text-sm text-[var(--color-text-secondary)]">{formatTime(currentTime)}</span>
           </div>
 
-          {/* --- Model Selector --- */}
           <div className="relative">
             <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button">
-              <span className="text-[var(--color-text-primary)]">
-                {currentProvider ? <currentProvider.icon /> : <Brain size={18} />}
+              {/* UPDATED: Render the icon as a component. It will now inherit the text color from this parent span. */}
+              <span className="text-[var(--color-text-primary)] flex items-center justify-center w-5 h-5">
+                {CurrentIcon ? <CurrentIcon /> : <Brain size={18} />}
               </span>
               <span className="hidden md:inline text-sm font-medium text-[var(--color-text-secondary)]">{currentModel?.name || "Select Model"}</span>
               <ChevronDown size={14} className={`text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {modelDropdownOpen && (
               <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
-                {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => (
-                  <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
-                    <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-                      <span className="text-[var(--color-text-primary)]"><config.icon /></span> {config.name}
-                      {!hasApiKeyForProvider(provider) && <div className="ml-auto flex items-center gap-1.5 text-red-400 normal-case"><AlertCircle size={12} /> No Key</div>}
-                    </div>
-                    <div className="space-y-1 mt-2">
-                      {config.models.map((model: any) => {
-                        const isSelected = settings.selectedModel === model.id && settings.selectedProvider === provider;
-                        return (
-                          <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-white/10 border border-white/20 selected' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <div className={`text-sm font-medium ${isSelected ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{model.name}</div>
-                                <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{model.description}</div>
+                {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => {
+                  // UPDATED: Destructure the icon component for rendering.
+                  const IconComponent = config.icon;
+                  return (
+                    <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
+                      <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                        <span className="text-[var(--color-text-primary)] w-5 h-5 flex items-center justify-center">
+                          <IconComponent />
+                        </span>
+                        {config.name}
+                        {!hasApiKeyForProvider(provider) && <div className="ml-auto flex items-center gap-1.5 text-red-400 normal-case"><AlertCircle size={12} /> No Key</div>}
+                      </div>
+                      <div className="space-y-1 mt-2">
+                        {config.models.map((model: any) => {
+                          const isSelected = settings.selectedModel === model.id && settings.selectedProvider === provider;
+                          return (
+                            <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-white/10 border border-white/20 selected' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className={`text-sm font-medium ${isSelected ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{model.name}</div>
+                                  <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{model.description}</div>
+                                </div>
+                                {isSelected && <Check size={16} className="text-[var(--color-text-secondary)]" />}
                               </div>
-                              {isSelected && <Check size={16} className="text-[var(--color-text-secondary)]" />}
-                            </div>
-                          </button>
-                        );
-                      })}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* --- Library Dropdown --- */}
           <div className="relative">
             <button onClick={() => setLibraryOpen(!libraryOpen)} className="p-2.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button" title="Library & Settings">
               <BookOpen size={18} className="text-[var(--color-text-secondary)]" />
