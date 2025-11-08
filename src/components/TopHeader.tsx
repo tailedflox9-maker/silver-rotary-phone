@@ -1,4 +1,4 @@
-// src/components/TopHeader.tsx
+// src/components/TopHeader.tsx - COMPLETE FILE WITH FIXED DROPDOWNS
 import React, { useState, useMemo, useEffect } from 'react';
 import { Settings, Brain, Check, AlertCircle, ChevronDown, BookOpen, Trash2, Plus, Search, Clock, Sun, Moon } from 'lucide-react';
 import { APISettings, ModelProvider, BookProject } from '../types';
@@ -185,7 +185,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
               <ChevronDown size={14} className={`text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {modelDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
+              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)] backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
                 {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => (
                   <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
                     <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
@@ -196,13 +196,13 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
                       {config.models.map((model: any) => {
                         const isSelected = settings.selectedModel === model.id && settings.selectedProvider === provider;
                         return (
-                          <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-white/10 border border-white/20 selected' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
+                          <button key={model.id} onClick={() => { if (hasApiKeyForProvider(provider)) { onModelChange(model.id, provider); setModelDropdownOpen(false); } else { onOpenSettings(); } }} disabled={!hasApiKeyForProvider(provider)} className={`w-full text-left rounded-lg transition-all p-3 ${isSelected ? 'bg-blue-500/20 border border-blue-500/40 selected' : hasApiKeyForProvider(provider) ? 'hover:bg-white/5 border border-transparent' : 'text-gray-600 cursor-not-allowed border border-transparent'}`} >
                             <div className="flex justify-between items-center">
                               <div>
-                                <div className={`text-sm font-medium ${isSelected ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{model.name}</div>
+                                <div className={`text-sm font-medium ${isSelected ? 'text-blue-300' : 'text-[var(--color-text-primary)]'}`}>{model.name}</div>
                                 <div className="text-xs text-[var(--color-text-secondary)] mt-0.5">{model.description}</div>
                               </div>
-                              {isSelected && <Check size={16} className="text-[var(--color-text-secondary)]" />}
+                              {isSelected && <Check size={16} className="text-blue-400" />}
                             </div>
                           </button>
                         );
@@ -220,7 +220,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
               <BookOpen size={18} className="text-[var(--color-text-secondary)]" />
             </button>
             {libraryOpen && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 animate-fade-in-up model-dropdown">
+              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)] backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 animate-fade-in-up model-dropdown">
                 <div className="p-4 border-b border-[var(--color-border)]">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-secondary)]" />
@@ -229,8 +229,8 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
                 </div>
                 <div className="max-h-80 overflow-y-auto p-3">
                   {sortedBooks.map(book => (
-                    <div key={book.id} onClick={() => { onSelectBook(book.id); setLibraryOpen(false); }} className={`group flex items-center justify-between w-full rounded-lg cursor-pointer p-3 mb-2 transition-all ${currentBookId === book.id ? 'bg-white/10 border border-white/20 selected' : 'border border-transparent hover:bg-white/5'}`}>
-                      <span className="text-sm font-medium truncate text-[var(--color-text-secondary)]">{book.title}</span>
+                    <div key={book.id} onClick={() => { onSelectBook(book.id); setLibraryOpen(false); }} className={`group flex items-center justify-between w-full rounded-lg cursor-pointer p-3 mb-2 transition-all ${currentBookId === book.id ? 'bg-blue-500/20 border border-blue-500/40 selected' : 'border border-transparent hover:bg-white/5'}`}>
+                      <span className="text-sm font-medium truncate text-[var(--color-text-primary)]">{book.title}</span>
                       <button onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }} className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all">
                         <Trash2 size={14} />
                       </button>
@@ -239,10 +239,10 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
                   {books.length === 0 && <div className="text-center text-sm text-[var(--color-text-secondary)] py-8">No books yet.</div>}
                 </div>
                 <div className="border-t border-[var(--color-border)] p-3 space-y-1">
-                  <button onClick={() => { onNewBook(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-white/5 rounded-lg transition-colors">
+                  <button onClick={() => { onNewBook(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--color-text-primary)] hover:bg-white/5 rounded-lg transition-colors">
                     <Plus size={16} /> New Book
                   </button>
-                  <button onClick={() => { onOpenSettings(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-white/5 rounded-lg transition-colors">
+                  <button onClick={() => { onOpenSettings(); setLibraryOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--color-text-primary)] hover:bg-white/5 rounded-lg transition-colors">
                     <Settings size={16} /> Settings
                   </button>
                 </div>
