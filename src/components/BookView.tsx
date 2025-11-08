@@ -717,20 +717,12 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 200 && !isEditing) {
-        setShowFloatingButtons(true);
-      } else {
-        setShowFloatingButtons(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    // Always show floating buttons when not in editing mode.
+    if (!isEditing) {
+      setShowFloatingButtons(true);
+    } else {
+      setShowFloatingButtons(false);
+    }
   }, [isEditing]);
 
   useEffect(() => {
