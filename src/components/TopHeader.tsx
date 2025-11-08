@@ -5,14 +5,56 @@ import { APISettings, ModelProvider, BookProject } from '../types';
 
 // --- Helper Icons & Configs ---
 
-const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5 icon-filter" />;
-const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5 icon-filter" />;
-const ZhipuIcon = () => <img src="/zhipu.svg" alt="ZhipuAI" className="w-5 h-5 icon-filter" />;
-const GroqIcon = () => <img src="/groq.svg" alt="Groq" className="w-5 h-5 icon-filter" />;
+const GoogleIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
+  <img 
+    src="/gemini.svg" 
+    alt="Google AI" 
+    className="w-5 h-5" 
+    style={{ 
+      filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
+      opacity: 0.8 
+    }} 
+  />
+);
+const MistralIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
+  <img 
+    src="/mistral.svg" 
+    alt="Mistral AI" 
+    className="w-5 h-5" 
+    style={{ 
+      filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
+      opacity: 0.8 
+    }} 
+  />
+);
+const ZhipuIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
+  <img 
+    src="/zhipu.svg" 
+    alt="ZhipuAI" 
+    className="w-5 h-5" 
+    style={{ 
+      filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
+      opacity: 0.8 
+    }} 
+  />
+);
+const GroqIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
+  <img 
+    src="/groq.svg" 
+    alt="Groq" 
+    className="w-5 h-5" 
+    style={{ 
+      filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
+      opacity: 0.8 
+    }} 
+  />
+);
 
 const modelConfig = {
   google: {
-    name: "Google AI", icon: GoogleIcon, models: [
+    name: "Google AI", 
+    icon: (props: { theme?: 'light' | 'dark' }) => <GoogleIcon {...props} />, 
+    models: [
       { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', description: 'Fast, lightweight model' },
       { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', description: 'Enhanced lightweight model' },
       { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Balanced speed and capability' },
@@ -22,16 +64,24 @@ const modelConfig = {
     ]
   },
   mistral: {
-    name: "Mistral AI", icon: MistralIcon, models: [
+    name: "Mistral AI", 
+    icon: (props: { theme?: 'light' | 'dark' }) => <MistralIcon {...props} />, 
+    models: [
       { id: 'mistral-small-latest', name: 'Mistral Small', description: 'Fast and cost-effective' },
       { id: 'mistral-medium-latest', name: 'Mistral Medium', description: 'Balanced performance' },
       { id: 'mistral-large-latest', name: 'Mistral Large', description: 'Most powerful model' },
       { id: 'pixtral-large-latest', name: 'Pixtral Large', description: 'Multimodal capabilities' },
     ]
   },
-  zhipu: { name: "ZhipuAI", icon: ZhipuIcon, models: [{ id: 'glm-4.5-flash', name: 'GLM 4.5 Flash', description: 'Chinese AI model' }] },
+  zhipu: { 
+    name: "ZhipuAI", 
+    icon: (props: { theme?: 'light' | 'dark' }) => <ZhipuIcon {...props} />, 
+    models: [{ id: 'glm-4.5-flash', name: 'GLM 4.5 Flash', description: 'Chinese AI model' }] 
+  },
   groq: {
-    name: "Groq", icon: GroqIcon, models: [
+    name: "Groq", 
+    icon: (props: { theme?: 'light' | 'dark' }) => <GroqIcon {...props} />, 
+    models: [
       { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Powerful & versatile' },
       { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', description: 'Large open-source model' },
       { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', description: 'Medium open-source model' },
@@ -129,7 +179,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
           <div className="relative">
             <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button">
               <span className="text-[var(--color-text-primary)]">
-                {currentProvider ? <currentProvider.icon /> : <Brain size={18} />}
+                {currentProvider ? <currentProvider.icon theme={theme} /> : <Brain size={18} />}
               </span>
               <span className="hidden md:inline text-sm font-medium text-[var(--color-text-secondary)]">{currentModel?.name || "Select Model"}</span>
               <ChevronDown size={14} className={`text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
@@ -139,7 +189,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
                 {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => (
                   <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
                     <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
-                      <span className="text-[var(--color-text-primary)]"><config.icon /></span> {config.name}
+                      <span className="text-[var(--color-text-primary)]"><config.icon theme={theme} /></span> {config.name}
                       {!hasApiKeyForProvider(provider) && <div className="ml-auto flex items-center gap-1.5 text-red-400 normal-case"><AlertCircle size={12} /> No Key</div>}
                     </div>
                     <div className="space-y-1 mt-2">
