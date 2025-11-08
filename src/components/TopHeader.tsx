@@ -1,12 +1,12 @@
-// src/components/TopHeader.tsx
+// src/components/TopHeader.tsx - CORRECTED VERSION
 import React, { useState, useMemo, useEffect } from 'react';
 import { Settings, Brain, Check, AlertCircle, ChevronDown, BookOpen, Trash2, Plus, Search, Clock, Sun, Moon } from 'lucide-react';
 import { APISettings, ModelProvider, BookProject } from '../types';
 
 // --- Helper Icons & Configs ---
 
-// UPDATED: Import SVGs as React components instead of using <img> tags.
-// This allows them to inherit color and be styled consistently with the theme.
+// CORRECTED: Use 'import' to transform the SVGs into React components.
+// This was the source of the error in the previous version.
 import GeminiIcon from '/gemini.svg?react';
 import MistralIcon from '/mistral.svg?react';
 import ZhipuIcon from '/zhipu.svg?react';
@@ -15,7 +15,6 @@ import GroqIcon from '/groq.svg?react';
 const modelConfig = {
   google: {
     name: "Google AI",
-    // UPDATED: Use the imported component directly.
     icon: GeminiIcon,
     models: [
       { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', description: 'Fast, lightweight model' },
@@ -93,7 +92,6 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
   const { provider: currentProvider, model: currentModel } = useMemo(() => {
     const providerKey = settings.selectedProvider as ModelProvider;
-    // UPDATED: Cast the config to `any` to satisfy TypeScript, as we know the structure is correct.
     const provider = (modelConfig as any)[providerKey];
     const model = provider?.models.find((m: any) => m.id === settings.selectedModel);
     return { provider, model };
@@ -112,8 +110,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
     const formattedMinutes = minutes.toString().padStart(2, '0');
     return `${dayName} ${monthName} ${day} ${formattedHours}:${formattedMinutes} ${ampm}`;
   };
-
-  // UPDATED: Store the icon component in a variable for cleaner rendering.
+  
   const CurrentIcon = currentProvider?.icon;
 
   return (
@@ -141,7 +138,6 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
 
           <div className="relative">
             <button onClick={() => setModelDropdownOpen(!modelDropdownOpen)} className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all top-header-button">
-              {/* UPDATED: Render the icon as a component. It will now inherit the text color from this parent span. */}
               <span className="text-[var(--color-text-primary)] flex items-center justify-center w-5 h-5">
                 {CurrentIcon ? <CurrentIcon /> : <Brain size={18} />}
               </span>
@@ -151,7 +147,6 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
             {modelDropdownOpen && (
               <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)]/95 backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
                 {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => {
-                  // UPDATED: Destructure the icon component for rendering.
                   const IconComponent = config.icon;
                   return (
                     <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
