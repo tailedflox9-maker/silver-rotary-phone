@@ -1,5 +1,5 @@
 // ============================================================================
-// FILE 1: src/services/bookService.ts (COMPLETE WITH FIX)
+// FILE: src/services/bookService.ts (COMPLETE FIXED VERSION)
 // ============================================================================
 
 import { BookProject, BookRoadmap, BookModule, RoadmapModule, BookSession } from '../types/book';
@@ -45,7 +45,7 @@ class BookGenerationService {
     googleApiKey: '',
     zhipuApiKey: '',
     mistralApiKey: '',
-    groqApiKey: '', // ✅ NEW
+    groqApiKey: '',
     selectedProvider: 'google',
     selectedModel: 'gemini-2.5-flash'
   };
@@ -202,13 +202,12 @@ class BookGenerationService {
     return { isValid: errors.length === 0, errors };
   }
 
-  // ✅ ADDED/UPDATED: getApiKeyForProvider method
   private getApiKeyForProvider(provider: string): string | null {
     switch (provider) {
       case 'google': return this.settings.googleApiKey || null;
       case 'mistral': return this.settings.mistralApiKey || null;
       case 'zhipu': return this.settings.zhipuApiKey || null;
-      case 'groq': return this.settings.groqApiKey || null; // ✅ NEW
+      case 'groq': return this.settings.groqApiKey || null;
       default: return null;
     }
   }
@@ -294,7 +293,6 @@ class BookGenerationService {
       });
     }
 
-    // ✅ NEW: Add Groq alternative
     if (this.settings.groqApiKey && this.settings.selectedProvider !== 'groq') {
       alternatives.push({
         provider: 'groq',
@@ -343,7 +341,6 @@ class BookGenerationService {
     this.userRetryDecisions.set(bookId, decision);
   }
 
-  // ✅ UPDATED: generateWithAI switch statement
   private async generateWithAI(prompt: string, bookId?: string, onChunk?: (chunk: string) => void): Promise<string> {
     const validation = this.validateSettings();
     if (!validation.isValid) {
@@ -375,7 +372,7 @@ class BookGenerationService {
         case 'zhipu': 
           result = await this.generateWithZhipu(prompt, abortController.signal, onChunk); 
           break;
-        case 'groq': // ✅ NEW
+        case 'groq':
           result = await this.generateWithGroq(prompt, abortController.signal, onChunk); 
           break;
         default: 
@@ -624,7 +621,6 @@ class BookGenerationService {
     throw new Error('ZhipuAI API failed after retries');
   }
 
-  // ✅ ADDED: New Groq generation method
   private async generateWithGroq(prompt: string, signal?: AbortSignal, onChunk?: (chunk: string) => void): Promise<string> {
     const apiKey = this.getApiKey();
     const model = this.settings.selectedModel;
@@ -689,9 +685,7 @@ class BookGenerationService {
                   fullContent += textPart;
                   if (onChunk) onChunk(textPart);
                 }
-              } catch (parseError) {
-                // Ignore parse errors for individual chunks
-              }
+              } catch (parseError) {}
             }
           }
         }
@@ -710,6 +704,15 @@ class BookGenerationService {
   }
 
   async generateRoadmap(session: BookSession, bookId: string): Promise<BookRoadmap> {
+    // ✅ FIX: Clear any existing pause flags when starting a new book
+    try {
+      localStorage.removeItem(`pause_flag_${bookId}`);
+      localStorage.removeItem(`checkpoint_${bookId}`);
+      console.log('✓ Cleared pause flags for new book');
+    } catch (error) {
+      console.warn('Failed to clear pause flags:', error);
+    }
+
     this.updateProgress(bookId, { status: 'generating_roadmap', progress: 5 });
 
     const maxAttempts = 2;
@@ -1002,6 +1005,7 @@ class BookGenerationService {
       throw new Error('No roadmap available');
     }
     
+    // ✅ FIX: Clear pause flag at the START of generation
     this.resumeGeneration(book.id);
     
     const checkpoint = this.loadCheckpoint(book.id);
@@ -1276,11 +1280,27 @@ class BookGenerationService {
         modules: completedModules
       });
     } else {
+      // ✅ FIX: Clear checkpoint and pause flags when all modules are done
       this.clearCheckpoint(book.id);
+      try {
+        localStorage.removeItem(`pause_flag_${book.id}`);
+        console.log('✓ All modules completed - cleared pause flags');
+      } catch (error) {
+        console.warn('Failed to clear pause flag:', error);
+      }
+      
+      // ✅ FIX: Update status to roadmap_completed so the UI shows "Assemble Book" button
       this.updateProgress(book.id, {
         status: 'roadmap_completed',
         modules: completedModules,
         progress: 90
+      });
+      
+      // ✅ FIX: Update generation status to completed
+      this.updateGenerationStatus(book.id, {
+        status: 'completed',
+        totalProgress: 100,
+        logMessage: '✅ All modules generated successfully!'
       });
     }
   }
@@ -1372,7 +1392,6 @@ class BookGenerationService {
     }
   }
 
-  // ✅ FIXED: Clear pause flag when book is completed
   async assembleFinalBook(book: BookProject, session: BookSession): Promise<void> {
     this.updateProgress(book.id, { status: 'assembling', progress: 90 });
 
@@ -1424,13 +1443,12 @@ class BookGenerationService {
     }
   }
 
-  // ✅ UPDATED: getProviderDisplayName method
   private getProviderDisplayName(): string {
     const names: Record<string, string> = { 
       google: 'Google Gemini', 
       mistral: 'Mistral AI', 
       zhipu: 'ZhipuAI',
-      groq: 'Groq' // ✅ NEW
+      groq: 'Groq'
     };
     return names[this.settings.selectedProvider] || 'AI';
   }
