@@ -130,6 +130,7 @@ interface ReadingModeProps {
   onSave: () => void;
   onCancel: () => void;
   onContentChange: (content: string) => void;
+  onGoBack: () => void;
 }
 interface ReadingSettings {
   fontSize: number;
@@ -615,6 +616,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   onSave,
   onCancel,
   onContentChange,
+  onGoBack,
   bookId,
   currentModuleIndex
 }) => {
@@ -645,7 +647,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     };
 
     const scrollContainer = contentRef.current;
-    scrollContainer.addEventListener('scroll', handleScroll);
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       scrollContainer.removeEventListener('scroll', handleScroll);
@@ -660,7 +662,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
         contentRef.current.scrollTop = bookmark.scrollPosition;
       }
     }
-  }, [bookId, currentModuleIndex, isEditing]);
+  }, [bookId, currentModuleIndex, isEditing, content]); // re-run if content changes
 
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
@@ -716,6 +718,10 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     >
       {/* Control Bar */}
       <div className="flex justify-between items-center gap-3 p-3 border-b" style={{ borderColor: currentTheme.border }}>
+        <button onClick={onGoBack} className="btn btn-secondary btn-sm flex items-center gap-2">
+          <ArrowLeft size={14} /> Library
+        </button>
+
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
           {(['light', 'sepia', 'dark'] as const).map((theme) => (
             <button
@@ -755,7 +761,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
       </div>
       
       {/* Content Area */}
-      <div ref={contentRef} className="p-4 sm:p-8">
+      <div ref={contentRef} className="p-4 sm:p-8 overflow-y-auto" style={{ height: 'calc(100vh - 220px)' }}>
         <article
           className={`prose prose-lg max-w-none transition-all duration-300 ${
             settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''
@@ -895,7 +901,7 @@ const BookListGrid = ({
 
   const getStatusColor = (status: BookProject['status']) => {
     const colors = {
-      completed: 'from-green-500/20 to-emerald-500/20 border-green-500/30',
+      completed: 'from-gray-800/20 to-gray-900/20 border-green-500/40',
       generating_content: 'from-blue-500/20 to-purple-500/20 border-blue-500/30',
       assembling: 'from-orange-500/20 to-yellow-500/20 border-orange-500/30',
       roadmap_completed: 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30',
@@ -973,7 +979,7 @@ const BookListGrid = ({
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-1.5 truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all">
+                        <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-1.5 truncate group-hover:text-[var(--color-accent-primary)] transition-colors">
                           {book.title}
                         </h3>
                       </div>
@@ -1132,6 +1138,7 @@ export function BookView({
   const [editedContent, setEditedContent] = useState('');
   const currentBook = currentBookId ? books.find(b => b.id === currentBookId) : null;
   const [pdfProgress, setPdfProgress] = useState(0);
+  
   useEffect(() => {
     if (currentBook) {
       const isGen = ['generating_roadmap', 'generating_content', 'assembling'].includes(
@@ -1139,13 +1146,31 @@ export function BookView({
       );
       setLocalIsGenerating(isGen);
       setIsEditing(false);
+
+      // Automatically switch to 'read' tab if book is completed and has a bookmark
+      if (currentBook.status === 'completed') {
+        const bookmark = readingProgressUtils.getBookmark(currentBook.id);
+        setDetailTab(bookmark ? 'read' : 'overview');
+      } else {
+        setDetailTab('overview');
+      }
+    } else {
+      setDetailTab('overview');
     }
   }, [currentBook]);
+
   useEffect(() => {
     return () => {
       if (currentBookId) bookService.cancelActiveRequests(currentBookId);
     };
   }, [currentBookId]);
+
+  const handleGoBackToLibrary = () => {
+    setView('list');
+    onSelectBook(null);
+    setShowListInMain(true);
+  };
+
   const handleCreateRoadmap = async () => {
     if (!formData.goal.trim() || !hasApiKey) return;
     setLocalIsGenerating(true);
@@ -1539,8 +1564,9 @@ export function BookView({
                 onSave={handleSaveChanges}
                 onCancel={handleCancelEditing}
                 onContentChange={setEditedContent}
+                onGoBack={handleGoBackToLibrary}
                 bookId={currentBook.id}
-                currentModuleIndex={0} // You can track actual module if needed
+                currentModuleIndex={0} // Placeholder, can be enhanced to track module
               />
             ) : (
               <>
