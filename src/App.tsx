@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx - COMPLETE FIXED VERSION
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -6,7 +6,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { useGenerationStats } from './components/GenerationProgressPanel';
 import { APISettings, ModelProvider } from './types';
 import { usePWA } from './hooks/usePWA';
-import { WifiOff, Sun, Moon } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { storageUtils } from './utils/storage';
 import { bookService } from './services/bookService';
 import { BookView } from './components/BookView';
@@ -100,6 +100,42 @@ function App() {
     window.addEventListener('offline', handleOffline);
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
+
+  // ✅ FIX: Auto-detect completion and show "Assemble Book" button
+  useEffect(() => {
+    if (!currentBook) return;
+    
+    // Check if all modules are completed but book isn't assembled yet
+    const areAllModulesDone = 
+      currentBook.roadmap &&
+      currentBook.modules.length === currentBook.roadmap.modules.length &&
+      currentBook.modules.every(m => m.status === 'completed');
+    
+    // Update status to show assemble button
+    if (areAllModulesDone && 
+        currentBook.status === 'generating_content' && 
+        generationStatus.status !== 'generating' &&
+        generationStatus.status !== 'paused' &&
+        generationStatus.status !== 'waiting_retry') {
+      
+      console.log('✓ All modules completed - updating to roadmap_completed');
+      
+      setBooks(prevBooks => 
+        prevBooks.map(book =>
+          book.id === currentBook.id
+            ? { ...book, status: 'roadmap_completed', progress: 90, updatedAt: new Date() }
+            : book
+        )
+      );
+      
+      setGenerationStatus({
+        status: 'completed',
+        totalProgress: 100,
+        logMessage: '✅ All modules completed!',
+        totalWordsGenerated: currentBook.modules.reduce((s, m) => s + m.wordCount, 0)
+      });
+    }
+  }, [currentBook, generationStatus.status]);
   
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
@@ -170,7 +206,6 @@ function App() {
     setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
   };
   
-  // ✅ NEW: Function to handle manual status updates
   const handleUpdateBookStatus = (bookId: string, newStatus: BookProject['status']) => {
     if (!bookId || !newStatus) return;
     setBooks(prevBooks =>
@@ -187,10 +222,27 @@ function App() {
     if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
 
     const bookId = generateId();
+    
+    // ✅ FIX: Clear any existing pause/checkpoint for this new book
+    try {
+      localStorage.removeItem(`pause_flag_${bookId}`);
+      localStorage.removeItem(`checkpoint_${bookId}`);
+    } catch (e) {
+      console.warn('Failed to clear flags:', e);
+    }
+
     const newBook: BookProject = {
-      id: bookId, title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
-      goal: session.goal, language: 'en', status: 'planning', progress: 0, createdAt: new Date(), updatedAt: new Date(),
-      modules: [], category: 'general', reasoning: session.reasoning
+      id: bookId, 
+      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
+      goal: session.goal, 
+      language: 'en', 
+      status: 'planning', 
+      progress: 0, 
+      createdAt: new Date(), 
+      updatedAt: new Date(),
+      modules: [], 
+      category: 'general', 
+      reasoning: session.reasoning
     };
 
     setBooks(prev => [...prev, newBook]);
@@ -201,12 +253,24 @@ function App() {
       const roadmap = await bookService.generateRoadmap(session, bookId);
       setBooks(prev => prev.map(book => 
         book.id === bookId 
-          ? { ...book, roadmap, status: 'roadmap_completed', progress: 10, title: roadmap.modules[0]?.title.includes('Module') ? session.goal : roadmap.modules[0]?.title || session.goal }
+          ? { 
+              ...book, 
+              roadmap, 
+              status: 'roadmap_completed', 
+              progress: 10, 
+              title: roadmap.modules[0]?.title.includes('Module') 
+                ? session.goal 
+                : roadmap.modules[0]?.title || session.goal 
+            }
           : book
       ));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
-      setBooks(prev => prev.map(book => book.id === bookId ? { ...book, status: 'error', error: errorMessage } : book));
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { ...book, status: 'error', error: errorMessage } 
+          : book
+      ));
       alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
     }
   };
