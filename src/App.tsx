@@ -61,7 +61,6 @@ function App() {
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
   
-  // Apply and save theme changes
   useEffect(() => {
     localStorage.setItem('pustakam-theme', theme);
     document.documentElement.className = theme;
@@ -171,6 +170,18 @@ function App() {
     setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
   };
   
+  // ✅ NEW: Function to handle manual status updates
+  const handleUpdateBookStatus = (bookId: string, newStatus: BookProject['status']) => {
+    if (!bookId || !newStatus) return;
+    setBooks(prevBooks =>
+      prevBooks.map(book =>
+        book.id === bookId
+          ? { ...book, status: newStatus, updatedAt: new Date() }
+          : book
+      )
+    );
+  };
+
   const handleCreateBookRoadmap = async (session: BookSession) => {
     if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
     if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
@@ -347,6 +358,7 @@ function App() {
           onAssembleBook={handleAssembleBook}
           onSelectBook={handleSelectBook}
           onDeleteBook={handleDeleteBook}
+          onUpdateBookStatus={handleUpdateBookStatus}
           hasApiKey={hasApiKey}
           view={view}
           setView={setView}
