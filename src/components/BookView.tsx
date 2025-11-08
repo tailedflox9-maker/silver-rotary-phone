@@ -1,4 +1,4 @@
-// src/components/BookView.tsx - FIXED VERSION
+// src/components/BookView.tsx
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -616,21 +616,18 @@ const CodeBlock = React.memo(({ children, className, theme }: any) => {
       containerBg: '#0D1117',
       headerBg: 'rgba(22, 27, 34, 0.7)',
       headerText: '#8B949E',
-      border: 'border-gray-700',
       buttonHover: 'hover:bg-gray-700',
     },
     sepia: {
       containerBg: '#F0EAD6',
       headerBg: 'rgba(232, 225, 209, 0.7)',
       headerText: '#8B7355',
-      border: 'border-[#D4C4A8]',
       buttonHover: 'hover:bg-[#D4C4A8]',
     },
     light: {
       containerBg: '#f8f8f8',
       headerBg: 'rgba(239, 239, 239, 0.7)',
       headerText: '#555555',
-      border: 'border-gray-200',
       buttonHover: 'hover:bg-gray-200',
     }
   };
@@ -639,10 +636,9 @@ const CodeBlock = React.memo(({ children, className, theme }: any) => {
 
   return (
     <div 
-      className={`relative rounded-xl border my-6 group code-block-container overflow-hidden`}
+      className={`relative rounded-lg my-4 code-block-container overflow-hidden`}
       style={{
         backgroundColor: currentThemeStyles.containerBg,
-        borderColor: currentThemeStyles.border.replace('border-', '')
       }}
     >
       <div 
@@ -874,7 +870,25 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                code: (props) => <CodeBlock {...props} theme={settings.theme} />,
+                code: ({ node, inline, className, children, ...props }) => {
+                  if (inline) {
+                    return (
+                      <code
+                        className="font-mono rounded"
+                        style={{
+                          backgroundColor: currentTheme.border,
+                          padding: '0.2em 0.4em',
+                          fontSize: '0.9em',
+                          color: currentTheme.text,
+                        }}
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  }
+                  return <CodeBlock {...props} theme={settings.theme} className={className}>{children}</CodeBlock>;
+                }
               }}
               className="focus:outline-none"
             >
