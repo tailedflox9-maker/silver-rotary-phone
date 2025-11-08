@@ -907,8 +907,7 @@ const BookListGrid = ({
   };
 
   const getReadingProgress = (bookId: string) => {
-    const bookmark = readingProgressUtils.getBookmark(bookId);
-    return bookmark;
+    return readingProgressUtils.getBookmark(bookId);
   };
 
   return (
@@ -957,7 +956,7 @@ const BookListGrid = ({
             const isHovering = hoveredBookId === book.id;
             const readingProgress = getReadingProgress(book.id);
             const hasBookmark = readingProgress && book.status === 'completed';
-            
+
             return (
               <div
                 key={book.id}
@@ -968,184 +967,88 @@ const BookListGrid = ({
                   ${isHovering ? 'scale-[1.02] shadow-2xl' : 'scale-100 shadow-lg'}
                   bg-gradient-to-br ${getStatusColor(book.status)}`}
               >
-                {/* Bookmark Badge - Top Right */}
-                {hasBookmark && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/20 border border-blue-500/40 rounded-full backdrop-blur-sm">
-                      <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                      <span className="text-xs font-semibold text-blue-300">
-                        {readingProgress.percentComplete}%
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Animated background gradient */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
-                {/* Content */}
-                <div className="relative p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold text-[var(--color-text-primary)] mb-2 truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all">
-                        {book.title}
-                      </h3>
-                      <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2">{book.goal}</p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteBook(book.id);
-                      }}
-                      className="ml-4 p-2 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-black/30 rounded-full border border-white/10 w-fit mb-4">
-                    {getStatusIcon(book.status)}
-                    <span className="text-xs font-medium text-gray-300 capitalize">
-                      {getStatusText(book.status)}
-                    </span>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="bg-black/20 rounded-lg p-3 border border-white/5">
-                      <div className="flex items-center gap-2 mb-1">
-                        <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                        <span className="text-xs text-gray-400">Modules</span>
+                <div className="relative p-5 flex flex-col h-full">
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-1.5 truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all">
+                          {book.title}
+                        </h3>
                       </div>
-                      <div className="text-lg font-bold text-white">{book.modules.length}</div>
-                    </div>
-                    <div className="bg-black/20 rounded-lg p-3 border border-white/5">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Hash className="w-3.5 h-3.5 text-green-400" />
-                        <span className="text-xs text-gray-400">Words</span>
-                      </div>
-                      <div className="text-lg font-bold text-white">
-                        {book.totalWords ? `${(book.totalWords / 1000).toFixed(1)}K` : '0'}
-                      </div>
-                    </div>
-                    <div className="bg-black/20 rounded-lg p-3 border border-white/5">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
-                        <span className="text-xs text-gray-400">
-                          {book.status === 'completed' ? 'Read' : 'Progress'}
-                        </span>
-                      </div>
-                      <div className="text-lg font-bold text-white">
-                        {book.status === 'completed' && hasBookmark
-                          ? `${readingProgress.percentComplete}%`
-                          : `${Math.round(book.progress)}%`}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar - Reading Progress for Completed Books */}
-                  {book.status === 'completed' && hasBookmark ? (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                        <span>Reading Progress</span>
-                        <span>{readingProgress.percentComplete}%</span>
-                      </div>
-                      <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/10">
-                        <div
-                          className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full transition-all duration-500"
-                          style={{ width: `${readingProgress.percentComplete}%` }}
-                        />
-                      </div>
-                    </div>
-                  ) : book.status !== 'completed' && book.status !== 'error' ? (
-                    <div className="mb-4">
-                      <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/10">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500 relative overflow-hidden"
-                          style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {/* Continue Reading Button for Bookmarked Books */}
-                  {hasBookmark && (
-                    <div className="mb-4">
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <BookOpen className="w-4 h-4 text-blue-400" />
-                              <span className="text-xs font-semibold text-blue-300">Continue Reading</span>
-                            </div>
-                            <p className="text-xs text-gray-400 truncate">
-                              {book.modules[readingProgress.moduleIndex]?.title || 'Module ' + (readingProgress.moduleIndex + 1)}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Last read {readingProgressUtils.formatLastRead(readingProgress.lastReadAt)}
-                            </p>
-                          </div>
-                          <div className="ml-3">
-                            <Play className="w-5 h-5 text-blue-400" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Preview Panel (shows on hover) */}
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ${
-                      isHovering ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
-                    }`}
-                  >
-                    <div className="bg-black/40 rounded-lg p-4 border border-white/10 mt-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Eye className="w-4 h-4 text-blue-400" />
-                        <span className="text-xs font-semibold text-gray-300">Preview</span>
-                      </div>
-                      <p className="text-xs text-gray-400 line-clamp-3 leading-relaxed">
-                        {book.finalBook 
-                          ? book.finalBook.substring(0, 150).replace(/[#*_`]/g, '') + '...'
-                          : book.modules.length > 0
-                          ? `Latest: ${book.modules[book.modules.length - 1]?.title}`
-                          : 'No content yet. Start generating!'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 mt-4 pt-4 border-t border-white/5">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
-                    </div>
-                    {book.status === 'completed' && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          bookService.downloadAsMarkdown(book);
-                        }}
-                        className="flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
-                        title="Download"
+                        onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }}
+                        className="ml-2 p-2 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
+                        title="Delete"
                       >
-                        <Download className="w-3 h-3" />
-                        <span>Download</span>
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    )}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Hover Glow Effect */}
-                <div className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
-                  isHovering ? 'opacity-100' : 'opacity-0'
-                }`}>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-xl" />
+                    <div className="flex items-center gap-2 px-2.5 py-1 bg-black/30 rounded-full border border-white/10 w-fit mb-4">
+                      {getStatusIcon(book.status)}
+                      <span className="text-xs font-medium text-gray-300 capitalize">{getStatusText(book.status)}</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2.5 mb-4">
+                      <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
+                        <div className="text-xs text-gray-400 mb-1">Modules</div>
+                        <div className="text-base font-bold text-white">{book.modules.length}</div>
+                      </div>
+                      <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
+                        <div className="text-xs text-gray-400 mb-1">Words</div>
+                        <div className="text-base font-bold text-white">
+                          {book.totalWords ? `${(book.totalWords / 1000).toFixed(1)}K` : '0'}
+                        </div>
+                      </div>
+                      <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
+                        <div className="text-xs text-gray-400 mb-1">
+                          {hasBookmark ? 'Read' : 'Progress'}
+                        </div>
+                        <div className="text-base font-bold text-white">
+                          {hasBookmark ? `${readingProgress.percentComplete}%` : `${Math.round(book.progress)}%`}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto">
+                    {hasBookmark ? (
+                      <div>
+                        <div className="w-full bg-black/30 rounded-full h-1.5 overflow-hidden border border-white/10">
+                          <div
+                            className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full"
+                            style={{ width: `${readingProgress.percentComplete}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (book.status !== 'completed' && book.status !== 'error') && (
+                      <div>
+                        <div className="w-full bg-black/30 rounded-full h-1.5 overflow-hidden border border-white/10">
+                          <div
+                            className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full relative"
+                            style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-xs text-gray-500 mt-4 pt-3 border-t border-white/5">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                      {book.status === 'completed' && (
+                        <div className="flex items-center gap-1 text-blue-400">
+                          <Download className="w-3 h-3" />
+                          <span>Download</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -1155,6 +1058,7 @@ const BookListGrid = ({
     </div>
   );
 };
+
 
 const DetailTabButton = ({
   label,
