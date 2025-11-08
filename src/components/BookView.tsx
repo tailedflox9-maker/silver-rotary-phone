@@ -873,20 +873,13 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
                 code: ({ node, inline, className, children, ...props }) => {
                   if (inline) {
                     return (
-                      <code
-                        className="font-mono rounded"
-                        style={{
-                          backgroundColor: currentTheme.border,
-                          padding: '0.2em 0.4em',
-                          fontSize: '0.9em',
-                          color: currentTheme.text,
-                        }}
-                        {...props}
-                      >
+                      // Inline code styling is now handled by Tailwind config
+                      <code {...props}>
                         {children}
                       </code>
                     );
                   }
+                  // Full code blocks are handled by our custom component
                   return <CodeBlock {...props} theme={settings.theme} className={className}>{children}</CodeBlock>;
                 }
               }}
