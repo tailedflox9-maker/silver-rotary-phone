@@ -1,4 +1,4 @@
-// src/components/BookView.tsx
+// src/components/BookView.tsx - FIXED VERSION
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -53,7 +53,9 @@ import {
   Pause,
   AlertTriangle,
   ChevronDown,
-  Sun
+  Sun,
+  Bookmark,
+  BookmarkCheck
 } from 'lucide-react';
 import { BookProject, BookSession } from '../types/book';
 import { bookService } from '../services/bookService';
@@ -193,7 +195,7 @@ const formatTime = (seconds: number): string => {
 };
 
 // ============================================================================
-// SUB-COMPONENTS (UNCHANGED)
+// SUB-COMPONENTS
 // ============================================================================
 const GradientProgressBar = ({ progress = 0, active = true }) => (
   <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
@@ -302,11 +304,13 @@ const RetryDecisionPanel = ({
 
     return () => clearInterval(timer);
   }, [countdown]);
+  
   const isRateLimit = retryInfo.error.toLowerCase().includes('rate limit') ||
                       retryInfo.error.toLowerCase().includes('429');
 
   const isNetworkError = retryInfo.error.toLowerCase().includes('network') ||
                          retryInfo.error.toLowerCase().includes('connection');
+  
   return (
     <div className="bg-red-900/20 backdrop-blur-xl border border-red-500/50 rounded-xl overflow-hidden animate-fade-in-up">
       <div className="p-6">
@@ -435,12 +439,15 @@ const EmbeddedProgressPanel = ({
   const isPaused = generationStatus.status === 'paused';
   const isGenerating = generationStatus.status === 'generating';
   const isWaitingRetry = generationStatus.status === 'waiting_retry';
+  
   useEffect(() => {
     if (streamBoxRef.current && generationStatus.currentModule?.generatedText) {
       streamBoxRef.current.scrollTop = streamBoxRef.current.scrollHeight;
     }
   }, [generationStatus.currentModule?.generatedText]);
+  
   const overallProgress = (stats.completedModules / (stats.totalModules || 1)) * 100;
+  
   if (isWaitingRetry && generationStatus.retryInfo && onRetryDecision) {
     return (
       <RetryDecisionPanel
@@ -452,6 +459,7 @@ const EmbeddedProgressPanel = ({
       />
     );
   }
+  
   return (
     <div className={`bg-zinc-900/60 backdrop-blur-xl border rounded-xl overflow-hidden animate-fade-in-up ${
       isPaused ? 'border-yellow-500/50' : 'border-zinc-800/50'
@@ -608,6 +616,7 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
   </SyntaxHighlighter>
 ));
 
+// ✅ FIXED: Reading Mode with Bookmark Functionality
 const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIndex: number }> = ({
   content,
   isEditing,
@@ -634,6 +643,19 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
       ...parsed,
     };
   });
+  
+  // ✅ NEW: Bookmark state
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  // Check if current position is bookmarked
+  useEffect(() => {
+    const bookmark = readingProgressUtils.getBookmark(bookId);
+    if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
+      setIsBookmarked(true);
+    } else {
+      setIsBookmarked(false);
+    }
+  }, [bookId, currentModuleIndex]);
 
   // Auto-save bookmark on scroll
   useEffect(() => {
@@ -662,11 +684,25 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
         contentRef.current.scrollTop = bookmark.scrollPosition;
       }
     }
-  }, [bookId, currentModuleIndex, isEditing, content]); // re-run if content changes
+  }, [bookId, currentModuleIndex, isEditing, content]);
 
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
+
+  // ✅ NEW: Toggle bookmark function
+  const toggleBookmark = () => {
+    if (contentRef.current) {
+      const scrollPosition = contentRef.current.scrollTop;
+      if (isBookmarked) {
+        readingProgressUtils.deleteBookmark(bookId);
+        setIsBookmarked(false);
+      } else {
+        readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+        setIsBookmarked(true);
+      }
+    }
+  };
 
   const currentTheme = THEMES[settings.theme];
 
@@ -722,6 +758,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           <ArrowLeft size={14} /> Library
         </button>
 
+        {/* Theme Selector */}
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
           {(['light', 'sepia', 'dark'] as const).map((theme) => (
             <button
@@ -739,6 +776,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           ))}
         </div>
 
+        {/* Font Size Control */}
         <div className="flex items-center gap-2">
             <button
               onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }))}
@@ -754,6 +792,16 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
               <ZoomIn size={16} />
             </button>
         </div>
+        
+        {/* ✅ NEW: Bookmark Button */}
+        <button 
+          onClick={toggleBookmark} 
+          className={`btn btn-sm ${isBookmarked ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'btn-secondary'}`}
+          title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+          {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+        </button>
         
         <button onClick={onEdit} className="btn btn-secondary btn-sm" style={{borderColor: currentTheme.border, color: currentTheme.secondary}}>
           <Edit size={14} /> Edit
@@ -1028,6 +1076,11 @@ const BookListGrid = ({
                             style={{ width: `${readingProgress.percentComplete}%` }}
                           />
                         </div>
+                        {/* ✅ NEW: Show bookmark indicator */}
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-gray-400">Last read: {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}</span>
+                          <BookmarkCheck className="w-3.5 h-3.5 text-yellow-400" />
+                        </div>
                       </div>
                     ) : (book.status !== 'completed' && book.status !== 'error') && (
                       <div>
@@ -1092,7 +1145,7 @@ const DetailTabButton = ({
 
 
 // ============================================================================
-// MAIN BOOKVIEW COMPONENT
+// MAIN BOOKVIEW COMPONENT (FIXED BUTTON VISIBILITY)
 // ============================================================================
 export function BookView({
   books,
@@ -1182,6 +1235,7 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
+  
   const handleStartGeneration = async () => {
     if (!currentBook) return;
     setLocalIsGenerating(true);
@@ -1204,11 +1258,13 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
+  
   const handlePause = () => {
     if (currentBook && onPauseGeneration) {
       onPauseGeneration(currentBook.id);
     }
   };
+  
   const handleResume = () => {
     if (currentBook && onResumeGeneration) {
       onResumeGeneration(currentBook, {
@@ -1225,6 +1281,7 @@ export function BookView({
       });
     }
   };
+  
   const handleStartAssembly = async () => {
     if (!currentBook) return;
     setLocalIsGenerating(true);
@@ -1247,22 +1304,26 @@ export function BookView({
       setLocalIsGenerating(false);
     }
   };
+  
   const handleDownloadPdf = async () => {
     if (!currentBook) return;
     setPdfProgress(1);
     await pdfService.generatePdf(currentBook, setPdfProgress);
     setTimeout(() => setPdfProgress(0), 2000);
   };
+  
   const handleStartEditing = () => {
     if (currentBook?.finalBook) {
       setEditedContent(currentBook.finalBook);
       setIsEditing(true);
     }
   };
+  
   const handleCancelEditing = () => {
     setIsEditing(false);
     setEditedContent('');
   };
+  
   const handleSaveChanges = () => {
     if (currentBook && editedContent) {
       onUpdateBookContent(currentBook.id, editedContent);
@@ -1270,6 +1331,7 @@ export function BookView({
       setEditedContent('');
     }
   };
+  
   const getStatusIcon = (status: BookProject['status']) => {
     const iconMap: Record<BookProject['status'], React.ElementType> = {
       planning: Clock,
@@ -1294,6 +1356,7 @@ export function BookView({
       : '';
     return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
   };
+  
   const getStatusText = (status: BookProject['status']) =>
     ({
       planning: 'Planning',
@@ -1495,7 +1558,7 @@ export function BookView({
     );
   }
   
-  // --- FINAL, SCALED DOWN DETAIL VIEW ---
+  // ✅ FIXED: Detail View - All buttons now visible
   if (view === 'detail' && currentBook) {
     const areAllModulesDone =
       currentBook.roadmap &&
@@ -1504,6 +1567,7 @@ export function BookView({
     const failedModules = currentBook.modules.filter((m) => m.status === 'error');
     const completedModules = currentBook.modules.filter((m) => m.status === 'completed');
     const isPaused = generationStatus?.status === 'paused';
+    
     return (
       <div className="w-full max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">
@@ -1566,31 +1630,35 @@ export function BookView({
                 onContentChange={setEditedContent}
                 onGoBack={handleGoBackToLibrary}
                 bookId={currentBook.id}
-                currentModuleIndex={0} // Placeholder, can be enhanced to track module
+                currentModuleIndex={0}
               />
             ) : (
               <>
+                {/* ✅ FIXED: Progress Panel - Always show during generation */}
                 {(isGenerating || isPaused || generationStatus?.status === 'waiting_retry') &&
-                  currentBook.status !== 'completed' &&
-                      generationStatus &&
-                      generationStats && (
-                            <EmbeddedProgressPanel
-                            generationStatus={generationStatus}
-                              stats={generationStats}
-                              onCancel={() => {
-                              if (window.confirm('Cancel generation? Progress will be saved.')) {
-                            bookService.cancelActiveRequests(currentBook.id);
-                            }
-                          }}
-                        onPause={handlePause}
-                        onResume={handleResume}
-                        onRetryDecision={onRetryDecision}
-                    availableModels={availableModels}
-                  />
-                )}
+                  generationStatus &&
+                  generationStats && (
+                    <EmbeddedProgressPanel
+                      generationStatus={generationStatus}
+                      stats={generationStats}
+                      onCancel={() => {
+                        if (window.confirm('Cancel generation? Progress will be saved.')) {
+                          bookService.cancelActiveRequests(currentBook.id);
+                        }
+                      }}
+                      onPause={handlePause}
+                      onResume={handleResume}
+                      onRetryDecision={onRetryDecision}
+                      availableModels={availableModels}
+                    />
+                  )}
+                
+                {/* ✅ FIXED: Generate Button - Always show when status is roadmap_completed AND not generating/paused */}
                 {currentBook.status === 'roadmap_completed' &&
                   !areAllModulesDone &&
-                  !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry' && (
+                  !isGenerating && 
+                  !isPaused && 
+                  generationStatus?.status !== 'waiting_retry' && (
                     <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
                       <div className="flex items-center gap-4 mb-5">
                         <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10 rounded-lg">
@@ -1637,23 +1705,31 @@ export function BookView({
                       </button>
                     </div>
                   )}
-                {areAllModulesDone && currentBook.status !== 'completed' && !localIsGenerating && (
-                  <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-7 space-y-5 animate-fade-in-up">
-                    <div className="text-center">
-                      <div className="w-12 h-12 flex items-center justify-center bg-green-500/10 rounded-full mx-auto mb-3">
-                        <CheckCircle className="w-7 h-7 text-green-400" />
+                
+                {/* ✅ FIXED: Assemble Button - Always show when all modules are done AND not generating/paused */}
+                {areAllModulesDone && 
+                  currentBook.status !== 'completed' && 
+                  !localIsGenerating && 
+                  !isGenerating && 
+                  !isPaused && (
+                    <div className="bg-[var(--color-card)] border border-green-500/30 rounded-lg p-7 space-y-5 animate-fade-in-up">
+                      <div className="text-center">
+                        <div className="w-12 h-12 flex items-center justify-center bg-green-500/10 rounded-full mx-auto mb-3">
+                          <CheckCircle className="w-7 h-7 text-green-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
+                        <p className="text-sm text-[var(--color-text-secondary)] mt-1.5">
+                          All chapters written. Ready to assemble.
+                        </p>
                       </div>
-                      <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
-                      <p className="text-sm text-[var(--color-text-secondary)] mt-1.5">
-                        All chapters written. Ready to assemble.
-                      </p>
+                      <button onClick={handleStartAssembly} className="btn btn-primary w-full py-2.5">
+                        <Box className="w-5 h-5" />
+                        Assemble Final Book
+                      </button>
                     </div>
-                    <button onClick={handleStartAssembly} className="btn btn-primary w-full py-2.5">
-                      <Box className="w-5 h-5" />
-                      Assemble Final Book
-                    </button>
-                  </div>
-                )}
+                  )}
+                
+                {/* Completed Status */}
                 {currentBook.status === 'completed' && (
                     <div className="space-y-6">
                       <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-7">
@@ -1716,6 +1792,8 @@ export function BookView({
                       </div>
                     </div>
                   )}
+                
+                {/* Assembling Status */}
                 {currentBook.status === 'assembling' && (
                   <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow text-center">
                       <div className="relative w-14 h-14 mx-auto">
@@ -1735,8 +1813,9 @@ export function BookView({
                     </div>
                   </div>
                 )}
-                {currentBook.roadmap &&
-                  (currentBook.status !== 'completed' && !isGenerating && !isPaused && generationStatus?.status !== 'waiting_retry') && (
+                
+                {/* ✅ FIXED: Roadmap Display - Always show chapters list when roadmap exists */}
+                {currentBook.roadmap && (
                     <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
                       <div className="flex items-center gap-3 mb-5">
                         <ListChecks className="w-5 h-5 text-purple-400" />
