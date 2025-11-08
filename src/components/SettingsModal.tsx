@@ -183,7 +183,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSaveSettings }: Set
       url: 'https://open.bigmodel.cn/usercenter/apikeys',
       description: 'For GLM models (Chinese AI provider)'
     },
-    { // ✅ NEW
+    {
       id: 'groqApiKey' as keyof APISettings,
       name: 'Groq',
       url: 'https://console.groq.com/keys',
@@ -199,7 +199,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSaveSettings }: Set
           <div className="p-5 flex items-center justify-between border-b border-[var(--color-border)]">
             <div className="flex items-center gap-3">
               <Settings size={20} />
-              <h2 className="text-xl font-bold">Settings</h2>
+              <h2 className="text-2xl font-bold">Settings</h2>
             </div>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
               <X size={18} />
@@ -261,7 +261,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSaveSettings }: Set
                             value={localSettings[api.id] as string} 
                             onChange={e => setLocalSettings(p => ({ ...p, [api.id]: e.target.value }))} 
                             placeholder={`Enter your ${api.name} API key`} 
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 pl-9 pr-10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent transition-colors" 
+                            className="input-style pl-9 pr-10" 
                           />
                           <button 
                             type="button" 
