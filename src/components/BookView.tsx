@@ -1,9 +1,9 @@
-// src/components/BookView.tsx - COMPLETE REFINED VERSION
+// src/components/BookView.tsx - THEME-CONSISTENT VERSION
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   Book,
   Plus,
@@ -135,6 +135,7 @@ interface ReadingModeProps {
   onCancel: () => void;
   onContentChange: (content: string) => void;
   onGoBack: () => void;
+  theme: 'light' | 'dark';
 }
 interface ReadingSettings {
   fontSize: number;
@@ -200,7 +201,7 @@ const formatTime = (seconds: number): string => {
 // SUB-COMPONENTS
 // ============================================================================
 const GradientProgressBar = ({ progress = 0, active = true }) => (
-  <div className="relative w-full h-2.5 bg-zinc-800/50 rounded-full overflow-hidden border border-zinc-700/50">
+  <div className="relative w-full h-2.5 bg-[var(--color-card)] rounded-full overflow-hidden border border-[var(--color-border)]">
     <div
       className="absolute inset-0 bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-500 transition-all duration-700 ease-out"
       style={{
@@ -219,7 +220,7 @@ const PixelAnimation = () => {
   useEffect(() => {
     const colors = [
       'bg-orange-500', 'bg-yellow-500', 'bg-amber-600',
-      'bg-red-500', 'bg-zinc-700', 'bg-zinc-600',
+      'bg-red-500', 'bg-[var(--color-text-secondary)]', 'bg-[var(--color-border)]',
     ];
 
     const generatePixels = () => {
@@ -322,7 +323,7 @@ const RetryDecisionPanel = ({
               <AlertCircle className="w-6 h-6 text-red-400 animate-pulse" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">Generation Failed</h3>
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Generation Failed</h3>
               <p className="text-sm text-[var(--color-text-secondary)]">
                 Attempt {retryInfo.retryCount} of {retryInfo.maxRetries}
               </p>
@@ -332,12 +333,12 @@ const RetryDecisionPanel = ({
             Waiting
           </div>
         </div>
-        <div className="mb-4 p-4 bg-black/40 border border-white/10 rounded-lg">
-          <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+        <div className="mb-4 p-4 bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg">
+          <h4 className="font-medium text-[var(--color-text-primary)] mb-2 flex items-center gap-2">
             <FileText className="w-4 h-4 text-blue-400" />
             {retryInfo.moduleTitle}
           </h4>
-          <div className="text-sm text-gray-300 mb-3">
+          <div className="text-sm text-[var(--color-text-secondary)] mb-3">
             <span className="text-red-400 font-medium">Error:</span> {retryInfo.error}
           </div>
           <div className="flex items-center gap-2">
@@ -358,8 +359,8 @@ const RetryDecisionPanel = ({
         <div className="mb-6 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
           <div className="flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-gray-300">
-              <p className="font-medium text-white mb-2">Recommended Actions:</p>
+            <div className="text-sm text-[var(--color-text-secondary)]">
+              <p className="font-medium text-[var(--color-text-primary)] mb-2">Recommended Actions:</p>
               <ul className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
                 {isRateLimit && (
                   <>
@@ -388,7 +389,7 @@ const RetryDecisionPanel = ({
           <button
             onClick={onRetry}
             disabled={countdown > 0}
-            className="w-full btn bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed rounded-lg text-white font-semibold py-3 transition-all shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-2"
+            className="w-full btn bg-green-600 hover:bg-green-700 disabled:bg-[var(--color-card)] disabled:text-[var(--color-text-secondary)] disabled:cursor-not-allowed rounded-lg text-white font-semibold py-3 transition-all shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             {countdown > 0 ? `Retry in ${countdown}s` : 'Retry Same Model'}
@@ -404,13 +405,13 @@ const RetryDecisionPanel = ({
           )}
           <button
             onClick={onSkip}
-            className="w-full btn border border-zinc-700 hover:bg-zinc-800 rounded-lg text-gray-300 font-medium py-3 transition-all hover:border-red-500/50 hover:text-red-400 flex items-center justify-center gap-2"
+            className="w-full btn border border-[var(--color-border)] hover:bg-[var(--color-card)] rounded-lg text-[var(--color-text-secondary)] font-medium py-3 transition-all hover:border-red-500/50 hover:text-red-400 flex items-center justify-center gap-2"
           >
             <X className="w-4 h-4" />
             Skip This Module
           </button>
         </div>
-        <div className="mt-4 text-xs text-zinc-500 flex items-center gap-1.5 justify-center">
+        <div className="mt-4 text-xs text-[var(--color-text-secondary)] flex items-center gap-1.5 justify-center">
           <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
           <span>Your progress has been saved. You can also close this tab.</span>
         </div>
@@ -463,8 +464,8 @@ const EmbeddedProgressPanel = ({
   }
   
   return (
-    <div className={`bg-zinc-900/60 backdrop-blur-xl border rounded-xl overflow-hidden animate-fade-in-up ${
-      isPaused ? 'border-yellow-500/50' : 'border-zinc-800/50'
+    <div className={`bg-[var(--color-card)] backdrop-blur-xl border rounded-xl overflow-hidden animate-fade-in-up ${
+      isPaused ? 'border-yellow-500/50' : 'border-[var(--color-border)]'
     }`}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
@@ -479,7 +480,7 @@ const EmbeddedProgressPanel = ({
               </div>
             )}
             <div>
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
                 {isPaused ? 'Generation Paused' : 'Generating Chapters...'}
               </h3>
               <p className="text-sm text-[var(--color-text-secondary)]">
@@ -495,7 +496,7 @@ const EmbeddedProgressPanel = ({
             }`}>
               {Math.round(overallProgress)}%
             </div>
-            <div className="text-sm font-mono text-zinc-400">
+            <div className="text-sm font-mono text-[var(--color-text-secondary)]">
               {stats.totalWordsGenerated.toLocaleString()} words
             </div>
           </div>
@@ -527,9 +528,9 @@ const EmbeddedProgressPanel = ({
               <PixelAnimation />
             </div>
             {generationStatus.currentModule.generatedText && (
-              <div className="bg-black/40 border border-zinc-800/50 rounded-lg p-4">
+              <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-white flex items-center gap-2">
+                  <h4 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
                     <Zap className="w-4 h-4 text-yellow-400" />
                     {generationStatus.currentModule.title}
                   </h4>
@@ -542,7 +543,7 @@ const EmbeddedProgressPanel = ({
                 </div>
                 <div
                   ref={streamBoxRef}
-                  className="text-sm text-zinc-300 leading-relaxed max-h-32 overflow-y-auto font-mono streaming-text-box"
+                  className="text-sm text-[var(--color-text-secondary)] leading-relaxed max-h-32 overflow-y-auto font-mono streaming-text-box"
                 >
                   {generationStatus.currentModule.generatedText}
                   <span className="inline-block w-2 h-4 bg-blue-400 animate-pulse ml-1" />
@@ -551,9 +552,9 @@ const EmbeddedProgressPanel = ({
             )}
           </>
         )}
-        <div className="mt-6 pt-4 border-t border-zinc-800/50">
+        <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
               <Clock className="w-4 h-4 text-yellow-500" />
               <span>
                 {isPaused
@@ -564,7 +565,7 @@ const EmbeddedProgressPanel = ({
             </div>
             <div className="flex items-center gap-3">
               {(isGenerating || isPaused) && onCancel && (
-                <button onClick={onCancel} className="px-4 py-2 border border-zinc-700 hover:bg-zinc-800 rounded-lg text-sm font-medium transition-all hover:border-red-500/50 hover:text-red-400" title="Stop generation and save progress" >
+                <button onClick={onCancel} className="px-4 py-2 border border-[var(--color-border)] hover:bg-[var(--color-card)] rounded-lg text-sm font-medium transition-all hover:border-red-500/50 hover:text-red-400" title="Stop generation and save progress" >
                   <X className="w-4 h-4 inline mr-1.5" /> Cancel
                 </button>
               )}
@@ -581,7 +582,7 @@ const EmbeddedProgressPanel = ({
               )}
             </div>
           </div>
-          <div className="mt-3 text-xs text-zinc-500 flex items-center gap-1.5">
+          <div className="mt-3 text-xs text-[var(--color-text-secondary)] flex items-center gap-1.5">
             <AlertCircle className="w-3.5 h-3.5" />
             <span>
               {isPaused
@@ -596,7 +597,7 @@ const EmbeddedProgressPanel = ({
   );
 };
 
-const CodeBlock = React.memo(({ children, className, theme }: any) => {
+const CodeBlock = React.memo(({ children, className, theme, readingTheme }: any) => {
   const [isCopied, setIsCopied] = useState(false);
   const language = className?.replace(/language-/, '') || 'text';
 
@@ -632,7 +633,7 @@ const CodeBlock = React.memo(({ children, className, theme }: any) => {
     }
   };
 
-  const currentThemeStyles = themeStyles[theme as keyof typeof themeStyles] || themeStyles.dark;
+  const currentThemeStyles = themeStyles[readingTheme as keyof typeof themeStyles] || themeStyles.dark;
 
   return (
     <div 
@@ -660,7 +661,7 @@ const CodeBlock = React.memo(({ children, className, theme }: any) => {
       </div>
 
       <SyntaxHighlighter
-        style={vscDarkPlus}
+        style={readingTheme === 'light' || readingTheme === 'sepia' ? prism : vscDarkPlus}
         language={language}
         PreTag="div"
         className={`!m-0 !p-0`}
@@ -691,6 +692,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   onCancel,
   onContentChange,
   onGoBack,
+  theme,
   bookId,
   currentModuleIndex
 }) => {
@@ -702,7 +704,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
       fontSize: 18,
       lineHeight: 1.7,
       fontFamily: 'serif',
-      theme: 'dark',
+      theme: theme === 'dark' ? 'dark' : 'light',
       maxWidth: 'medium',
       textAlign: 'left',
       ...parsed,
@@ -713,7 +715,6 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
 
   useEffect(() => {
-    // Always show floating buttons when not in editing mode.
     if (!isEditing) {
       setShowFloatingButtons(true);
     } else {
@@ -775,7 +776,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     return (
       <div className="animate-fade-in">
         <div className="flex justify-between items-center mb-4 sticky top-0 bg-[var(--color-bg)] z-30 pt-4 pb-2 border-b border-[var(--color-border)]">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
+          <h3 className="text-lg font-semibold flex items-center gap-2 text-[var(--color-text-primary)]">
             <Edit className="w-5 h-5" />
             Editing Mode
           </h3>
@@ -789,7 +790,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           </div>
         </div>
         <textarea
-          className="w-full h-[70vh] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg p-4 text-white font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+          className="w-full h-[70vh] bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg p-4 text-[var(--color-text-primary)] font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           value={editedContent}
           onChange={(e) => onContentChange(e.target.value)}
           style={{ fontSize: `${settings.fontSize - 2}px` }}
@@ -823,18 +824,18 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           style={{ borderColor: currentTheme.border, backgroundColor: `${currentTheme.bg}e6` }}
         >
           <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
-            {(['light', 'sepia', 'dark'] as const).map((theme) => (
+            {(['light', 'sepia', 'dark'] as const).map((themeOption) => (
               <button
-                key={theme}
-                onClick={() => setSettings(prev => ({ ...prev, theme }))}
+                key={themeOption}
+                onClick={() => setSettings(prev => ({ ...prev, theme: themeOption }))}
                 className={`p-2 rounded-md transition-all`}
                 style={{
-                  backgroundColor: settings.theme === theme ? currentTheme.accent : 'transparent',
-                  color: settings.theme === theme ? '#FFFFFF' : currentTheme.secondary,
+                  backgroundColor: settings.theme === themeOption ? currentTheme.accent : 'transparent',
+                  color: settings.theme === themeOption ? '#FFFFFF' : currentTheme.secondary,
                 }}
-                title={`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme`}
+                title={`${themeOption.charAt(0).toUpperCase() + themeOption.slice(1)} theme`}
               >
-                {theme === 'light' ? <Sun size={16} /> : theme === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
+                {themeOption === 'light' ? <Sun size={16} /> : themeOption === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
               </button>
             ))}
           </div>
@@ -872,11 +873,9 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
               components={{
                 code: ({ node, inline, className, children, ...props }) => {
                   if (inline) {
-                    // Inline code will now be styled by Tailwind's prose configuration in tailwind.config.js
                     return <code {...props}>{children}</code>;
                   }
-                  // Full code blocks are rendered by our custom CodeBlock component
-                  return <CodeBlock {...props} theme={settings.theme} className={className}>{children}</CodeBlock>;
+                  return <CodeBlock {...props} theme={theme} readingTheme={settings.theme} className={className}>{children}</CodeBlock>;
                 }
               }}
               className="focus:outline-none"
@@ -897,7 +896,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           className="w-14 h-14 rounded-full bg-[var(--color-sidebar)] border border-[var(--color-border)] flex items-center justify-center shadow-lg hover:bg-[var(--color-card)] transition-colors"
           title="Back to Library"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={20} className="text-[var(--color-text-primary)]" />
         </button>
       </div>
 
@@ -968,9 +967,9 @@ const HomeView = ({
           )}
         </div>
       ) : (
-        <div className="bg-[var(--color-card)] p-6 rounded-xl max-w-md mx-auto">
+        <div className="bg-[var(--color-card)] p-6 rounded-xl max-w-md mx-auto border border-[var(--color-border)]">
           <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
-          <h3 className="font-semibold mb-2">API Key Required</h3>
+          <h3 className="font-semibold mb-2 text-[var(--color-text-primary)]">API Key Required</h3>
           <p className="text-sm text-[var(--color-text-secondary)]">
             Please configure your API key in Settings to begin.
           </p>
@@ -1043,10 +1042,10 @@ const BookListGrid = ({
       assembling: 'border-orange-500/30',
       roadmap_completed: 'border-yellow-500/30',
       error: 'border-red-500/30',
-      planning: 'border-gray-500/30',
+      planning: 'border-[var(--color-border)]',
       generating_roadmap: 'border-blue-500/30',
     };
-    return colors[status] || 'border-gray-500/30';
+    return colors[status] || 'border-[var(--color-border)]';
   };
 
   const getReadingProgress = (bookId: string) => {
@@ -1134,11 +1133,11 @@ const BookListGrid = ({
                           e.stopPropagation();
                           setStatusDropdownOpen(statusDropdownOpen === book.id ? null : book.id);
                         }}
-                        className="flex items-center gap-2 px-2.5 py-1 bg-black/30 rounded-full border border-white/10 w-fit cursor-pointer group"
+                        className="flex items-center gap-2 px-2.5 py-1 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] w-fit cursor-pointer group"
                       >
                         {getStatusIcon(book.status)}
-                        <span className="text-xs font-medium text-gray-300 capitalize">{getStatusText(book.status)}</span>
-                        <ChevronDown size={12} className="text-gray-400 group-hover:text-white transition-colors" />
+                        <span className="text-xs font-medium text-[var(--color-text-secondary)] capitalize">{getStatusText(book.status)}</span>
+                        <ChevronDown size={12} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors" />
                       </div>
                       {statusDropdownOpen === book.id && (
                         <div className="absolute top-full left-0 mt-1 bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 w-48 animate-fade-in-up">
@@ -1151,7 +1150,7 @@ const BookListGrid = ({
                                   onUpdateBookStatus(book.id, status);
                                   setStatusDropdownOpen(null);
                                 }}
-                                className="px-3 py-1.5 text-xs rounded-md cursor-pointer hover:bg-white/5 flex items-center justify-between"
+                                className="px-3 py-1.5 text-xs rounded-md cursor-pointer hover:bg-[var(--color-card)] flex items-center justify-between text-[var(--color-text-secondary)]"
                               >
                                 {getStatusText(status)}
                                 {book.status === status && <Check size={14} className="text-blue-400" />}
@@ -1164,21 +1163,21 @@ const BookListGrid = ({
 
 
                     <div className="grid grid-cols-3 gap-2.5 mb-4">
-                      <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
-                        <div className="text-xs text-gray-400 mb-1">Modules</div>
-                        <div className="text-base font-bold text-white">{book.modules.length}</div>
+                      <div className="bg-[var(--color-bg)] rounded-lg p-2.5 border border-[var(--color-border)] text-center">
+                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">Modules</div>
+                        <div className="text-base font-bold text-[var(--color-text-primary)]">{book.modules.length}</div>
                       </div>
-                      <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
-                        <div className="text-xs text-gray-400 mb-1">Words</div>
-                        <div className="text-base font-bold text-white">
+                      <div className="bg-[var(--color-bg)] rounded-lg p-2.5 border border-[var(--color-border)] text-center">
+                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">Words</div>
+                        <div className="text-base font-bold text-[var(--color-text-primary)]">
                           {book.totalWords ? `${(book.totalWords / 1000).toFixed(1)}K` : '0'}
                         </div>
                       </div>
-                      <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
-                        <div className="text-xs text-gray-400 mb-1">
+                      <div className="bg-[var(--color-bg)] rounded-lg p-2.5 border border-[var(--color-border)] text-center">
+                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">
                           {hasBookmark ? 'Read' : 'Progress'}
                         </div>
-                        <div className="text-base font-bold text-white">
+                        <div className="text-base font-bold text-[var(--color-text-primary)]">
                           {hasBookmark ? `${readingProgress.percentComplete}%` : `${Math.round(book.progress)}%`}
                         </div>
                       </div>
@@ -1188,20 +1187,20 @@ const BookListGrid = ({
                   <div className="mt-auto">
                     {hasBookmark ? (
                       <div>
-                        <div className="w-full bg-black/30 rounded-full h-1.5 overflow-hidden border border-white/10">
+                        <div className="w-full bg-[var(--color-bg)] rounded-full h-1.5 overflow-hidden border border-[var(--color-border)]">
                           <div
                             className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full"
                             style={{ width: `${readingProgress.percentComplete}%` }}
                           />
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-400">Last read: {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}</span>
+                          <span className="text-xs text-[var(--color-text-secondary)]">Last read: {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}</span>
                           <BookmarkCheck className="w-3.5 h-3.5 text-yellow-400" />
                         </div>
                       </div>
                     ) : (book.status !== 'completed' && book.status !== 'error') && (
                       <div>
-                        <div className="w-full bg-black/30 rounded-full h-1.5 overflow-hidden border border-white/10">
+                        <div className="w-full bg-[var(--color-bg)] rounded-full h-1.5 overflow-hidden border border-[var(--color-border)]">
                           <div
                             className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full relative"
                             style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
@@ -1212,7 +1211,7 @@ const BookListGrid = ({
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500 mt-4 pt-3 border-t border-white/5">
+                    <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mt-4 pt-3 border-t border-[var(--color-border)]">
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-3 h-3" />
                         <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
@@ -1507,7 +1506,6 @@ export function BookView({
     );
   }
   
-// --- SIMPLE MINIMAL CREATE VIEW ---
   if (view === 'create') {
     return (
       <div className="w-full max-w-2xl mx-auto px-6 py-10">
@@ -1523,14 +1521,13 @@ export function BookView({
         </button>
 
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Create New Book</h1>
+          <h1 className="text-2xl font-bold mb-2 text-[var(--color-text-primary)]">Create New Book</h1>
           <p className="text-[var(--color-text-secondary)]">Describe what you want to learn and AI will structure it for you.</p>
         </div>
 
         <div className="space-y-6">
-          {/* Learning Goal */}
           <div>
-            <label htmlFor="goal" className="block text-sm font-medium mb-2">
+            <label htmlFor="goal" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
               Learning Goal
             </label>
             <textarea
@@ -1544,10 +1541,9 @@ export function BookView({
             />
           </div>
 
-          {/* Two Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="audience" className="block text-sm font-medium mb-2">
+              <label htmlFor="audience" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
                 Target Audience
               </label>
               <input
@@ -1562,7 +1558,7 @@ export function BookView({
               />
             </div>
             <div>
-              <label htmlFor="complexity" className="block text-sm font-medium mb-2">
+              <label htmlFor="complexity" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
                 Complexity Level
               </label>
               <CustomSelect
@@ -1579,7 +1575,6 @@ export function BookView({
             </div>
           </div>
 
-          {/* Advanced Options */}
           <div>
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
@@ -1595,7 +1590,7 @@ export function BookView({
             {showAdvanced && (
               <div className="space-y-4 animate-fade-in-up">
                 <div>
-                  <label htmlFor="reasoning" className="block text-sm font-medium mb-2">
+                  <label htmlFor="reasoning" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
                     Context & Reasoning (Optional)
                   </label>
                   <textarea
@@ -1608,7 +1603,7 @@ export function BookView({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-3">
+                  <label className="block text-sm font-medium mb-3 text-[var(--color-text-primary)]">
                     Content Preferences
                   </label>
                   <div className="space-y-2">
@@ -1624,7 +1619,7 @@ export function BookView({
                         }
                         className="w-4 h-4 accent-blue-500"
                       />
-                      <span className="text-sm">Include Code Examples</span>
+                      <span className="text-sm text-[var(--color-text-secondary)]">Include Code Examples</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -1641,7 +1636,7 @@ export function BookView({
                         }
                         className="w-4 h-4 accent-blue-500"
                       />
-                      <span className="text-sm">Include Practice Exercises</span>
+                      <span className="text-sm text-[var(--color-text-secondary)]">Include Practice Exercises</span>
                     </label>
                   </div>
                 </div>
@@ -1649,7 +1644,6 @@ export function BookView({
             )}
           </div>
 
-          {/* Submit Button */}
           <button
             onClick={handleCreateRoadmap}
             disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
@@ -1697,7 +1691,7 @@ export function BookView({
           </button>
           <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-1.5">{currentBook.title}</h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-sm font-medium">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-text-secondary)]">
               {getStatusIcon(currentBook.status)}
               {getStatusText(currentBook.status)}
             </div>
@@ -1742,6 +1736,7 @@ export function BookView({
                 onCancel={handleCancelEditing}
                 onContentChange={setEditedContent}
                 onGoBack={handleGoBackToLibrary}
+                theme={theme}
                 bookId={currentBook.id}
                 currentModuleIndex={0}
               />
@@ -1789,8 +1784,8 @@ export function BookView({
                       <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 mb-5">
                         <div className="flex items-start gap-3">
                           <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                          <div className="text-sm text-gray-300">
-                            <p className="font-medium text-white mb-2">Smart Recovery Enabled</p>
+                          <div className="text-sm text-[var(--color-text-secondary)]">
+                            <p className="font-medium text-[var(--color-text-primary)] mb-2">Smart Recovery Enabled</p>
                             <ul className="space-y-1 text-xs text-[var(--color-text-secondary)]">
                               <li>✓ Progress is saved automatically</li>
                               <li>✓ Failed modules will be retried with smart options</li>
@@ -1827,7 +1822,7 @@ export function BookView({
                         <div className="w-12 h-12 flex items-center justify-center bg-green-500/10 rounded-full mx-auto mb-3">
                           <CheckCircle className="w-7 h-7 text-green-400" />
                         </div>
-                        <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
+                        <h3 className="text-xl font-bold text-[var(--color-text-primary)]">Generation Complete!</h3>
                         <p className="text-sm text-[var(--color-text-secondary)] mt-1.5">
                           All chapters written. Ready to assemble.
                         </p>
@@ -1840,7 +1835,7 @@ export function BookView({
                   )}
                 
                 {currentBook.status === 'assembling' && (
-                  <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow text-center">
+                  <div className="bg-[var(--color-card)] backdrop-blur-xl border-2 border-[var(--color-border)] rounded-lg p-8 space-y-6 animate-assembling-glow text-center">
                       <div className="relative w-14 h-14 mx-auto">
                         <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
                         <div className="relative w-14 h-14 flex items-center justify-center bg-green-500/10 rounded-full">
@@ -1848,12 +1843,12 @@ export function BookView({
                         </div>
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-white">Assembling Your Book</h3>
+                        <h3 className="text-xl font-bold text-[var(--color-text-primary)]">Assembling Your Book</h3>
                         <p className="text-[var(--color-text-secondary)] mt-1.5 max-w-md mx-auto text-sm">
                           Finalizing chapters and preparing for download...
                         </p>
                       </div>
-                    <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/10">
+                    <div className="w-full bg-[var(--color-bg)] rounded-full h-2 overflow-hidden border border-[var(--color-border)]">
                       <div className="h-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 rounded-full animate-slide-in-out"></div>
                     </div>
                   </div>
@@ -1863,7 +1858,7 @@ export function BookView({
                     <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
                       <div className="flex items-center gap-3 mb-5">
                         <ListChecks className="w-5 h-5 text-purple-400" />
-                        <h3 className="text-lg font-bold">Learning Roadmap</h3>
+                        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">Learning Roadmap</h3>
                       </div>
                       <div className="space-y-3">
                         {currentBook.roadmap.modules.map((module, index) => {
@@ -1882,7 +1877,7 @@ export function BookView({
                                   ? 'bg-emerald-500/10 border-emerald-500/30'
                                   : completedModule?.status === 'error'
                                   ? 'border-red-500/30 bg-red-500/5'
-                                  : 'bg-zinc-800/30 border-zinc-800/50'
+                                  : 'bg-[var(--color-bg)] border-[var(--color-border)]'
                               }`}
                             >
                               <div
@@ -1893,7 +1888,7 @@ export function BookView({
                                     ? 'bg-red-500 text-white'
                                     : isActive
                                     ? 'bg-blue-500 text-white animate-pulse'
-                                    : 'bg-zinc-700 text-zinc-500'
+                                    : 'bg-[var(--color-card)] text-[var(--color-text-secondary)]'
                                 }`}
                               >
                                 {completedModule?.status === 'completed' ? (
@@ -1907,7 +1902,7 @@ export function BookView({
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-base text-white">
+                                <h4 className="font-medium text-base text-[var(--color-text-primary)]">
                                   {module.title}
                                 </h4>
                                 <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{module.estimatedTime}</p>
