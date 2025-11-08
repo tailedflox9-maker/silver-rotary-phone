@@ -108,7 +108,7 @@ interface BookViewProps {
   onAssembleBook: (book: BookProject, session: BookSession) => Promise<void>;
   onSelectBook: (id: string | null) => void;
   onDeleteBook: (id: string) => void;
-  onUpdateBookStatus: (id: string, status: BookProject['status']) => void; // ✅ NEW
+  onUpdateBookStatus: (id: string, status: BookProject['status']) => void;
   hasApiKey: boolean;
   view: AppView;
   setView: React.Dispatch<React.SetStateAction<AppView>>;
@@ -617,7 +617,7 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
   </SyntaxHighlighter>
 ));
 
-// ✅ FIXED: Reading Mode with Bookmark Functionality & Scrolling
+// ✅ MODIFIED: Reading Mode with Floating Buttons
 const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIndex: number }> = ({
   content,
   isEditing,
@@ -646,6 +646,25 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   });
   
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showFloatingButtons, setShowFloatingButtons] = useState(false); // ✅ NEW
+
+  // ✅ NEW: Show floating buttons on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 200 && !isEditing) {
+        setShowFloatingButtons(true);
+      } else {
+        setShowFloatingButtons(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isEditing]);
 
   useEffect(() => {
     const bookmark = readingProgressUtils.getBookmark(bookId);
@@ -660,25 +679,22 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     if (!contentRef.current || isEditing) return;
 
     const handleScroll = () => {
-      if (contentRef.current) {
-        const scrollPosition = contentRef.current.scrollTop;
+        const scrollPosition = window.scrollY; // Use window scroll position
         readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
-      }
     };
 
-    const scrollContainer = contentRef.current;
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [bookId, currentModuleIndex, isEditing]);
 
   useEffect(() => {
-    if (contentRef.current && !isEditing) {
+    if (!isEditing) {
       const bookmark = readingProgressUtils.getBookmark(bookId);
       if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
-        contentRef.current.scrollTop = bookmark.scrollPosition;
+        window.scrollTo(0, bookmark.scrollPosition); // Use window scroll
       }
     }
   }, [bookId, currentModuleIndex, isEditing, content]);
@@ -688,15 +704,13 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   }, [settings]);
 
   const toggleBookmark = () => {
-    if (contentRef.current) {
-      const scrollPosition = contentRef.current.scrollTop;
-      if (isBookmarked) {
-        readingProgressUtils.deleteBookmark(bookId);
-        setIsBookmarked(false);
-      } else {
-        readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
-        setIsBookmarked(true);
-      }
+    const scrollPosition = window.scrollY; // Use window scroll position
+    if (isBookmarked) {
+      readingProgressUtils.deleteBookmark(bookId);
+      setIsBookmarked(false);
+    } else {
+      readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+      setIsBookmarked(true);
     }
   };
 
@@ -744,86 +758,106 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   };
 
   return (
-    <div
-      className={`reading-container theme-${settings.theme} rounded-lg border border-[var(--color-border)] overflow-hidden transition-colors duration-300`}
-      style={readingAreaStyles}
-    >
-      {/* ✅ MODIFIED: Control Bar is now sticky */}
-      <div 
-        className="sticky top-0 z-20 flex justify-between items-center gap-3 p-3 border-b" 
-        style={{ borderColor: currentTheme.border, backgroundColor: currentTheme.bg }}
+    <>
+      <div
+        className={`reading-container theme-${settings.theme} rounded-lg border border-[var(--color-border)] overflow-hidden transition-colors duration-300`}
+        style={readingAreaStyles}
       >
-        <button onClick={onGoBack} className="btn btn-secondary btn-sm flex items-center gap-2">
-          <ArrowLeft size={14} /> Library
-        </button>
+        <div 
+          className="sticky top-0 z-20 flex justify-center items-center gap-3 p-3 border-b" 
+          style={{ borderColor: currentTheme.border, backgroundColor: `${currentTheme.bg}e6` }} // Added backdrop blur effect
+        >
+          <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
+            {(['light', 'sepia', 'dark'] as const).map((theme) => (
+              <button
+                key={theme}
+                onClick={() => setSettings(prev => ({ ...prev, theme }))}
+                className={`p-2 rounded-md transition-all`}
+                style={{
+                  backgroundColor: settings.theme === theme ? currentTheme.accent : 'transparent',
+                  color: settings.theme === theme ? '#FFFFFF' : currentTheme.secondary,
+                }}
+                title={`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme`}
+              >
+                {theme === 'light' ? <Sun size={16} /> : theme === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
+              </button>
+            ))}
+          </div>
 
-        <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
-          {(['light', 'sepia', 'dark'] as const).map((theme) => (
-            <button
-              key={theme}
-              onClick={() => setSettings(prev => ({ ...prev, theme }))}
-              className={`p-2 rounded-md transition-all`}
-              style={{
-                backgroundColor: settings.theme === theme ? currentTheme.accent : 'transparent',
-                color: settings.theme === theme ? '#FFFFFF' : currentTheme.secondary,
-              }}
-              title={`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme`}
-            >
-              {theme === 'light' ? <Sun size={16} /> : theme === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }))}
-              className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
-            >
-              <ZoomOut size={16} />
-            </button>
-            <span className="min-w-[3rem] text-center text-sm font-mono" style={{ color: currentTheme.secondary }}>{settings.fontSize}px</span>
-            <button
-              onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.min(28, prev.fontSize + 1) }))}
-              className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
-            >
-              <ZoomIn size={16} />
-            </button>
+          <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }))}
+                className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+              >
+                <ZoomOut size={16} />
+              </button>
+              <span className="min-w-[3rem] text-center text-sm font-mono" style={{ color: currentTheme.secondary }}>{settings.fontSize}px</span>
+              <button
+                onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.min(28, prev.fontSize + 1) }))}
+                className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+              >
+                <ZoomIn size={16} />
+              </button>
+          </div>
+          
+          <button onClick={onEdit} className="btn btn-secondary btn-sm" style={{borderColor: currentTheme.border, color: currentTheme.secondary}}>
+            <Edit size={14} /> Edit
+          </button>
         </div>
         
-        <button 
-          onClick={toggleBookmark} 
-          className={`btn btn-sm ${isBookmarked ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'btn-secondary'}`}
+        <div ref={contentRef} className="p-4 sm:p-8">
+          <article
+            className={`prose prose-lg max-w-none transition-all duration-300 mx-auto ${
+              settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''
+            }`}
+            style={contentStyles}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code: (props) => <CodeBlock {...props} theme={settings.theme} />,
+              }}
+              className="focus:outline-none"
+            >
+              {content}
+            </ReactMarkdown>
+          </article>
+        </div>
+      </div>
+
+      {/* ✅ NEW: Floating Action Buttons */}
+      <div 
+        className={`fixed bottom-6 left-6 z-30 transition-all duration-300 ${
+          showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
+        <button
+          onClick={onGoBack}
+          className="w-14 h-14 rounded-full bg-[var(--color-sidebar)] border border-[var(--color-border)] flex items-center justify-center shadow-lg hover:bg-[var(--color-card)] transition-colors"
+          title="Back to Library"
+        >
+          <ArrowLeft size={20} />
+        </button>
+      </div>
+
+      <div 
+        className={`fixed bottom-6 right-6 z-30 transition-all duration-300 ${
+          showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
+        <button
+          onClick={toggleBookmark}
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+            isBookmarked 
+              ? 'bg-yellow-500/90 text-white border border-yellow-400 hover:bg-yellow-500' 
+              : 'bg-[var(--color-sidebar)] border border-[var(--color-border)] hover:bg-[var(--color-card)]'
+          }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
         >
-          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
-          {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-        </button>
-        
-        <button onClick={onEdit} className="btn btn-secondary btn-sm" style={{borderColor: currentTheme.border, color: currentTheme.secondary}}>
-          <Edit size={14} /> Edit
+          {isBookmarked ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
         </button>
       </div>
-      
-      {/* ✅ MODIFIED: Content Area now scrolls with the page */}
-      <div ref={contentRef} className="p-4 sm:p-8">
-        <article
-          className={`prose prose-lg max-w-none transition-all duration-300 ${
-            settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''
-          }`}
-          style={contentStyles}
-        >
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code: (props) => <CodeBlock {...props} theme={settings.theme} />,
-            }}
-            className="focus:outline-none"
-          >
-            {content}
-          </ReactMarkdown>
-        </article>
-      </div>
-    </div>
+    </>
   );
 };
 
@@ -891,25 +925,24 @@ const HomeView = ({
   </div>
 );
 
-// ✅ MODIFIED: Book List with status changer & updated styles
 const BookListGrid = ({
   books,
   onSelectBook,
   onDeleteBook,
-  onUpdateBookStatus, // ✅ NEW
+  onUpdateBookStatus,
   setView,
   setShowListInMain,
 }: {
   books: BookProject[];
   onSelectBook: (id: string) => void;
   onDeleteBook: (id: string) => void;
-  onUpdateBookStatus: (id: string, status: BookProject['status']) => void; // ✅ NEW
+  onUpdateBookStatus: (id: string, status: BookProject['status']) => void;
   setView: (view: AppView) => void;
   setShowListInMain: (show: boolean) => void;
 }) => {
   const [hoveredBookId, setHoveredBookId] = useState<string | null>(null);
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null); // ✅ NEW
-  const availableStatuses: BookProject['status'][] = ['planning', 'roadmap_completed', 'generating_content', 'assembling', 'completed', 'error']; // ✅ NEW
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
+  const availableStatuses: BookProject['status'][] = ['planning', 'roadmap_completed', 'generating_content', 'assembling', 'completed', 'error'];
 
 
   const getStatusIcon = (status: BookProject['status']) => {
@@ -948,7 +981,6 @@ const BookListGrid = ({
       error: 'Error',
     }[status] || 'Unknown');
 
-  // ✅ MODIFIED: getStatusColor now returns only border classes
   const getStatusColor = (status: BookProject['status']) => {
     const colors = {
       completed: 'border-[var(--color-border)]',
@@ -1019,14 +1051,12 @@ const BookListGrid = ({
                 onClick={() => onSelectBook(book.id)}
                 onMouseEnter={() => setHoveredBookId(book.id)}
                 onMouseLeave={() => setHoveredBookId(null)}
-                // ✅ MODIFIED: Card classes for new style
                 className={`relative overflow-hidden rounded-xl border-2 bg-[var(--color-card)] transition-all duration-300 cursor-pointer group
                   ${isHovering ? 'scale-[1.02] shadow-2xl' : 'scale-100 shadow-lg'}
                   ${getStatusColor(book.status)}`}
               >
-                {/* ✅ REMOVED: Gradient hover overlay */}
                 
-                <div className="relative p-4 flex flex-col h-full"> {/* ✅ MODIFIED: Padding reduced */}
+                <div className="relative p-4 flex flex-col h-full">
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
@@ -1043,7 +1073,6 @@ const BookListGrid = ({
                       </button>
                     </div>
                     
-                    {/* ✅ MODIFIED: Status changer dropdown */}
                     <div className="relative mb-4">
                       <div
                         onClick={(e) => {
