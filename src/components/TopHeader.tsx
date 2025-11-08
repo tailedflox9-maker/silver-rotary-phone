@@ -12,7 +12,7 @@ const GoogleIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
     className="w-5 h-5" 
     style={{ 
       filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
-      opacity: 0.8 
+      opacity: 0.95 
     }} 
   />
 );
@@ -23,7 +23,7 @@ const MistralIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
     className="w-5 h-5" 
     style={{ 
       filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
-      opacity: 0.8 
+      opacity: 0.95 
     }} 
   />
 );
@@ -34,7 +34,7 @@ const ZhipuIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
     className="w-5 h-5" 
     style={{ 
       filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
-      opacity: 0.8 
+      opacity: 0.95 
     }} 
   />
 );
@@ -45,7 +45,7 @@ const GroqIcon = ({ theme }: { theme?: 'light' | 'dark' }) => (
     className="w-5 h-5" 
     style={{ 
       filter: theme === 'light' ? 'brightness(0) saturate(100%)' : 'brightness(0) invert(1)',
-      opacity: 0.8 
+      opacity: 0.95 
     }} 
   />
 );
