@@ -108,6 +108,7 @@ interface BookViewProps {
   onAssembleBook: (book: BookProject, session: BookSession) => Promise<void>;
   onSelectBook: (id: string | null) => void;
   onDeleteBook: (id: string) => void;
+  onUpdateBookStatus: (id: string, status: BookProject['status']) => void; // ✅ NEW
   hasApiKey: boolean;
   view: AppView;
   setView: React.Dispatch<React.SetStateAction<AppView>>;
@@ -616,7 +617,7 @@ const CodeBlock = React.memo(({ children, language, theme }: any) => (
   </SyntaxHighlighter>
 ));
 
-// ✅ FIXED: Reading Mode with Bookmark Functionality
+// ✅ FIXED: Reading Mode with Bookmark Functionality & Scrolling
 const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIndex: number }> = ({
   content,
   isEditing,
@@ -644,10 +645,8 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     };
   });
   
-  // ✅ NEW: Bookmark state
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  // Check if current position is bookmarked
   useEffect(() => {
     const bookmark = readingProgressUtils.getBookmark(bookId);
     if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
@@ -657,7 +656,6 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     }
   }, [bookId, currentModuleIndex]);
 
-  // Auto-save bookmark on scroll
   useEffect(() => {
     if (!contentRef.current || isEditing) return;
 
@@ -676,7 +674,6 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     };
   }, [bookId, currentModuleIndex, isEditing]);
 
-  // Restore scroll position on load
   useEffect(() => {
     if (contentRef.current && !isEditing) {
       const bookmark = readingProgressUtils.getBookmark(bookId);
@@ -690,7 +687,6 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
 
-  // ✅ NEW: Toggle bookmark function
   const toggleBookmark = () => {
     if (contentRef.current) {
       const scrollPosition = contentRef.current.scrollTop;
@@ -752,13 +748,15 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
       className={`reading-container theme-${settings.theme} rounded-lg border border-[var(--color-border)] overflow-hidden transition-colors duration-300`}
       style={readingAreaStyles}
     >
-      {/* Control Bar */}
-      <div className="flex justify-between items-center gap-3 p-3 border-b" style={{ borderColor: currentTheme.border }}>
+      {/* ✅ MODIFIED: Control Bar is now sticky */}
+      <div 
+        className="sticky top-0 z-20 flex justify-between items-center gap-3 p-3 border-b" 
+        style={{ borderColor: currentTheme.border, backgroundColor: currentTheme.bg }}
+      >
         <button onClick={onGoBack} className="btn btn-secondary btn-sm flex items-center gap-2">
           <ArrowLeft size={14} /> Library
         </button>
 
-        {/* Theme Selector */}
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
           {(['light', 'sepia', 'dark'] as const).map((theme) => (
             <button
@@ -776,7 +774,6 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           ))}
         </div>
 
-        {/* Font Size Control */}
         <div className="flex items-center gap-2">
             <button
               onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }))}
@@ -793,7 +790,6 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
             </button>
         </div>
         
-        {/* ✅ NEW: Bookmark Button */}
         <button 
           onClick={toggleBookmark} 
           className={`btn btn-sm ${isBookmarked ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : 'btn-secondary'}`}
@@ -808,8 +804,8 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
         </button>
       </div>
       
-      {/* Content Area */}
-      <div ref={contentRef} className="p-4 sm:p-8 overflow-y-auto" style={{ height: 'calc(100vh - 220px)' }}>
+      {/* ✅ MODIFIED: Content Area now scrolls with the page */}
+      <div ref={contentRef} className="p-4 sm:p-8">
         <article
           className={`prose prose-lg max-w-none transition-all duration-300 ${
             settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''
@@ -895,21 +891,26 @@ const HomeView = ({
   </div>
 );
 
-// --- SCALED DOWN: Book List ---
+// ✅ MODIFIED: Book List with status changer & updated styles
 const BookListGrid = ({
   books,
   onSelectBook,
   onDeleteBook,
+  onUpdateBookStatus, // ✅ NEW
   setView,
   setShowListInMain,
 }: {
   books: BookProject[];
   onSelectBook: (id: string) => void;
   onDeleteBook: (id: string) => void;
+  onUpdateBookStatus: (id: string, status: BookProject['status']) => void; // ✅ NEW
   setView: (view: AppView) => void;
   setShowListInMain: (show: boolean) => void;
 }) => {
   const [hoveredBookId, setHoveredBookId] = useState<string | null>(null);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null); // ✅ NEW
+  const availableStatuses: BookProject['status'][] = ['planning', 'roadmap_completed', 'generating_content', 'assembling', 'completed', 'error']; // ✅ NEW
+
 
   const getStatusIcon = (status: BookProject['status']) => {
     const iconMap: Record<BookProject['status'], React.ElementType> = {
@@ -947,17 +948,18 @@ const BookListGrid = ({
       error: 'Error',
     }[status] || 'Unknown');
 
+  // ✅ MODIFIED: getStatusColor now returns only border classes
   const getStatusColor = (status: BookProject['status']) => {
     const colors = {
-      completed: 'from-gray-800/20 to-gray-900/20 border-green-500/40',
-      generating_content: 'from-blue-500/20 to-purple-500/20 border-blue-500/30',
-      assembling: 'from-orange-500/20 to-yellow-500/20 border-orange-500/30',
-      roadmap_completed: 'from-yellow-500/20 to-orange-500/20 border-yellow-500/30',
-      error: 'from-red-500/20 to-pink-500/20 border-red-500/30',
-      planning: 'from-gray-500/20 to-slate-500/20 border-gray-500/30',
-      generating_roadmap: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
+      completed: 'border-[var(--color-border)]',
+      generating_content: 'border-blue-500/30',
+      assembling: 'border-orange-500/30',
+      roadmap_completed: 'border-yellow-500/30',
+      error: 'border-red-500/30',
+      planning: 'border-gray-500/30',
+      generating_roadmap: 'border-blue-500/30',
     };
-    return colors[status] || 'from-gray-500/20 to-slate-500/20 border-gray-500/30';
+    return colors[status] || 'border-gray-500/30';
   };
 
   const getReadingProgress = (bookId: string) => {
@@ -1017,13 +1019,14 @@ const BookListGrid = ({
                 onClick={() => onSelectBook(book.id)}
                 onMouseEnter={() => setHoveredBookId(book.id)}
                 onMouseLeave={() => setHoveredBookId(null)}
-                className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 cursor-pointer group
+                // ✅ MODIFIED: Card classes for new style
+                className={`relative overflow-hidden rounded-xl border-2 bg-[var(--color-card)] transition-all duration-300 cursor-pointer group
                   ${isHovering ? 'scale-[1.02] shadow-2xl' : 'scale-100 shadow-lg'}
-                  bg-gradient-to-br ${getStatusColor(book.status)}`}
+                  ${getStatusColor(book.status)}`}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* ✅ REMOVED: Gradient hover overlay */}
                 
-                <div className="relative p-5 flex flex-col h-full">
+                <div className="relative p-4 flex flex-col h-full"> {/* ✅ MODIFIED: Padding reduced */}
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
@@ -1039,11 +1042,42 @@ const BookListGrid = ({
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-
-                    <div className="flex items-center gap-2 px-2.5 py-1 bg-black/30 rounded-full border border-white/10 w-fit mb-4">
-                      {getStatusIcon(book.status)}
-                      <span className="text-xs font-medium text-gray-300 capitalize">{getStatusText(book.status)}</span>
+                    
+                    {/* ✅ MODIFIED: Status changer dropdown */}
+                    <div className="relative mb-4">
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatusDropdownOpen(statusDropdownOpen === book.id ? null : book.id);
+                        }}
+                        className="flex items-center gap-2 px-2.5 py-1 bg-black/30 rounded-full border border-white/10 w-fit cursor-pointer group"
+                      >
+                        {getStatusIcon(book.status)}
+                        <span className="text-xs font-medium text-gray-300 capitalize">{getStatusText(book.status)}</span>
+                        <ChevronDown size={12} className="text-gray-400 group-hover:text-white transition-colors" />
+                      </div>
+                      {statusDropdownOpen === book.id && (
+                        <div className="absolute top-full left-0 mt-1 bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 w-48 animate-fade-in-up">
+                          <ul className="p-1">
+                            {availableStatuses.map(status => (
+                              <li
+                                key={status}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateBookStatus(book.id, status);
+                                  setStatusDropdownOpen(null);
+                                }}
+                                className="px-3 py-1.5 text-xs rounded-md cursor-pointer hover:bg-white/5 flex items-center justify-between"
+                              >
+                                {getStatusText(status)}
+                                {book.status === status && <Check size={14} className="text-blue-400" />}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
+
 
                     <div className="grid grid-cols-3 gap-2.5 mb-4">
                       <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 text-center">
@@ -1076,7 +1110,6 @@ const BookListGrid = ({
                             style={{ width: `${readingProgress.percentComplete}%` }}
                           />
                         </div>
-                        {/* ✅ NEW: Show bookmark indicator */}
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs text-gray-400">Last read: {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}</span>
                           <BookmarkCheck className="w-3.5 h-3.5 text-yellow-400" />
@@ -1156,6 +1189,7 @@ export function BookView({
   onAssembleBook,
   onSelectBook,
   onDeleteBook,
+  onUpdateBookStatus,
   hasApiKey,
   view,
   setView,
@@ -1200,7 +1234,6 @@ export function BookView({
       setLocalIsGenerating(isGen);
       setIsEditing(false);
 
-      // Automatically switch to 'read' tab if book is completed and has a bookmark
       if (currentBook.status === 'completed') {
         const bookmark = readingProgressUtils.getBookmark(currentBook.id);
         setDetailTab(bookmark ? 'read' : 'overview');
@@ -1378,6 +1411,7 @@ export function BookView({
           books={books}
           onSelectBook={onSelectBook}
           onDeleteBook={onDeleteBook}
+          onUpdateBookStatus={onUpdateBookStatus}
           setView={setView}
           setShowListInMain={setShowListInMain}
         />
@@ -1558,7 +1592,6 @@ export function BookView({
     );
   }
   
-  // ✅ FIXED: Detail View - All buttons now visible
   if (view === 'detail' && currentBook) {
     const areAllModulesDone =
       currentBook.roadmap &&
@@ -1634,7 +1667,6 @@ export function BookView({
               />
             ) : (
               <>
-                {/* ✅ FIXED: Progress Panel - Always show during generation */}
                 {(isGenerating || isPaused || generationStatus?.status === 'waiting_retry') &&
                   generationStatus &&
                   generationStats && (
@@ -1653,7 +1685,6 @@ export function BookView({
                     />
                   )}
                 
-                {/* ✅ FIXED: Generate Button - Always show when status is roadmap_completed AND not generating/paused */}
                 {currentBook.status === 'roadmap_completed' &&
                   !areAllModulesDone &&
                   !isGenerating && 
@@ -1706,7 +1737,6 @@ export function BookView({
                     </div>
                   )}
                 
-                {/* ✅ FIXED: Assemble Button - Always show when all modules are done AND not generating/paused */}
                 {areAllModulesDone && 
                   currentBook.status !== 'completed' && 
                   !localIsGenerating && 
@@ -1729,7 +1759,6 @@ export function BookView({
                     </div>
                   )}
                 
-                {/* Completed Status */}
                 {currentBook.status === 'completed' && (
                     <div className="space-y-6">
                       <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-7">
@@ -1793,7 +1822,6 @@ export function BookView({
                     </div>
                   )}
                 
-                {/* Assembling Status */}
                 {currentBook.status === 'assembling' && (
                   <div className="bg-zinc-900/60 backdrop-blur-xl border-2 rounded-lg p-8 space-y-6 animate-assembling-glow text-center">
                       <div className="relative w-14 h-14 mx-auto">
@@ -1814,7 +1842,6 @@ export function BookView({
                   </div>
                 )}
                 
-                {/* ✅ FIXED: Roadmap Display - Always show chapters list when roadmap exists */}
                 {currentBook.roadmap && (
                     <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
                       <div className="flex items-center gap-3 mb-5">
