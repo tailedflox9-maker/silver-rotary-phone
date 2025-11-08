@@ -1,4 +1,4 @@
-// src/components/BookView.tsx - THEME-CONSISTENT VERSION
+// src/components/BookView.tsx - COMPLETE FILE WITH PDF DOWNLOAD
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -1851,6 +1851,97 @@ export function BookView({
                     <div className="w-full bg-[var(--color-bg)] rounded-full h-2 overflow-hidden border border-[var(--color-border)]">
                       <div className="h-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 rounded-full animate-slide-in-out"></div>
                     </div>
+                  </div>
+                )}
+
+                {/* ✅ PDF DOWNLOAD SECTION - ONLY IN COMPLETED STATE */}
+                {currentBook.status === 'completed' && detailTab === 'overview' && (
+                  <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10 rounded-lg">
+                        <Download className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
+                          Download Your Book
+                        </h3>
+                        <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
+                          Export as professional PDF or Markdown format
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* PDF Download */}
+                      <button
+                        onClick={handleDownloadPdf}
+                        disabled={pdfProgress > 0 && pdfProgress < 100}
+                        className="flex items-center justify-between p-4 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:border-blue-500 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 flex items-center justify-center bg-blue-500/10 rounded-lg">
+                            <Download className="w-5 h-5 text-blue-500" />
+                          </div>
+                          <div className="text-left">
+                            <div className="font-semibold group-hover:text-blue-400 transition-colors text-[var(--color-text-primary)]">
+                              Professional PDF
+                            </div>
+                            <div className="text-sm text-[var(--color-text-secondary)]">
+                              {pdfProgress > 0 && pdfProgress < 100
+                                ? `Generating... ${pdfProgress}%`
+                                : 'Print-ready document'}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Markdown Download */}
+                      <button
+                        onClick={() => {
+                          if (currentBook.finalBook) {
+                            const blob = new Blob([currentBook.finalBook], { type: 'text/markdown;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${currentBook.title.replace(/[^a-z0-9\s-]/gi, '').replace(/\s+/g, '_').toLowerCase()}_book.md`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          }
+                        }}
+                        className="flex items-center justify-between p-4 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg hover:border-green-500 transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 flex items-center justify-center bg-green-500/10 rounded-lg">
+                            <Download className="w-5 h-5 text-green-500" />
+                          </div>
+                          <div className="text-left">
+                            <div className="font-semibold group-hover:text-green-400 transition-colors text-[var(--color-text-primary)]">
+                              Markdown File
+                            </div>
+                            <div className="text-sm text-[var(--color-text-secondary)]">
+                              Easy to edit & version
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {pdfProgress > 0 && pdfProgress < 100 && (
+                      <div className="mt-4">
+                        <div className="w-full bg-[var(--color-bg)] rounded-full h-2 overflow-hidden border border-[var(--color-border)]">
+                          <div
+                            className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-300"
+                            style={{ width: `${pdfProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-[var(--color-text-secondary)] mt-2 text-center">
+                          Generating PDF... {pdfProgress}%
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 
