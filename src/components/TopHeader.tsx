@@ -5,10 +5,10 @@ import { APISettings, ModelProvider, BookProject } from '../types';
 
 // --- Helper Icons & Configs ---
 
-const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5" />;
-const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5" />;
-const ZhipuIcon = () => <img src="/zhipu.svg" alt="ZhipuAI" className="w-5 h-5" />;
-const GroqIcon = () => <img src="/groq.svg" alt="Groq" className="w-5 h-5" />;
+const GoogleIcon = () => <img src="/gemini.svg" alt="Google AI" className="w-5 h-5 brightness-0 invert opacity-80" />;
+const MistralIcon = () => <img src="/mistral.svg" alt="Mistral AI" className="w-5 h-5 brightness-0 invert opacity-80" />;
+const ZhipuIcon = () => <img src="/zhipu.svg" alt="ZhipuAI" className="w-5 h-5 brightness-0 invert opacity-80" />;
+const GroqIcon = () => <img src="/groq.svg" alt="Groq" className="w-5 h-5 brightness-0 invert opacity-80" />;
 
 const modelConfig = {
   google: {
