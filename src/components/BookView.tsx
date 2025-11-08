@@ -1,4 +1,4 @@
-// src/components/BookView.tsx
+// src/components/BookView.tsx - COMPLETE REFINED VERSION
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -872,14 +872,10 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
               components={{
                 code: ({ node, inline, className, children, ...props }) => {
                   if (inline) {
-                    return (
-                      // Inline code styling is now handled by Tailwind config
-                      <code {...props}>
-                        {children}
-                      </code>
-                    );
+                    // Inline code will now be styled by Tailwind's prose configuration in tailwind.config.js
+                    return <code {...props}>{children}</code>;
                   }
-                  // Full code blocks are handled by our custom component
+                  // Full code blocks are rendered by our custom CodeBlock component
                   return <CodeBlock {...props} theme={settings.theme} className={className}>{children}</CodeBlock>;
                 }
               }}
@@ -1840,69 +1836,6 @@ export function BookView({
                         <Box className="w-5 h-5" />
                         Assemble Final Book
                       </button>
-                    </div>
-                  )}
-                
-                {currentBook.status === 'completed' && (
-                    <div className="space-y-6">
-                      <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-7">
-                        <div className="flex items-center gap-4 mb-5">
-                          <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6 text-green-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">Generation Complete</h3>
-                            <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
-                              Your book is ready to read and download.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <button onClick={() => setDetailTab('read')} className="btn btn-primary justify-center py-2.5">
-                            <Eye className="w-4 h-4" /> Read Book
-                          </button>
-                          <button onClick={() => bookService.downloadAsMarkdown(currentBook)} className="btn btn-secondary justify-center py-2.5">
-                            <Download className="w-4 h-4" /> Download .MD
-                          </button>
-                          <button
-                            onClick={handleDownloadPdf}
-                            disabled={pdfProgress > 0}
-                            className="btn bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition-all py-2.5"
-                          >
-                            {pdfProgress > 0 ? (
-                              <><Loader2 className="w-4 h-4 animate-spin" /> PDF ({pdfProgress}%)</>
-                            ) : (
-                              <><Download className="w-4 h-4" /> Download PDF</>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-[var(--color-text-primary)]">
-                            {currentBook.modules.length}
-                          </div>
-                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Chapters</div>
-                        </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-[var(--color-text-primary)]">
-                            {(currentBook.totalWords || 0).toLocaleString()}
-                          </div>
-                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Words</div>
-                        </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-[var(--color-text-primary)]">
-                            {currentBook.roadmap?.estimatedReadingTime || 'N/A'}
-                          </div>
-                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Est. Reading</div>
-                        </div>
-                        <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl p-4 text-center">
-                          <div className="text-2xl font-bold text-[var(--color-text-primary)] capitalize">
-                            {currentBook.roadmap?.difficultyLevel || 'N/A'}
-                          </div>
-                          <div className="text-xs text-[var(--color-text-secondary)] uppercase tracking-wider mt-1">Level</div>
-                        </div>
-                      </div>
                     </div>
                   )}
                 
