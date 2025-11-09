@@ -713,6 +713,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
+  const [isRestoringBookmark, setIsRestoringBookmark] = useState(false);
 
   useEffect(() => {
     if (!isEditing) {
@@ -732,26 +733,70 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   }, [bookId, currentModuleIndex]);
 
   useEffect(() => {
-    if (isEditing) return;
-
+    if (isEditing || isRestoringBookmark) return;
+  
+    let scrollTimeout: any;
+    
     const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      
+      scrollTimeout = setTimeout(() => {
         const scrollPosition = window.scrollY;
-        readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+        
+        if (scrollPosition > 100) {
+          readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+        }
+      }, 500);
     };
-
+  
     window.addEventListener('scroll', handleScroll, { passive: true });
-
+  
     return () => {
+      clearTimeout(scrollTimeout);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [bookId, currentModuleIndex, isEditing]);
-
+  }, [bookId, currentModuleIndex, isEditing, isRestoringBookmark]);
+  
   useEffect(() => {
-    if (!isEditing) {
-      const bookmark = readingProgressUtils.getBookmark(bookId);
-      if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
-        window.scrollTo(0, bookmark.scrollPosition);
-      }
+    if (isEditing) return;
+  
+    const bookmark = readingProgressUtils.getBookmark(bookId);
+    
+    if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
+      setIsRestoringBookmark(true);
+      
+      const indicator = document.createElement('div');
+      indicator.className = 'bookmark-restore-indicator';
+      indicator.textContent = `📖 Restoring bookmark (${bookmark.percentComplete}%)`;
+      document.body.appendChild(indicator);
+      
+      const timer = setTimeout(() => {
+        document.documentElement.classList.add('bookmark-restoring');
+        
+        window.scrollTo({
+          top: bookmark.scrollPosition,
+          behavior: 'smooth'
+        });
+        
+        if (contentRef.current) {
+          contentRef.current.scrollTop = bookmark.scrollPosition;
+        }
+        
+        setTimeout(() => {
+          document.documentElement.classList.remove('bookmark-restoring');
+          if (document.body.contains(indicator)) {
+            document.body.removeChild(indicator);
+          }
+          setIsRestoringBookmark(false);
+        }, 1500);
+      }, 200);
+  
+      return () => {
+        clearTimeout(timer);
+        if (document.body.contains(indicator)) {
+          document.body.removeChild(indicator);
+        }
+      };
     }
   }, [bookId, currentModuleIndex, isEditing, content]);
 
@@ -761,12 +806,56 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
 
   const toggleBookmark = () => {
     const scrollPosition = window.scrollY;
+    
     if (isBookmarked) {
       readingProgressUtils.deleteBookmark(bookId);
       setIsBookmarked(false);
+      
+      const toast = document.createElement('div');
+      toast.className = 'bookmark-toast';
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+          </svg>
+          <span>Bookmark removed</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 2000);
+      
     } else {
       readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
       setIsBookmarked(true);
+      
+      const toast = document.createElement('div');
+      toast.className = 'bookmark-toast';
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+          </svg>
+          <span>Bookmark saved at ${Math.round(scrollPosition)}px</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 2500);
     }
   };
 
@@ -998,7 +1087,6 @@ const BookListGrid = ({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
   const availableStatuses: BookProject['status'][] = ['planning', 'roadmap_completed', 'generating_content', 'assembling', 'completed', 'error'];
 
-
   const getStatusIcon = (status: BookProject['status']) => {
     const iconMap: Record<BookProject['status'], React.ElementType> = {
       planning: Clock,
@@ -1093,7 +1181,7 @@ const BookListGrid = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {books.map((book) => {
             const isHovering = hoveredBookId === book.id;
             const readingProgress = getReadingProgress(book.id);
@@ -1105,83 +1193,59 @@ const BookListGrid = ({
                 onClick={() => onSelectBook(book.id)}
                 onMouseEnter={() => setHoveredBookId(book.id)}
                 onMouseLeave={() => setHoveredBookId(null)}
-                className={`relative overflow-hidden rounded-xl border-2 bg-[var(--color-card)] transition-all duration-300 cursor-pointer group
-                  ${isHovering ? 'scale-[1.02] shadow-2xl' : 'scale-100 shadow-lg'}
+                className={`relative overflow-hidden rounded-xl border bg-[var(--color-card)] transition-all duration-300 cursor-pointer group
+                  ${isHovering ? 'scale-[1.02] shadow-xl border-[var(--color-accent-primary)]' : 'scale-100 shadow-md'}
                   ${getStatusColor(book.status)}`}
               >
                 
-                <div className="relative p-4 flex flex-col h-full">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-1.5 truncate group-hover:text-[var(--color-accent-primary)] transition-colors">
-                          {book.title}
-                        </h3>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }}
-                        className="ml-2 p-2 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                <div className="relative p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h3 className="text-base font-bold text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-accent-primary)] transition-colors">
+                        {book.title}
+                      </h3>
                     </div>
-                    
-                    <div className="relative mb-4">
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setStatusDropdownOpen(statusDropdownOpen === book.id ? null : book.id);
-                        }}
-                        className="flex items-center gap-2 px-2.5 py-1 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] w-fit cursor-pointer group"
-                      >
-                        {getStatusIcon(book.status)}
-                        <span className="text-xs font-medium text-[var(--color-text-secondary)] capitalize">{getStatusText(book.status)}</span>
-                        <ChevronDown size={12} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-                      </div>
-                      {statusDropdownOpen === book.id && (
-                        <div className="absolute top-full left-0 mt-1 bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 w-48 animate-fade-in-up">
-                          <ul className="p-1">
-                            {availableStatuses.map(status => (
-                              <li
-                                key={status}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateBookStatus(book.id, status);
-                                  setStatusDropdownOpen(null);
-                                }}
-                                className="px-3 py-1.5 text-xs rounded-md cursor-pointer hover:bg-[var(--color-card)] flex items-center justify-between text-[var(--color-text-secondary)]"
-                              >
-                                {getStatusText(status)}
-                                {book.status === status && <Check size={14} className="text-blue-400" />}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }}
+                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="relative mb-3">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStatusDropdownOpen(statusDropdownOpen === book.id ? null : book.id);
+                      }}
+                      className="flex items-center gap-2 px-2 py-1 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] w-fit cursor-pointer group"
+                    >
+                      {getStatusIcon(book.status)}
+                      <span className="text-xs font-medium text-[var(--color-text-secondary)] capitalize">{getStatusText(book.status)}</span>
+                      <ChevronDown size={12} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors" />
                     </div>
-
-
-                    <div className="grid grid-cols-3 gap-2.5 mb-4">
-                      <div className="bg-[var(--color-bg)] rounded-lg p-2.5 border border-[var(--color-border)] text-center">
-                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">Modules</div>
-                        <div className="text-base font-bold text-[var(--color-text-primary)]">{book.modules.length}</div>
+                    {statusDropdownOpen === book.id && (
+                      <div className="absolute top-full left-0 mt-1 bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 w-48 animate-fade-in-up">
+                        <ul className="p-1">
+                          {availableStatuses.map(status => (
+                            <li
+                              key={status}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateBookStatus(book.id, status);
+                                setStatusDropdownOpen(null);
+                              }}
+                              className="px-3 py-1.5 text-xs rounded-md cursor-pointer hover:bg-[var(--color-card)] flex items-center justify-between text-[var(--color-text-secondary)]"
+                            >
+                              {getStatusText(status)}
+                              {book.status === status && <Check size={14} className="text-blue-400" />}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                      <div className="bg-[var(--color-bg)] rounded-lg p-2.5 border border-[var(--color-border)] text-center">
-                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">Words</div>
-                        <div className="text-base font-bold text-[var(--color-text-primary)]">
-                          {book.totalWords ? `${(book.totalWords / 1000).toFixed(1)}K` : '0'}
-                        </div>
-                      </div>
-                      <div className="bg-[var(--color-bg)] rounded-lg p-2.5 border border-[var(--color-border)] text-center">
-                        <div className="text-xs text-[var(--color-text-secondary)] mb-1">
-                          {hasBookmark ? 'Read' : 'Progress'}
-                        </div>
-                        <div className="text-base font-bold text-[var(--color-text-primary)]">
-                          {hasBookmark ? `${readingProgress.percentComplete}%` : `${Math.round(book.progress)}%`}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="mt-auto">
@@ -1194,7 +1258,9 @@ const BookListGrid = ({
                           />
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-[var(--color-text-secondary)]">Last read: {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}</span>
+                          <span className="text-xs text-[var(--color-text-secondary)]">
+                            {readingProgress.percentComplete}% • {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}
+                          </span>
                           <BookmarkCheck className="w-3.5 h-3.5 text-yellow-400" />
                         </div>
                       </div>
@@ -1208,10 +1274,13 @@ const BookListGrid = ({
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
                           </div>
                         </div>
+                        <div className="text-xs text-[var(--color-text-secondary)] mt-2">
+                          {Math.round(book.progress)}% Complete
+                        </div>
                       </div>
                     )}
                     
-                    <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mt-4 pt-3 border-t border-[var(--color-border)]">
+                    <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mt-3 pt-3 border-t border-[var(--color-border)]">
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-3 h-3" />
                         <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
