@@ -1,4 +1,4 @@
-// src/components/BookView.tsx - COMPLETE FILE WITH PDF DOWNLOAD
+// src/components/BookView.tsx - COMPLETE FIXED VERSION WITH WORKING BOOKMARKS
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -136,6 +136,8 @@ interface ReadingModeProps {
   onContentChange: (content: string) => void;
   onGoBack: () => void;
   theme: 'light' | 'dark';
+  bookId: string;
+  currentModuleIndex: number;
 }
 interface ReadingSettings {
   fontSize: number;
@@ -683,7 +685,8 @@ const CodeBlock = React.memo(({ children, className, theme, readingTheme }: any)
   );
 });
 
-const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIndex: number }> = ({
+// ✅ FIXED READING MODE WITH WORKING BOOKMARKS
+const ReadingMode: React.FC<ReadingModeProps> = ({
   content,
   isEditing,
   editedContent,
@@ -714,7 +717,21 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const [bookmark, setBookmark] = useState<ReadingBookmark | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
 
+  // ✅ FIX: Load bookmark on mount
+  useEffect(() => {
+    const currentBookmark = readingProgressUtils.getBookmark(bookId);
+    setBookmark(currentBookmark);
+    
+    if (currentBookmark && currentBookmark.moduleIndex === currentModuleIndex) {
+      setIsBookmarked(true);
+    } else {
+      setIsBookmarked(false);
+    }
+  }, [bookId, currentModuleIndex]);
+
+  // ✅ FIX: Show floating buttons after component mounts
   useEffect(() => {
     if (!isEditing) {
       setShowFloatingButtons(true);
@@ -723,27 +740,22 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     }
   }, [isEditing]);
 
-  useEffect(() => {
-    const currentBookmark = readingProgressUtils.getBookmark(bookId);
-    setBookmark(currentBookmark);
-    if (currentBookmark && currentBookmark.moduleIndex === currentModuleIndex) {
-      setIsBookmarked(true);
-    } else {
-      setIsBookmarked(false);
-    }
-  }, [bookId, currentModuleIndex]);
-
+  // ✅ FIX: Auto-save scroll position (debounced)
   useEffect(() => {
     if (isEditing) return;
 
     let scrollTimeout: any;
     const handleScroll = () => {
+      setIsScrolling(true);
       clearTimeout(scrollTimeout);
+      
       scrollTimeout = setTimeout(() => {
         const scrollPosition = window.scrollY;
         if (scrollPosition > 100) {
           readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+          console.log('✓ Auto-saved bookmark at:', scrollPosition);
         }
+        setIsScrolling(false);
       }, 500);
     };
 
@@ -759,87 +771,65 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
 
+  // ✅ FIX: Toggle bookmark with proper feedback
   const toggleBookmark = () => {
     const scrollPosition = window.scrollY;
     
     if (isBookmarked) {
+      // Remove bookmark
       readingProgressUtils.deleteBookmark(bookId);
       setIsBookmarked(false);
+      setBookmark(null);
       
-      const toast = document.createElement('div');
-      toast.className = 'bookmark-toast';
-      toast.innerHTML = `
-        <div class="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
-          <span>Bookmark removed</span>
-        </div>
-      `;
-      document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.classList.add('hiding');
-        setTimeout(() => {
-          if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-          }
-        }, 300);
-      }, 2000);
+      showToast('Bookmark removed', '🔖');
       
     } else {
+      // Add bookmark
       readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+      
+      const newBookmark = readingProgressUtils.getBookmark(bookId);
+      setBookmark(newBookmark);
       setIsBookmarked(true);
       
-      const toast = document.createElement('div');
-      toast.className = 'bookmark-toast';
-      toast.innerHTML = `
-        <div class="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
-          <span>Bookmark saved at ${Math.round(scrollPosition)}px</span>
-        </div>
-      `;
-      document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.classList.add('hiding');
-        setTimeout(() => {
-          if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-          }
-        }, 300);
-      }, 2500);
+      showToast(`Bookmark saved at ${Math.round(scrollPosition)}px`, '✅');
     }
   };
 
+  // ✅ FIX: Go to bookmark with smooth scroll
   const handleGoToBookmark = () => {
     if (bookmark) {
+      console.log('📍 Going to bookmark:', bookmark.scrollPosition);
+      
       window.scrollTo({
         top: bookmark.scrollPosition,
         behavior: 'smooth'
       });
   
-      const toast = document.createElement('div');
-      toast.className = 'bookmark-toast';
-      (toast.style.background = 'rgba(59, 130, 246, 0.95)'),
-      toast.innerHTML = `
-        <div class="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-          <span>Jumped to last position</span>
-        </div>
-      `;
-      document.body.appendChild(toast);
-      setTimeout(() => {
-        toast.classList.add('hiding');
-        setTimeout(() => {
-          if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-          }
-        }, 300);
-      }, 2000);
+      showToast('Jumped to last position', '📖', 'bg-blue-500/95');
     }
+  };
+
+  // ✅ NEW: Toast notification helper
+  const showToast = (message: string, icon: string = '✓', bgColor: string = 'bg-green-500/95') => {
+    const toast = document.createElement('div');
+    toast.className = 'bookmark-toast';
+    toast.style.background = bgColor;
+    toast.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span style="font-size: 16px;">${icon}</span>
+        <span>${message}</span>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.classList.add('hiding');
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    }, 2000);
   };
 
   const currentTheme = THEMES[settings.theme];
@@ -928,14 +918,16 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
               </button>
           </div>
           
+          {/* ✅ FIX: Go to Bookmark Button */}
           {bookmark && (
               <button
                   onClick={handleGoToBookmark}
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm flex items-center gap-2"
                   style={{borderColor: currentTheme.border, color: currentTheme.secondary}}
                   title={`Go to last read position (${Math.round(bookmark.percentComplete)}% complete)`}
               >
-                  <Bookmark size={14} /> Go to Bookmark
+                  <Bookmark size={14} /> 
+                  Go to Bookmark
               </button>
           )}
 
@@ -969,6 +961,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
         </div>
       </div>
 
+      {/* ✅ FIX: Floating Back Button */}
       <div 
         className={`fixed bottom-6 left-6 z-30 transition-all duration-300 ${
           showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
@@ -983,6 +976,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
         </button>
       </div>
 
+      {/* ✅ FIX: Floating Bookmark Button */}
       <div 
         className={`fixed bottom-6 right-6 z-30 transition-all duration-300 ${
           showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
@@ -990,9 +984,9 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
       >
         <button
           onClick={toggleBookmark}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
             isBookmarked 
-              ? 'bg-yellow-500/90 text-white border border-yellow-400 hover:bg-yellow-500' 
+              ? 'bg-yellow-500/90 text-white border border-yellow-400 hover:bg-yellow-500 animate-pulse' 
               : 'bg-[var(--color-sidebar)] border border-[var(--color-border)] hover:bg-[var(--color-card)]'
           }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
@@ -1399,84 +1393,139 @@ export function BookView({
     setShowListInMain(true);
   };
 
-  const handleCreateRoadmap = async () => {
-    if (!formData.goal.trim() || !hasApiKey) return;
-    setLocalIsGenerating(true);
+  const handleCreateRoadmap = async (session: BookSession) => {
+    if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
+    if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
+
+    const bookId = generateId();
+    
     try {
-      await onCreateBookRoadmap(formData);
-    } catch (error) {
-      console.error('Failed to create roadmap:', error);
-    } finally {
-      setLocalIsGenerating(false);
+      localStorage.removeItem(`pause_flag_${bookId}`);
+      localStorage.removeItem(`checkpoint_${bookId}`);
+    } catch (e) {
+      console.warn('Failed to clear flags:', e);
     }
-  };
-  
-  const handleStartGeneration = async () => {
-    if (!currentBook) return;
-    setLocalIsGenerating(true);
+
+    const newBook: BookProject = {
+      id: bookId, 
+      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
+      goal: session.goal, 
+      language: 'en', 
+      status: 'planning', 
+      progress: 0, 
+      createdAt: new Date(), 
+      updatedAt: new Date(),
+      modules: [], 
+      category: 'general', 
+      reasoning: session.reasoning
+    };
+
+    setBooks(prev => [...prev, newBook]);
+    setCurrentBookId(bookId);
+    setView('detail');
+
     try {
-      await onGenerateAllModules(currentBook, {
-        goal: currentBook.goal,
-        language: currentBook.language,
-        targetAudience: formData.targetAudience || currentBook.goal,
-        complexityLevel: formData.complexityLevel || 'intermediate',
-        reasoning: formData.reasoning || currentBook.reasoning,
-        preferences: formData.preferences || {
-          includeExamples: true,
-          includePracticalExercises: false,
-          includeQuizzes: false,
-        },
-      });
+      const roadmap = await bookService.generateRoadmap(session, bookId);
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { 
+              ...book, 
+              roadmap, 
+              status: 'roadmap_completed', 
+              progress: 10, 
+              title: roadmap.modules[0]?.title.includes('Module') 
+                ? session.goal 
+                : roadmap.modules[0]?.title || session.goal 
+            }
+          : book
+      ));
     } catch (error) {
-      console.error('Failed to generate modules:', error);
-    } finally {
-      setLocalIsGenerating(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { ...book, status: 'error', error: errorMessage } 
+          : book
+      ));
+      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
     }
   };
   
-  const handlePause = () => {
-    if (currentBook && onPauseGeneration) {
-      onPauseGeneration(currentBook.id);
-    }
-  };
-  
-  const handleResume = () => {
-    if (currentBook && onResumeGeneration) {
-      onResumeGeneration(currentBook, {
-        goal: currentBook.goal,
-        language: currentBook.language,
-        targetAudience: formData.targetAudience || currentBook.goal,
-        complexityLevel: formData.complexityLevel || 'intermediate',
-        reasoning: formData.reasoning || currentBook.reasoning,
-        preferences: formData.preferences || {
-          includeExamples: true,
-          includePracticalExercises: false,
-          includeQuizzes: false,
-        },
-      });
-    }
-  };
-  
-  const handleStartAssembly = async () => {
-    if (!currentBook) return;
-    setLocalIsGenerating(true);
+  const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
+    if (!book.roadmap) { alert('No roadmap available.'); return; }
+    setGenerationStartTime(new Date());
+    setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
     try {
-      await onAssembleBook(currentBook, {
-        goal: currentBook.goal,
-        language: currentBook.language,
-        targetAudience: formData.targetAudience || currentBook.goal,
-        complexityLevel: formData.complexityLevel || 'intermediate',
-        reasoning: formData.reasoning || currentBook.reasoning,
-        preferences: formData.preferences || {
-          includeExamples: true,
-          includePracticalExercises: false,
-          includeQuizzes: false,
-        },
-      });
+      await bookService.generateAllModulesWithRecovery(book, session);
     } catch (error) {
-      console.error('Failed to assemble book:', error);
-    } finally {
-      setLocalIsGenerating(false);
+      const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
+      if (!errorMessage.includes('GENERATION_PAUSED')) {
+        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Generation failed: ${errorMessage}` });
+        alert(`Generation failed: ${errorMessage}`);
+      }
+    }
+  };
+
+  const handlePauseGeneration = (bookId: string) => {
+    bookService.pauseGeneration(bookId);
+    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
+  };
+
+  const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
+    if (!book.roadmap) { alert('No roadmap available'); return; }
+    bookService.resumeGeneration(book.id);
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating', totalProgress: 0, logMessage: 'Resuming generation...',
+      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
+    });
+    try {
+      await bookService.generateAllModulesWithRecovery(book, session);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Resume failed';
+      if (!errorMessage.includes('GENERATION_PAUSED')) {
+        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Resume failed: ${errorMessage}`});
+      }
+    }
+  };
+
+  const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
+    const failedModules = book.modules.filter(m => m.status === 'error');
+    if (failedModules.length === 0) { alert('No failed modules to retry'); return; }
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating', totalProgress: 0, logMessage: `Retrying ${failedModules.length} failed modules...`,
+      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
+    });
+    try {
+      await bookService.retryFailedModules(book, session);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Retry failed';
+      setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Retry failed: ${errorMessage}` });
+    }
+  };
+
+  const handleAssembleBook = async (book: BookProject, session: BookSession) => {
+    try {
+      await bookService.assembleFinalBook(book, session);
+      setGenerationStatus({ status: 'completed', totalProgress: 100, logMessage: '✅ Book completed!' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
+      alert(`Failed to assemble book: ${errorMessage}`);
+      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, status: 'error', error: errorMessage } : b));
+    }
+  };
+
+  const handleDeleteBook = (id: string) => {
+    if (window.confirm('Delete this book permanently? This cannot be undone.')) {
+      setBooks(prev => prev.filter(b => b.id !== id));
+      if (currentBookId === id) {
+        setCurrentBookId(null);
+        setView('list');
+      }
+      try {
+        localStorage.removeItem(`checkpoint_${id}`);
+        localStorage.removeItem(`pause_flag_${id}`);
+      } catch (e) { console.warn('Failed to clear storage:', e); }
     }
   };
   
@@ -1816,8 +1865,8 @@ export function BookView({
                           bookService.cancelActiveRequests(currentBook.id);
                         }
                       }}
-                      onPause={handlePause}
-                      onResume={handleResume}
+                      onPause={handlePauseGeneration}
+                      onResume={handleResumeGeneration}
                       onRetryDecision={onRetryDecision}
                       availableModels={availableModels}
                     />
@@ -1917,7 +1966,6 @@ export function BookView({
                   </div>
                 )}
 
-                {/* ✅ PDF DOWNLOAD SECTION - ONLY IN COMPLETED STATE */}
                 {currentBook.status === 'completed' && detailTab === 'overview' && (
                   <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-7">
                     <div className="flex items-center gap-3 mb-5">
@@ -1935,7 +1983,6 @@ export function BookView({
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* PDF Download */}
                       <button
                         onClick={handleDownloadPdf}
                         disabled={pdfProgress > 0 && pdfProgress < 100}
@@ -1958,7 +2005,6 @@ export function BookView({
                         </div>
                       </button>
 
-                      {/* Markdown Download */}
                       <button
                         onClick={() => {
                           if (currentBook.finalBook) {
@@ -1991,7 +2037,6 @@ export function BookView({
                       </button>
                     </div>
 
-                    {/* Progress Bar */}
                     {pdfProgress > 0 && pdfProgress < 100 && (
                       <div className="mt-4">
                         <div className="w-full bg-[var(--color-bg)] rounded-full h-2 overflow-hidden border border-[var(--color-border)]">
