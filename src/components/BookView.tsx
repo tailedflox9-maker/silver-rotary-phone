@@ -1375,6 +1375,49 @@ export function BookView({
   const [editedContent, setEditedContent] = useState('');
   const currentBook = currentBookId ? books.find(b => b.id === currentBookId) : null;
   const [pdfProgress, setPdfProgress] = useState(0);
+
+  // ✅ FIX: Add these two missing handler functions
+  const handleStartGeneration = () => {
+    if (!currentBook?.roadmap) {
+      alert('No roadmap available');
+      return;
+    }
+
+    // Reconstruct session from book data
+    const session: BookSession = {
+      goal: currentBook.goal,
+      language: 'en',
+      targetAudience: '', // Not stored, use default
+      complexityLevel: currentBook.roadmap.difficultyLevel || 'intermediate',
+      preferences: {
+        includeExamples: true,
+        includePracticalExercises: false,
+        includeQuizzes: false
+      },
+      reasoning: currentBook.reasoning
+    };
+
+    onGenerateAllModules(currentBook, session);
+  };
+
+  const handleStartAssembly = () => {
+    if (!currentBook) return;
+    
+    const session: BookSession = {
+      goal: currentBook.goal,
+      language: 'en',
+      targetAudience: '',
+      complexityLevel: currentBook.roadmap?.difficultyLevel || 'intermediate',
+      preferences: {
+        includeExamples: true,
+        includePracticalExercises: false,
+        includeQuizzes: false
+      },
+      reasoning: currentBook.reasoning
+    };
+
+    onAssembleBook(currentBook, session);
+  };
   
   useEffect(() => {
     if (currentBook) {
@@ -1409,137 +1452,49 @@ export function BookView({
 
   const handleCreateRoadmap = async (session: BookSession) => {
     if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
-    if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
-
-    const bookId = generateId();
-    
-    try {
-      localStorage.removeItem(`pause_flag_${bookId}`);
-      localStorage.removeItem(`checkpoint_${bookId}`);
-    } catch (e) {
-      console.warn('Failed to clear flags:', e);
-    }
-
-    const newBook: BookProject = {
-      id: bookId, 
-      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
-      goal: session.goal, 
-      language: 'en', 
-      status: 'planning', 
-      progress: 0, 
-      createdAt: new Date(), 
-      updatedAt: new Date(),
-      modules: [], 
-      category: 'general', 
-      reasoning: session.reasoning
-    };
-
-    setBooks(prev => [...prev, newBook]);
-    setCurrentBookId(bookId);
-    setView('detail');
-
-    try {
-      const roadmap = await bookService.generateRoadmap(session, bookId);
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { 
-              ...book, 
-              roadmap, 
-              status: 'roadmap_completed', 
-              progress: 10, 
-              title: roadmap.modules[0]?.title.includes('Module') 
-                ? session.goal 
-                : roadmap.modules[0]?.title || session.goal 
-            }
-          : book
-      ));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { ...book, status: 'error', error: errorMessage } 
-          : book
-      ));
-      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
-    }
+    if (!hasApiKey) { alert('Please configure an API key in Settings first'); return; }
+    await onCreateBookRoadmap(session);
   };
   
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) { alert('No roadmap available.'); return; }
-    setGenerationStartTime(new Date());
-    setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
-    try {
-      await bookService.generateAllModulesWithRecovery(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
-      if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Generation failed: ${errorMessage}` });
-        alert(`Generation failed: ${errorMessage}`);
-      }
+    await onGenerateAllModules(book, session);
+  };
+
+  const handlePauseGeneration = () => {
+    if (currentBook) {
+      onPauseGeneration?.(currentBook.id);
     }
   };
 
-  const handlePauseGeneration = (bookId: string) => {
-    bookService.pauseGeneration(bookId);
-    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
-  };
-
-  const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) { alert('No roadmap available'); return; }
-    bookService.resumeGeneration(book.id);
-    setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating', totalProgress: 0, logMessage: 'Resuming generation...',
-      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
-    });
-    try {
-      await bookService.generateAllModulesWithRecovery(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Resume failed';
-      if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Resume failed: ${errorMessage}`});
-      }
-    }
+  const handleResumeGeneration = async () => {
+    if (!currentBook?.roadmap) { alert('No roadmap available'); return; }
+    
+    const session: BookSession = {
+        goal: currentBook.goal,
+        language: 'en',
+        targetAudience: '',
+        complexityLevel: currentBook.roadmap.difficultyLevel || 'intermediate',
+        preferences: { includeExamples: true, includePracticalExercises: false, includeQuizzes: false },
+        reasoning: currentBook.reasoning
+    };
+    
+    await onResumeGeneration?.(currentBook, session);
   };
 
   const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
     const failedModules = book.modules.filter(m => m.status === 'error');
     if (failedModules.length === 0) { alert('No failed modules to retry'); return; }
-    setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating', totalProgress: 0, logMessage: `Retrying ${failedModules.length} failed modules...`,
-      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
-    });
-    try {
-      await bookService.retryFailedModules(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Retry failed';
-      setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Retry failed: ${errorMessage}` });
-    }
+    await onRetryFailedModules(book, session);
   };
 
   const handleAssembleBook = async (book: BookProject, session: BookSession) => {
-    try {
-      await bookService.assembleFinalBook(book, session);
-      setGenerationStatus({ status: 'completed', totalProgress: 100, logMessage: '✅ Book completed!' });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
-      alert(`Failed to assemble book: ${errorMessage}`);
-      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, status: 'error', error: errorMessage } : b));
-    }
+    await onAssembleBook(book, session);
   };
 
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      setBooks(prev => prev.filter(b => b.id !== id));
-      if (currentBookId === id) {
-        setCurrentBookId(null);
-        setView('list');
-      }
-      try {
-        localStorage.removeItem(`checkpoint_${id}`);
-        localStorage.removeItem(`pause_flag_${id}`);
-      } catch (e) { console.warn('Failed to clear storage:', e); }
+      onDeleteBook(id);
     }
   };
   
@@ -1771,7 +1726,7 @@ export function BookView({
           </div>
 
           <button
-            onClick={handleCreateRoadmap}
+            onClick={() => handleCreateRoadmap(formData)}
             disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
             className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
