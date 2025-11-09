@@ -1,4 +1,5 @@
 // src/components/BookView.tsx - COMPLETE FIXED VERSION WITH WORKING BOOKMARKS
+
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -599,14 +600,16 @@ const EmbeddedProgressPanel = ({
   );
 };
 
+// ✅ FIX 8: Ensure children is treated as a string
 const CodeBlock = React.memo(({ children, className, theme, readingTheme }: any) => {
   const [isCopied, setIsCopied] = useState(false);
   const language = className?.replace(/language-/, '') || 'text';
+  const codeContent = typeof children === 'string' ? children : String(children);
 
   const handleCopy = () => {
     if (isCopied) return;
 
-    navigator.clipboard.writeText(String(children)).then(() => {
+    navigator.clipboard.writeText(String(codeContent)).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }).catch(err => {
@@ -679,7 +682,7 @@ const CodeBlock = React.memo(({ children, className, theme, readingTheme }: any)
           }
         }}
       >
-        {String(children).replace(/\n$/, '')}
+        {String(codeContent).replace(/\n$/, '')}
       </SyntaxHighlighter>
     </div>
   );
@@ -724,10 +727,13 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     return document.getElementById('main-scroll-area') || window;
   };
   
+  // ✅ FIX 6: Graceful fallback for scroll element
   const getScrollableElement = (): HTMLElement => {
-    // document.documentElement is for window scrolling (reports scrollTop)
-    // main-scroll-area is for the main element scrolling
-    return document.getElementById('main-scroll-area') || document.documentElement; 
+    const element = document.getElementById('main-scroll-area');
+    if (!element) {
+      console.warn('main-scroll-area not found, using document.documentElement as fallback');
+    }
+    return element || document.documentElement; 
   };
 
   // ✅ FIX: Load bookmark on mount
@@ -1409,137 +1415,45 @@ export function BookView({
 
   const handleCreateRoadmap = async (session: BookSession) => {
     if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
-    if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
-
-    const bookId = generateId();
-    
-    try {
-      localStorage.removeItem(`pause_flag_${bookId}`);
-      localStorage.removeItem(`checkpoint_${bookId}`);
-    } catch (e) {
-      console.warn('Failed to clear flags:', e);
+    if (!hasApiKey) { 
+      alert('Please configure an API key in Settings first'); 
+      // setSettingsOpen(true); // This function is not available here, handled in App.tsx
+      return; 
     }
-
-    const newBook: BookProject = {
-      id: bookId, 
-      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
-      goal: session.goal, 
-      language: 'en', 
-      status: 'planning', 
-      progress: 0, 
-      createdAt: new Date(), 
-      updatedAt: new Date(),
-      modules: [], 
-      category: 'general', 
-      reasoning: session.reasoning
-    };
-
-    setBooks(prev => [...prev, newBook]);
-    setCurrentBookId(bookId);
-    setView('detail');
-
-    try {
-      const roadmap = await bookService.generateRoadmap(session, bookId);
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { 
-              ...book, 
-              roadmap, 
-              status: 'roadmap_completed', 
-              progress: 10, 
-              title: roadmap.modules[0]?.title.includes('Module') 
-                ? session.goal 
-                : roadmap.modules[0]?.title || session.goal 
-            }
-          : book
-      ));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { ...book, status: 'error', error: errorMessage } 
-          : book
-      ));
-      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
-    }
+    await onCreateBookRoadmap(session);
   };
   
-  const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) { alert('No roadmap available.'); return; }
-    setGenerationStartTime(new Date());
-    setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
-    try {
-      await bookService.generateAllModulesWithRecovery(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
-      if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Generation failed: ${errorMessage}` });
-        alert(`Generation failed: ${errorMessage}`);
+  const handleStartGeneration = async () => {
+    if (currentBook && formData) {
+      if (failedModules.length > 0) {
+        await onRetryFailedModules(currentBook, formData);
+      } else {
+        await onGenerateAllModules(currentBook, formData);
       }
+    }
+  };
+
+  const handleStartAssembly = async () => {
+    if (currentBook && formData) {
+      await onAssembleBook(currentBook, formData);
     }
   };
 
   const handlePauseGeneration = (bookId: string) => {
-    bookService.pauseGeneration(bookId);
-    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
-  };
-
-  const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) { alert('No roadmap available'); return; }
-    bookService.resumeGeneration(book.id);
-    setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating', totalProgress: 0, logMessage: 'Resuming generation...',
-      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
-    });
-    try {
-      await bookService.generateAllModulesWithRecovery(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Resume failed';
-      if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Resume failed: ${errorMessage}`});
-      }
+    if (onPauseGeneration) {
+      onPauseGeneration(bookId);
     }
   };
 
-  const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
-    const failedModules = book.modules.filter(m => m.status === 'error');
-    if (failedModules.length === 0) { alert('No failed modules to retry'); return; }
-    setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating', totalProgress: 0, logMessage: `Retrying ${failedModules.length} failed modules...`,
-      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
-    });
-    try {
-      await bookService.retryFailedModules(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Retry failed';
-      setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Retry failed: ${errorMessage}` });
+  const handleResumeGeneration = async () => {
+    if (currentBook && onResumeGeneration) {
+      await onResumeGeneration(currentBook, formData);
     }
   };
-
-  const handleAssembleBook = async (book: BookProject, session: BookSession) => {
-    try {
-      await bookService.assembleFinalBook(book, session);
-      setGenerationStatus({ status: 'completed', totalProgress: 100, logMessage: '✅ Book completed!' });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
-      alert(`Failed to assemble book: ${errorMessage}`);
-      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, status: 'error', error: errorMessage } : b));
-    }
-  };
-
+  
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      setBooks(prev => prev.filter(b => b.id !== id));
-      if (currentBookId === id) {
-        setCurrentBookId(null);
-        setView('list');
-      }
-      try {
-        localStorage.removeItem(`checkpoint_${id}`);
-        localStorage.removeItem(`pause_flag_${id}`);
-      } catch (e) { console.warn('Failed to clear storage:', e); }
+      onDeleteBook(id);
     }
   };
   
@@ -1615,7 +1529,7 @@ export function BookView({
         <BookListGrid
           books={books}
           onSelectBook={onSelectBook}
-          onDeleteBook={onDeleteBook}
+          onDeleteBook={handleDeleteBook}
           onUpdateBookStatus={onUpdateBookStatus}
           setView={setView}
           setShowListInMain={setShowListInMain}
@@ -1771,7 +1685,7 @@ export function BookView({
           </div>
 
           <button
-            onClick={handleCreateRoadmap}
+            onClick={() => handleCreateRoadmap(formData)}
             disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
             className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -1879,7 +1793,7 @@ export function BookView({
                           bookService.cancelActiveRequests(currentBook.id);
                         }
                       }}
-                      onPause={handlePauseGeneration}
+                      onPause={() => handlePauseGeneration(currentBook.id)}
                       onResume={handleResumeGeneration}
                       onRetryDecision={onRetryDecision}
                       availableModels={availableModels}
