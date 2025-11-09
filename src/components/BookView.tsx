@@ -58,7 +58,7 @@ import {
   BookmarkCheck,
   Copy
 } from 'lucide-react';
-import { BookProject, BookSession } from '../types/book';
+import { BookProject, BookSession, ReadingBookmark } from '../types/book';
 import { bookService } from '../services/bookService';
 import { BookAnalytics } from './BookAnalytics';
 import { CustomSelect } from './CustomSelect';
@@ -713,7 +713,7 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
-  const [isRestoringBookmark, setIsRestoringBookmark] = useState(false);
+  const [bookmark, setBookmark] = useState<ReadingBookmark | null>(null);
 
   useEffect(() => {
     if (!isEditing) {
@@ -724,8 +724,9 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   }, [isEditing]);
 
   useEffect(() => {
-    const bookmark = readingProgressUtils.getBookmark(bookId);
-    if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
+    const currentBookmark = readingProgressUtils.getBookmark(bookId);
+    setBookmark(currentBookmark);
+    if (currentBookmark && currentBookmark.moduleIndex === currentModuleIndex) {
       setIsBookmarked(true);
     } else {
       setIsBookmarked(false);
@@ -733,72 +734,26 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
   }, [bookId, currentModuleIndex]);
 
   useEffect(() => {
-    if (isEditing || isRestoringBookmark) return;
-  
+    if (isEditing) return;
+
     let scrollTimeout: any;
-    
     const handleScroll = () => {
       clearTimeout(scrollTimeout);
-      
       scrollTimeout = setTimeout(() => {
         const scrollPosition = window.scrollY;
-        
         if (scrollPosition > 100) {
           readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
         }
       }, 500);
     };
-  
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-  
+
     return () => {
       clearTimeout(scrollTimeout);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [bookId, currentModuleIndex, isEditing, isRestoringBookmark]);
-  
-  useEffect(() => {
-    if (isEditing) return;
-  
-    const bookmark = readingProgressUtils.getBookmark(bookId);
-    
-    if (bookmark && bookmark.moduleIndex === currentModuleIndex) {
-      setIsRestoringBookmark(true);
-      
-      const indicator = document.createElement('div');
-      indicator.className = 'bookmark-restore-indicator';
-      indicator.textContent = `📖 Restoring bookmark (${bookmark.percentComplete}%)`;
-      document.body.appendChild(indicator);
-      
-      const timer = setTimeout(() => {
-        document.documentElement.classList.add('bookmark-restoring');
-        
-        window.scrollTo({
-          top: bookmark.scrollPosition,
-          behavior: 'smooth'
-        });
-        
-        if (contentRef.current) {
-          contentRef.current.scrollTop = bookmark.scrollPosition;
-        }
-        
-        setTimeout(() => {
-          document.documentElement.classList.remove('bookmark-restoring');
-          if (document.body.contains(indicator)) {
-            document.body.removeChild(indicator);
-          }
-          setIsRestoringBookmark(false);
-        }, 1500);
-      }, 200);
-  
-      return () => {
-        clearTimeout(timer);
-        if (document.body.contains(indicator)) {
-          document.body.removeChild(indicator);
-        }
-      };
-    }
-  }, [bookId, currentModuleIndex, isEditing, content]);
+  }, [bookId, currentModuleIndex, isEditing]);
 
   useEffect(() => {
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
@@ -856,6 +811,34 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
           }
         }, 300);
       }, 2500);
+    }
+  };
+
+  const handleGoToBookmark = () => {
+    if (bookmark) {
+      window.scrollTo({
+        top: bookmark.scrollPosition,
+        behavior: 'smooth'
+      });
+  
+      const toast = document.createElement('div');
+      toast.className = 'bookmark-toast';
+      (toast.style.background = 'rgba(59, 130, 246, 0.95)'),
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <span>Jumped to last position</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+          if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+          }
+        }, 300);
+      }, 2000);
     }
   };
 
@@ -945,6 +928,17 @@ const ReadingMode: React.FC<ReadingModeProps & { bookId: string; currentModuleIn
               </button>
           </div>
           
+          {bookmark && (
+              <button
+                  onClick={handleGoToBookmark}
+                  className="btn btn-secondary btn-sm"
+                  style={{borderColor: currentTheme.border, color: currentTheme.secondary}}
+                  title={`Go to last read position (${Math.round(bookmark.percentComplete)}% complete)`}
+              >
+                  <Bookmark size={14} /> Go to Bookmark
+              </button>
+          )}
+
           <button onClick={onEdit} className="btn btn-secondary btn-sm" style={{borderColor: currentTheme.border, color: currentTheme.secondary}}>
             <Edit size={14} /> Edit
           </button>
