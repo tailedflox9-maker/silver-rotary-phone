@@ -403,7 +403,8 @@ function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <main className="main-content">
+      {/* ✅ THIS IS THE FIX: Added id="main-scroll-area" here */}
+      <main id="main-scroll-area" className="main-content">
         {showOfflineMessage && (
           <div className="fixed top-20 right-4 z-50 content-card p-3 animate-fade-in-up">
             <div className="flex items-center gap-2 text-yellow-400">
