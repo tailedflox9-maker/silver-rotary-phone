@@ -1070,13 +1070,9 @@ const HomeView = ({
   </div>
 );
 
+// Minimal Book List Grid - Clean & Elegant
 const BookListGrid = ({
-  books,
-  onSelectBook,
-  onDeleteBook,
-  onUpdateBookStatus,
-  setView,
-  setShowListInMain,
+  books, onSelectBook, onDeleteBook, onUpdateBookStatus, setView, setShowListInMain
 }: {
   books: BookProject[];
   onSelectBook: (id: string) => void;
@@ -1085,217 +1081,119 @@ const BookListGrid = ({
   setView: (view: AppView) => void;
   setShowListInMain: (show: boolean) => void;
 }) => {
-  const [hoveredBookId, setHoveredBookId] = useState<string | null>(null);
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
-  const availableStatuses: BookProject['status'][] = ['planning', 'roadmap_completed', 'generating_content', 'assembling', 'completed', 'error'];
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const filteredBooks = useMemo(() => 
+    books.filter(book => book.title.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
+    [books, searchQuery]
+  );
 
-  const getStatusIcon = (status: BookProject['status']) => {
-    const iconMap: Record<BookProject['status'], React.ElementType> = {
-      planning: Clock,
-      generating_roadmap: Loader2,
-      roadmap_completed: ListChecks,
-      generating_content: Loader2,
-      assembling: Box,
-      completed: CheckCircle,
-      error: AlertCircle,
+  const getStatusInfo = (status: BookProject['status']) => {
+    const map: Record<BookProject['status'], {color: string; bg: string; text: string}> = {
+      planning: { color: 'text-gray-400', bg: 'bg-gray-500/10', text: 'Planning' },
+      generating_roadmap: { color: 'text-blue-400', bg: 'bg-blue-500/10', text: 'Roadmap' },
+      roadmap_completed: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', text: 'Ready' },
+      generating_content: { color: 'text-purple-400', bg: 'bg-purple-500/10', text: 'Writing' },
+      assembling: { color: 'text-orange-400', bg: 'bg-orange-500/10', text: 'Finalizing' },
+      completed: { color: 'text-green-400', bg: 'bg-green-500/10', text: 'Done' },
+      error: { color: 'text-red-400', bg: 'bg-red-500/10', text: 'Error' },
     };
-    const Icon = iconMap[status] || Loader2;
-    const colorClass =
-      status === 'completed'
-        ? 'text-green-500'
-        : status === 'error'
-        ? 'text-red-500'
-        : 'text-blue-500';
-    const animateClass = ['generating_roadmap', 'generating_content', 'assembling'].includes(
-      status
-    )
-      ? 'animate-spin'
-      : '';
-    return <Icon className={`w-4 h-4 ${colorClass} ${animateClass}`} />;
-  };
-
-  const getStatusText = (status: BookProject['status']) =>
-    ({
-      planning: 'Planning',
-      generating_roadmap: 'Creating Roadmap',
-      roadmap_completed: 'Ready to Write',
-      generating_content: 'Writing Chapters',
-      assembling: 'Finalizing Book',
-      completed: 'Completed',
-      error: 'Error',
-    }[status] || 'Unknown');
-
-  const getStatusColor = (status: BookProject['status']) => {
-    const colors = {
-      completed: 'border-[var(--color-border)]',
-      generating_content: 'border-blue-500/30',
-      assembling: 'border-orange-500/30',
-      roadmap_completed: 'border-yellow-500/30',
-      error: 'border-red-500/30',
-      planning: 'border-[var(--color-border)]',
-      generating_roadmap: 'border-blue-500/30',
-    };
-    return colors[status] || 'border-[var(--color-border)]';
-  };
-
-  const getReadingProgress = (bookId: string) => {
-    return readingProgressUtils.getBookmark(bookId);
+    return map[status] || map.planning;
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 py-10">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-10">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">My Library</h1>
-          <p className="text-[var(--color-text-secondary)] mt-1 text-sm">{books.length} {books.length === 1 ? 'project' : 'projects'}</p>
+          <h1 className="text-4xl font-bold text-[var(--color-text-primary)] tracking-tight">My Library</h1>
+          <p className="text-[var(--color-text-secondary)] mt-2">{books.length} {books.length === 1 ? 'book' : 'books'}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setShowListInMain(false)} className="btn btn-secondary btn-sm">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </button>
-          <button
-            onClick={() => {
-              setView('create');
-              setShowListInMain(false);
-            }}
-            className="btn btn-primary btn-sm"
-          >
-            <Plus className="w-4 h-4" /> New Book
-          </button>
+          <button onClick={() => setShowListInMain(false)} className="btn btn-ghost btn-sm"><ArrowLeft className="w-4 h-4" /> Back</button>
+          <button onClick={() => { setView('create'); setShowListInMain(false); }} className="btn btn-primary btn-sm"><Plus className="w-4 h-4" /> New Book</button>
         </div>
       </div>
 
       {books.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-20 h-20 mx-auto mb-6 bg-[var(--color-card)] rounded-full flex items-center justify-center border border-[var(--color-border)]">
+        <div className="text-center py-32">
+          <div className="w-20 h-20 mx-auto mb-6 bg-[var(--color-card)] rounded-2xl flex items-center justify-center border border-[var(--color-border)]">
             <BookOpen className="w-10 h-10 text-[var(--color-text-secondary)]" />
           </div>
-          <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">No books yet</h3>
-          <p className="text-[var(--color-text-secondary)] mb-6">Create your first AI-generated book to get started</p>
-          <button
-            onClick={() => {
-              setView('create');
-              setShowListInMain(false);
-            }}
-            className="btn btn-primary"
-          >
-            <Sparkles className="w-4 h-4" /> Create First Book
-          </button>
+          <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">No books yet</h3>
+          <p className="text-[var(--color-text-secondary)] mb-8 max-w-md mx-auto">Create your first AI-generated book to get started</p>
+          <button onClick={() => { setView('create'); setShowListInMain(false); }} className="btn btn-primary"><Sparkles className="w-4 h-4" /> Create First Book</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {books.map((book) => {
-            const isHovering = hoveredBookId === book.id;
-            const readingProgress = getReadingProgress(book.id);
+        <div className="space-y-3">
+          {filteredBooks.map((book) => {
+            const readingProgress = readingProgressUtils.getBookmark(book.id);
             const hasBookmark = readingProgress && book.status === 'completed';
+            const statusInfo = getStatusInfo(book.status);
 
             return (
               <div
                 key={book.id}
                 onClick={() => onSelectBook(book.id)}
-                onMouseEnter={() => setHoveredBookId(book.id)}
-                onMouseLeave={() => setHoveredBookId(null)}
-                className={`relative overflow-hidden rounded-xl border bg-[var(--color-card)] transition-all duration-300 cursor-pointer group
-                  ${isHovering ? 'scale-[1.02] shadow-xl border-[var(--color-accent-primary)]' : 'scale-100 shadow-md'}
-                  ${getStatusColor(book.status)}`}
+                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] hover:border-[var(--color-accent-primary)] transition-all duration-300 cursor-pointer"
               >
-                
-                <div className="relative p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <h3 className="text-base font-bold text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-accent-primary)] transition-colors">
-                        {book.title}
-                      </h3>
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }}
-                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="relative mb-3">
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setStatusDropdownOpen(statusDropdownOpen === book.id ? null : book.id);
-                      }}
-                      className="flex items-center gap-2 px-2 py-1 bg-[var(--color-card)] rounded-full border border-[var(--color-border)] w-fit cursor-pointer group"
-                    >
-                      {getStatusIcon(book.status)}
-                      <span className="text-xs font-medium text-[var(--color-text-secondary)] capitalize">{getStatusText(book.status)}</span>
-                      <ChevronDown size={12} className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors" />
-                    </div>
-                    {statusDropdownOpen === book.id && (
-                      <div className="absolute top-full left-0 mt-1 bg-[var(--color-sidebar)] border border-[var(--color-border)] rounded-lg shadow-lg z-10 w-48 animate-fade-in-up">
-                        <ul className="p-1">
-                          {availableStatuses.map(status => (
-                            <li
-                              key={status}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onUpdateBookStatus(book.id, status);
-                                setStatusDropdownOpen(null);
-                              }}
-                              className="px-3 py-1.5 text-xs rounded-md cursor-pointer hover:bg-[var(--color-card)] flex items-center justify-between text-[var(--color-text-secondary)]"
-                            >
-                              {getStatusText(status)}
-                              {book.status === status && <Check size={14} className="text-blue-400" />}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-auto">
-                    {hasBookmark ? (
-                      <div>
-                        <div className="w-full bg-[var(--color-bg)] rounded-full h-1.5 overflow-hidden border border-[var(--color-border)]">
-                          <div
-                            className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full"
-                            style={{ width: `${readingProgress.percentComplete}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-[var(--color-text-secondary)]">
-                            {readingProgress.percentComplete}% • {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}
-                          </span>
-                          <BookmarkCheck className="w-3.5 h-3.5 text-yellow-400" />
-                        </div>
-                      </div>
-                    ) : (book.status !== 'completed' && book.status !== 'error') && (
-                      <div>
-                        <div className="w-full bg-[var(--color-bg)] rounded-full h-1.5 overflow-hidden border border-[var(--color-border)]">
-                          <div
-                            className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full relative"
-                            style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
-                          </div>
-                        </div>
-                        <div className="text-xs text-[var(--color-text-secondary)] mt-2">
-                          {Math.round(book.progress)}% Complete
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mt-3 pt-3 border-t border-[var(--color-border)]">
+                <div className="flex items-center justify-between p-5">
+                  <div className="flex-1 min-w-0 pr-4">
+                    <h3 className="text-lg font-bold text-[var(--color-text-primary)] truncate group-hover:text-[var(--color-accent-primary)] transition-colors mb-1">
+                      {book.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-sm text-[var(--color-text-secondary)]">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" />
+                        <Clock className="w-3.5 h-3.5" />
                         <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
                       </div>
-                      {book.status === 'completed' && (
-                        <div className="flex items-center gap-1 text-blue-400">
-                          <Download className="w-3 h-3" />
-                          <span>Download</span>
+                      {book.modules.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <BookText className="w-3.5 h-3.5" />
+                          <span>{book.modules.length} chapters</span>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className={`px-3 py-1.5 rounded-full ${statusInfo.bg} flex items-center gap-2`}>
+                      <span className={`text-xs font-bold ${statusInfo.color}`}>{statusInfo.text}</span>
+                    </div>
+                    {book.status === 'completed' && (
+                      <Download className="w-5 h-5 text-[var(--color-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteBook(book.id); }}
+                      className="p-2 rounded-lg opacity-0 group-hover:opacity-100 text-[var(--color-text-secondary)] hover:text-red-400 hover:bg-red-900/20 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+
+                {(hasBookmark || book.status !== 'completed') && (
+                  <div className="px-5 pb-4">
+                    {hasBookmark ? (
+                      <div>
+                        <div className="w-full bg-[var(--color-bg)] rounded-full h-1.5 overflow-hidden border border-[var(--color-border)]">
+                          <div className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-full" style={{ width: `${readingProgress.percentComplete}%` }} />
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-[var(--color-text-secondary)]">{readingProgress.percentComplete}% • {readingProgressUtils.formatLastRead(new Date(readingProgress.lastReadAt))}</span>
+                          <BookmarkCheck className="w-3.5 h-3.5 text-yellow-400" />
+                        </div>
+                      </div>
+                    ) : book.status !== 'completed' && book.status !== 'error' && (
+                      <div>
+                        <div className="w-full bg-[var(--color-bg)] rounded-full h-1.5 overflow-hidden border border-[var(--color-border)]">
+                          <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full" style={{ width: `${Math.min(100, Math.max(0, book.progress))}%` }} />
+                        </div>
+                        <div className="text-xs text-[var(--color-text-secondary)] mt-2">{Math.round(book.progress)}% Complete</div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1921,7 +1819,7 @@ export function BookView({
                         </div>
                       </div>
                       <button
-                        onClick={handleStartGeneration}
+                        onClick={() => handleGenerateAllModules(currentBook, formData)}
                         disabled={localIsGenerating}
                         className="btn btn-primary w-full py-2.5"
                       >
@@ -1953,7 +1851,7 @@ export function BookView({
                           All chapters written. Ready to assemble.
                         </p>
                       </div>
-                      <button onClick={handleStartAssembly} className="btn btn-primary w-full py-2.5">
+                      <button onClick={() => handleAssembleBook(currentBook, formData)} className="btn btn-primary w-full py-2.5">
                         <Box className="w-5 h-5" />
                         Assemble Final Book
                       </button>
