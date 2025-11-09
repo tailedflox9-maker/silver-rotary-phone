@@ -742,20 +742,13 @@ class BookGenerationService {
     const reasoningPrompt = session.reasoning
       ? `\n- Reasoning/Motivation for the book: ${session.reasoning}`
       : '';
-    const languageMap = {
-      en: 'English',
-      hi: 'Hindi (using Devanagari script)',
-      mr: 'Marathi (using Devanagari script)'
-    };
-    const languageName = languageMap[session.language] || 'English';
   
     return `Create a comprehensive learning roadmap for: "${session.goal}"
   
   Requirements:
   - Generate a suitable number of modules, with a minimum of 8. The final number should be based on the complexity and scope of the learning goal.
-  - Each module should have a clear title and 3-5 specific learning objectives.
-  - All titles and objectives MUST be written in the ${languageName} language.
-  - Estimate realistic reading/study time for each module.
+  - Each module should have a clear title and 3-5 specific learning objectives
+  - Estimate realistic reading/study time for each module
   - Target audience: ${session.targetAudience || 'general learners'}
   - Complexity: ${session.complexityLevel || 'intermediate'}${reasoningPrompt}
   
@@ -763,8 +756,8 @@ class BookGenerationService {
   {
     "modules": [
       {
-        "title": "Module Title in ${languageName}",
-        "objectives": ["Objective 1 in ${languageName}", "Objective 2 in ${languageName}"],
+        "title": "Module Title",
+        "objectives": ["Objective 1", "Objective 2"],
         "estimatedTime": "2-3 hours"
       }
     ],
@@ -980,12 +973,6 @@ class BookGenerationService {
     const reasoningPrompt = session.reasoning
       ? `\n- Book's Core Reasoning: ${session.reasoning}`
       : '';
-    const languageMap = {
-      en: 'English',
-      hi: 'Hindi (using Devanagari script)',
-      mr: 'Marathi (using Devanagari script)'
-    };
-    const languageName = languageMap[session.language] || 'English';
   
     return `Generate a comprehensive chapter for: "${roadmapModule.title}"
   
@@ -997,7 +984,6 @@ class BookGenerationService {
   - Complexity: ${session.complexityLevel || 'intermediate'}${reasoningPrompt}${contextSummary}
   
   REQUIREMENTS:
-  - The entire chapter content MUST be written in the ${languageName} language.
   - Write 2000-4000 words
   - ${isFirstModule ? 'Provide introduction' : 'Build upon previous content'}
   - Use ## markdown headers
