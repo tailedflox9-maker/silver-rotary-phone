@@ -719,6 +719,17 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   const [bookmark, setBookmark] = useState<ReadingBookmark | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
 
+  // ✅ FIX: Helper functions to get the correct scrolling element
+  const getScrollEventsTarget = (): HTMLElement | Window => {
+    return document.getElementById('main-scroll-area') || window;
+  };
+  
+  const getScrollableElement = (): HTMLElement => {
+    // document.documentElement is for window scrolling (reports scrollTop)
+    // main-scroll-area is for the main element scrolling
+    return document.getElementById('main-scroll-area') || document.documentElement; 
+  };
+
   // ✅ FIX: Load bookmark on mount
   useEffect(() => {
     const currentBookmark = readingProgressUtils.getBookmark(bookId);
@@ -740,17 +751,20 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     }
   }, [isEditing]);
 
-  // ✅ FIX: Auto-save scroll position (debounced)
+  // ✅ FIX: Auto-save scroll position (debounced) - NOW USES CORRECT SCROLL ELEMENT
   useEffect(() => {
     if (isEditing) return;
 
+    const scrollTarget = getScrollEventsTarget();
+    const scrollElement = getScrollableElement();
     let scrollTimeout: any;
+
     const handleScroll = () => {
       setIsScrolling(true);
       clearTimeout(scrollTimeout);
       
       scrollTimeout = setTimeout(() => {
-        const scrollPosition = window.scrollY;
+        const scrollPosition = scrollElement.scrollTop; // ✅ Corrected
         if (scrollPosition > 100) {
           readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
           console.log('✓ Auto-saved bookmark at:', scrollPosition);
@@ -759,11 +773,11 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       }, 500);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    scrollTarget.addEventListener('scroll', handleScroll, { passive: true }); // ✅ Corrected
 
     return () => {
       clearTimeout(scrollTimeout);
-      window.removeEventListener('scroll', handleScroll);
+      scrollTarget.removeEventListener('scroll', handleScroll); // ✅ Corrected
     };
   }, [bookId, currentModuleIndex, isEditing]);
 
@@ -771,9 +785,9 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
 
-  // ✅ FIX: Toggle bookmark with proper feedback
+  // ✅ FIX: Toggle bookmark with proper feedback - NOW USES CORRECT SCROLL ELEMENT
   const toggleBookmark = () => {
-    const scrollPosition = window.scrollY;
+    const scrollPosition = getScrollableElement().scrollTop; // ✅ Corrected
     
     if (isBookmarked) {
       // Remove bookmark
@@ -795,12 +809,12 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     }
   };
 
-  // ✅ FIX: Go to bookmark with smooth scroll
+  // ✅ FIX: Go to bookmark with smooth scroll - NOW USES CORRECT SCROLL ELEMENT
   const handleGoToBookmark = () => {
     if (bookmark) {
       console.log('📍 Going to bookmark:', bookmark.scrollPosition);
       
-      window.scrollTo({
+      getScrollableElement().scrollTo({ // ✅ Corrected
         top: bookmark.scrollPosition,
         behavior: 'smooth'
       });
