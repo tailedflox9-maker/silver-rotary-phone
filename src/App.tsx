@@ -1,4 +1,6 @@
-// src/App.tsx - COMPLETE FIXED VERSION
+// ============================================================================
+// FILE: src/App.tsx - COMPLETE FIXED VERSION WITH GENERATION FIX
+// ============================================================================
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -101,17 +103,14 @@ function App() {
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
-  // ✅ FIX: Auto-detect completion and show "Assemble Book" button
   useEffect(() => {
     if (!currentBook) return;
     
-    // Check if all modules are completed but book isn't assembled yet
     const areAllModulesDone = 
       currentBook.roadmap &&
       currentBook.modules.length === currentBook.roadmap.modules.length &&
       currentBook.modules.every(m => m.status === 'completed');
     
-    // Update status to show assemble button
     if (areAllModulesDone && 
         currentBook.status === 'generating_content' && 
         generationStatus.status !== 'generating' &&
@@ -223,7 +222,6 @@ function App() {
 
     const bookId = generateId();
     
-    // ✅ FIX: Clear any existing pause/checkpoint for this new book
     try {
       localStorage.removeItem(`pause_flag_${bookId}`);
       localStorage.removeItem(`checkpoint_${bookId}`);
@@ -277,6 +275,14 @@ function App() {
   
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) { alert('No roadmap available.'); return; }
+    
+    // ✅ FIX: Validate session has required fields
+    if (!session || !session.goal || !session.goal.trim()) {
+      console.error('Invalid session:', session);
+      alert('Invalid book session. Please recreate the book.');
+      return;
+    }
+    
     setGenerationStartTime(new Date());
     setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
     try {
@@ -403,7 +409,6 @@ function App() {
         onToggleTheme={toggleTheme}
       />
 
-      {/* ✅ THIS IS THE FIX: Added id="main-scroll-area" here */}
       <main id="main-scroll-area" className="main-content">
         {showOfflineMessage && (
           <div className="fixed top-20 right-4 z-50 content-card p-3 animate-fade-in-up">
