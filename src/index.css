@@ -3,6 +3,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Font Face - Aptos-Mono
+   ========================================================================== */
+@font-face {
+  font-family: 'Aptos-Mono';
+  src: url('/fonts/Aptos-Mono-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ==========================================================================
    Base Layer & Theming
@@ -53,7 +63,7 @@
 
   body {
     @apply bg-[var(--color-bg)] text-[var(--color-text-primary)] antialiased transition-colors duration-300;
-    font-family: 'Work Sans', sans-serif;
+    font-family: 'Aptos-Mono', monospace;
     margin: 0;
     padding: 0;
   }
@@ -171,7 +181,10 @@
   }
 
   /* --- Buttons --- */
-  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--color-bg)]; }
+  .btn { 
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--color-bg)];
+    font-family: 'Aptos-Mono', monospace;
+  }
   .btn-primary { @apply bg-white text-black hover:bg-gray-200 focus:ring-white; }
   .btn-secondary { @apply bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white focus:ring-white; }
   .btn-danger { @apply bg-[var(--color-accent-danger)] text-white hover:bg-red-600 focus:ring-[var(--color-accent-danger)]; }
@@ -187,6 +200,7 @@
   /* --- Forms --- */
   .input-style, .textarea-style { 
     @apply w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-[var(--color-text-primary)] placeholder-[var(--color-text-placeholder)] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-colors;
+    font-family: 'Aptos-Mono', monospace;
   }
   .textarea-style { @apply min-h-[120px] resize-none; }
 
@@ -229,6 +243,7 @@
 
 .reading-container {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Aptos-Mono', monospace;
 }
 .theme-dark ::selection, .theme-light ::selection, .theme-sepia ::selection {
   background-color: var(--color-accent-primary);
@@ -297,6 +312,7 @@ article a:hover {
 .streaming-text-box {
   scroll-behavior: smooth;
   overflow-anchor: auto;
+  font-family: 'Aptos-Mono', monospace;
 }
 .streaming-text-box::-webkit-scrollbar {
   width: 4px;
@@ -323,12 +339,6 @@ article a:hover {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-
-   /* ============================================================================
-   ADD THESE STYLES TO YOUR EXISTING index.css
-   ============================================================================ */
-
-/* Bookmark Button Animations */
 @keyframes bookmark-pulse {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4);
@@ -352,7 +362,6 @@ article a:hover {
   }
 }
 
-/* Bookmark Icon Styles */
 .bookmark-btn-active {
   animation: bookmark-pulse 2s ease-in-out infinite;
 }
@@ -361,7 +370,6 @@ article a:hover {
   animation: bookmark-check 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Reading Progress Bar with Bookmark Indicator */
 .progress-with-bookmark {
   position: relative;
 }
@@ -376,12 +384,6 @@ article a:hover {
   animation: bookmark-pulse 2s ease-in-out infinite;
 }
 
-/* Smooth Scroll for Reading Mode */
-.reading-container {
-  scroll-behavior: smooth;
-}
-
-/* Enhanced Reading Controls */
 .reading-controls {
   backdrop-filter: blur(12px);
   background: rgba(0, 0, 0, 0.6);
@@ -393,7 +395,6 @@ article a:hover {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Bookmark Tooltip */
 .bookmark-tooltip {
   position: absolute;
   bottom: 100%;
@@ -415,14 +416,12 @@ article a:hover {
   transform: translateX(-50%) translateY(-4px);
 }
 
-/* Reading Mode Transitions */
 .theme-transition {
   transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Book Card Bookmark Badge */
 .book-card-bookmark {
   position: absolute;
   top: 12px;
@@ -447,7 +446,6 @@ article a:hover {
   }
 }
 
-/* Enhanced Progress Tracking */
 .progress-indicator {
   position: relative;
   overflow: visible;
@@ -478,7 +476,6 @@ article a:hover {
   }
 }
 
-/* Bookmark Success Toast */
 @keyframes toast-slide-in {
   from {
     transform: translateX(100%);
@@ -515,13 +512,13 @@ article a:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   animation: toast-slide-in 0.3s ease-out;
   z-index: 1000;
+  font-family: 'Aptos-Mono', monospace;
 }
 
 .bookmark-toast.hiding {
   animation: toast-slide-out 0.3s ease-in forwards;
 }
 
-/* Responsive Bookmark Styles */
 @media (max-width: 768px) {
   .book-card-bookmark {
     width: 24px;
@@ -543,7 +540,6 @@ article a:hover {
   }
 }
 
-/* Dark/Light Theme Bookmark Adjustments */
 .light .bookmark-btn-active {
   box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6);
 }
@@ -552,13 +548,11 @@ article a:hover {
   box-shadow: 0 2px 8px rgba(234, 179, 8, 0.5);
 }
 
-/* Accessibility: Focus States */
 .bookmark-btn:focus-visible {
   outline: 2px solid rgba(234, 179, 8, 0.8);
   outline-offset: 2px;
 }
 
-/* Print Styles - Hide Bookmarks */
 @media print {
   .bookmark-btn,
   .book-card-bookmark,
@@ -567,17 +561,6 @@ article a:hover {
   }
 }
 
-
-/* ============================================================================
-   ADD THESE STYLES TO YOUR src/index.css FILE
-   (Add at the end of the file, after existing styles)
-   ============================================================================ */
-
-/* ==========================================================================
-   Enhanced Dropdown Styles - Better Readability & Blur Background
-   ========================================================================== */
-
-/* Dark Theme Dropdown - High Opacity + Blur */
 .dark .model-dropdown {
   background: rgba(19, 19, 19, 0.98) !important;
   backdrop-filter: blur(16px) !important;
@@ -602,7 +585,6 @@ article a:hover {
   color: #A0A0A0 !important;
 }
 
-/* Light Theme Dropdown - Clean White + Blur */
 .light .model-dropdown {
   background: rgba(255, 255, 255, 0.98) !important;
   backdrop-filter: blur(16px) !important;
@@ -628,7 +610,6 @@ article a:hover {
   color: #6C757D !important;
 }
 
-/* Enhanced Shadow for Better Depth */
 .model-dropdown {
   box-shadow: 
     0 10px 25px -5px rgba(0, 0, 0, 0.3),
@@ -643,7 +624,6 @@ article a:hover {
     0 0 0 1px rgba(0, 0, 0, 0.05) inset !important;
 }
 
-/* Improve Search Input Contrast */
 .dark .model-dropdown input {
   background: rgba(0, 0, 0, 0.3) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
@@ -664,7 +644,6 @@ article a:hover {
   color: rgba(0, 0, 0, 0.4) !important;
 }
 
-/* Divider Lines */
 .dark .model-dropdown .border-b {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
@@ -673,7 +652,6 @@ article a:hover {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Provider Headers */
 .dark .model-dropdown .uppercase {
   color: #999999 !important;
 }
@@ -682,7 +660,6 @@ article a:hover {
   color: #6C757D !important;
 }
 
-/* Disabled State */
 .dark .model-dropdown button:disabled {
   color: #444444 !important;
   cursor: not-allowed !important;
@@ -693,7 +670,6 @@ article a:hover {
   cursor: not-allowed !important;
 }
 
-/* Scrollbar for Dropdown */
 .model-dropdown::-webkit-scrollbar {
   width: 6px;
 }
@@ -724,7 +700,6 @@ article a:hover {
   background: rgba(0, 0, 0, 0.3);
 }
 
-/* Fix text color for selected item text */
 .dark .model-dropdown button.selected .text-sm {
   color: #93C5FD !important;
 }
@@ -733,7 +708,6 @@ article a:hover {
   color: #0D6EFD !important;
 }
 
-/* Fix description text in selected items */
 .dark .model-dropdown button.selected .text-xs {
   color: #60A5FA !important;
 }
