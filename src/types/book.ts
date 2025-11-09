@@ -5,7 +5,7 @@ export interface BookProject {
   id: string;
   title: string;
   goal: string;
-  language: 'en' | 'hi' | 'mr'; // MODIFIED
+  language: 'en'; // Simplified to English only
   status: 'planning' | 'generating_roadmap' | 'roadmap_completed' | 'generating_content' | 'assembling' | 'completed' | 'error';
   progress: number; // 0-100
   createdAt: Date;
@@ -61,7 +61,7 @@ export interface BookGenerationProgress {
 
 export interface BookSession {
   goal: string;
-  language: 'en' | 'hi' | 'mr'; // MODIFIED
+  language: 'en'; // Simplified to English only
   targetAudience?: string;
   complexityLevel?: 'beginner' | 'intermediate' | 'advanced';
   preferences?: {
