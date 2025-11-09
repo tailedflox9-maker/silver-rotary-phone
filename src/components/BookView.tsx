@@ -1,5 +1,3 @@
-// src/components/BookView.tsx - COMPLETE FIXED VERSION WITH WORKING BOOKMARKS
-
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -704,17 +702,25 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<ReadingSettings>(() => {
-    const saved = localStorage.getItem('pustakam-reading-settings');
-    const parsed = saved ? JSON.parse(saved) : {};
-    return {
-      fontSize: 18,
-      lineHeight: 1.7,
-      fontFamily: 'serif',
-      theme: theme === 'dark' ? 'dark' : 'light',
-      maxWidth: 'medium',
-      textAlign: 'left',
-      ...parsed,
-    };
+    try { // Fix 5: LocalStorage error handling for reading settings
+      const saved = localStorage.getItem('pustakam-reading-settings');
+      const parsed = saved ? JSON.parse(saved) : {};
+      return {
+        fontSize: 18,
+        lineHeight: 1.7,
+        fontFamily: 'serif',
+        theme: theme === 'dark' ? 'dark' : 'light',
+        maxWidth: 'medium',
+        textAlign: 'left',
+        ...parsed,
+      };
+    } catch (error) {
+      console.error('Error loading reading settings from localStorage:', error);
+      return {
+        fontSize: 18, lineHeight: 1.7, fontFamily: 'serif', 
+        theme: theme === 'dark' ? 'dark' : 'light', maxWidth: 'medium', textAlign: 'left',
+      };
+    }
   });
   
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -724,14 +730,18 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
 
   // ✅ FIX: Helper functions to get the correct scrolling element
   const getScrollEventsTarget = (): HTMLElement | Window => {
-    return document.getElementById('main-scroll-area') || window;
+    const element = document.getElementById('main-scroll-area');
+    if (!element) {
+      console.warn('getScrollEventsTarget: main-scroll-area not found, using window as fallback'); // Fix 6: Add warning
+    }
+    return element || window;
   };
   
   // ✅ FIX 6: Graceful fallback for scroll element
   const getScrollableElement = (): HTMLElement => {
     const element = document.getElementById('main-scroll-area');
     if (!element) {
-      console.warn('main-scroll-area not found, using document.documentElement as fallback');
+      console.warn('getScrollableElement: main-scroll-area not found, using document.documentElement as fallback'); // Fix 6: Add warning
     }
     return element || document.documentElement; 
   };
@@ -772,7 +782,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       scrollTimeout = setTimeout(() => {
         const scrollPosition = scrollElement.scrollTop; // ✅ Corrected
         if (scrollPosition > 100) {
-          readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+          readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition); // Fix 5: LocalStorage error handling in saveBookmark
           console.log('✓ Auto-saved bookmark at:', scrollPosition);
         }
         setIsScrolling(false);
@@ -788,7 +798,12 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   }, [bookId, currentModuleIndex, isEditing]);
 
   useEffect(() => {
-    localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
+    try { // Fix 5: LocalStorage error handling for reading settings
+      localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Error saving reading settings to localStorage:', error);
+      alert('Failed to save reading settings. Please check your browser storage.');
+    }
   }, [settings]);
 
   // ✅ FIX: Toggle bookmark with proper feedback - NOW USES CORRECT SCROLL ELEMENT
@@ -797,7 +812,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     
     if (isBookmarked) {
       // Remove bookmark
-      readingProgressUtils.deleteBookmark(bookId);
+      readingProgressUtils.deleteBookmark(bookId); // Fix 5: LocalStorage error handling in deleteBookmark
       setIsBookmarked(false);
       setBookmark(null);
       
@@ -805,9 +820,9 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       
     } else {
       // Add bookmark
-      readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
+      readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition); // Fix 5: LocalStorage error handling in saveBookmark
       
-      const newBookmark = readingProgressUtils.getBookmark(bookId);
+      const newBookmark = readingProgressUtils.getBookmark(bookId); // Fix 5: LocalStorage error handling in getBookmark
       setBookmark(newBookmark);
       setIsBookmarked(true);
       
@@ -970,7 +985,8 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
                   if (inline) {
                     return <code {...props}>{children}</code>;
                   }
-                  return <CodeBlock {...props} theme={theme} readingTheme={settings.theme} className={className}>{children}</CodeBlock>;
+                  // Fix 8: Ensure children is explicitly converted to string for safety
+                  return <CodeBlock {...props} theme={theme} readingTheme={settings.theme} className={className}>{String(children)}</CodeBlock>;
                 }
               }}
               className="focus:outline-none"
@@ -1145,7 +1161,7 @@ const BookListGrid = ({
   };
 
   const getReadingProgress = (bookId: string) => {
-    return readingProgressUtils.getBookmark(bookId);
+    return readingProgressUtils.getBookmark(bookId); // Fix 5: LocalStorage error handling in getBookmark
   };
 
   return (
@@ -1391,7 +1407,7 @@ export function BookView({
       setIsEditing(false);
 
       if (currentBook.status === 'completed') {
-        const bookmark = readingProgressUtils.getBookmark(currentBook.id);
+        const bookmark = readingProgressUtils.getBookmark(currentBook.id); // Fix 5: LocalStorage error handling in getBookmark
         setDetailTab(bookmark ? 'read' : 'overview');
       } else {
         setDetailTab('overview');
