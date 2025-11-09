@@ -57,15 +57,20 @@ async function loadPdfMake() {
     }
     pdfMake.vfs = vfs;
 
-    // Auto-load Aptos-Mono fonts from /fonts/
+    // Auto-load all fonts from /fonts/
     const basePath = '/fonts/';
-    const aptosMonoFonts = [
+    const fontsToLoad = [
+      // Devanagari for Hindi/Marathi
+      { name: 'Amita-Regular.ttf', key: 'Amita-Regular.ttf' },
+      { name: 'Amita-Bold.ttf', key: 'Amita-Bold.ttf' },
+      { name: 'PlaypenSansDeva-SemiBold.ttf', key: 'PlaypenSansDeva-SemiBold.ttf' },
+      // Monospace for code
       { name: 'Aptos-Mono.ttf', key: 'Aptos-Mono.ttf' },
       { name: 'Aptos-Mono-Bold.ttf', key: 'Aptos-Mono-Bold.ttf' },
       { name: 'Aptos-Mono-Bold-Italic.ttf', key: 'Aptos-Mono-Bold-Italic.ttf' }
     ];
     
-    for (const font of aptosMonoFonts) {
+    for (const font of fontsToLoad) {
       try {
         const response = await fetch(`${basePath}${font.name}`);
         if (response.ok) {
@@ -83,50 +88,29 @@ async function loadPdfMake() {
       }
     }
     
-    const vfsKeys = Object.keys(vfs);
-    if (vfsKeys.length === 0) {
-      throw new Error('VFS_EMPTY');
-    }
-
-    // Check which fonts are available
-    const aptosMonoInVfs = !!vfs['Aptos-Mono.ttf'] && !!vfs['Aptos-Mono-Bold.ttf'];
-    
     // Configure fonts
-    if (aptosMonoInVfs) {
-      const hasBoldItalic = !!vfs['Aptos-Mono-Bold-Italic.ttf'];
-      
-      const isValidFont = (key: string) => {
-        const data = vfs[key];
-        return data && typeof data === 'string' && data.length > 1000;
-      };
-      
-      if (isValidFont('Aptos-Mono.ttf') && isValidFont('Aptos-Mono-Bold.ttf')) {
-        pdfMake.fonts = {
-          'Aptos-Mono': {
-            normal: 'Aptos-Mono.ttf',
-            bold: 'Aptos-Mono-Bold.ttf',
-            italics: (hasBoldItalic && isValidFont('Aptos-Mono-Bold-Italic.ttf')) ? 'Aptos-Mono-Bold-Italic.ttf' : 'Aptos-Mono.ttf',
-            bolditalics: (hasBoldItalic && isValidFont('Aptos-Mono-Bold-Italic.ttf')) ? 'Aptos-Mono-Bold-Italic.ttf' : 'Aptos-Mono-Bold.ttf'
-          }
-        };
-      } else {
-        pdfMake.fonts = {
-          Roboto: {
-            normal: 'Roboto-Regular.ttf',
-            bold: 'Roboto-Medium.ttf',
-            italics: 'Roboto-Italic.ttf',
-            bolditalics: 'Roboto-MediumItalic.ttf'
-          }
-        };
+    pdfMake.fonts = {
+      Roboto: {
+        normal: 'Roboto-Regular.ttf',
+        bold: 'Roboto-Medium.ttf',
+        italics: 'Roboto-Italic.ttf',
+        bolditalics: 'Roboto-MediumItalic.ttf'
+      },
+      Devanagari: {
+        normal: 'Amita-Regular.ttf',
+        bold: 'PlaypenSansDeva-SemiBold.ttf',
+        italics: 'Amita-Regular.ttf',
+        bolditalics: 'Amita-Bold.ttf',
       }
-    } else {
-      pdfMake.fonts = {
-        Roboto: {
-          normal: 'Roboto-Regular.ttf',
-          bold: 'Roboto-Medium.ttf',
-          italics: 'Roboto-Italic.ttf',
-          bolditalics: 'Roboto-MediumItalic.ttf'
-        }
+    };
+    
+    const aptosMonoInVfs = !!vfs['Aptos-Mono.ttf'] && !!vfs['Aptos-Mono-Bold.ttf'];
+    if (aptosMonoInVfs) {
+      pdfMake.fonts.AptosMono = {
+        normal: 'Aptos-Mono.ttf',
+        bold: 'Aptos-Mono-Bold.ttf',
+        italics: 'Aptos-Mono-Bold-Italic.ttf',
+        bolditalics: 'Aptos-Mono-Bold-Italic.ttf'
       };
     }
     
@@ -178,9 +162,11 @@ class ProfessionalPdfGenerator {
   private content: PDFContent[] = [];
   private styles: any;
   private fontFamily: string;
+  private codeFontFamily: string;
 
   constructor() {
     this.fontFamily = 'Roboto';
+    this.codeFontFamily = 'Roboto';
     this.styles = {
       coverTitle: {
         fontSize: 28,
@@ -255,7 +241,8 @@ class ProfessionalPdfGenerator {
         preserveLeadingSpaces: true,
         lineHeight: 1.5,
         alignment: 'left',
-        characterSpacing: -0.5
+        characterSpacing: -0.5,
+        font: this.codeFontFamily
       },
       blockquote: {
         fontSize: 10.5,
@@ -371,7 +358,7 @@ class ProfessionalPdfGenerator {
       } else if (match[6]) {
         parts.push({ text: match[6], italics: true });
       } else if (match[7]) {
-        parts.push({ text: match[7], font: this.fontFamily, background: '#f3f4f6' });
+        parts.push({ text: match[7], font: this.codeFontFamily, background: '#f3f4f6' });
       } else if (match[8]) {
         parts.push({ text: match[8], decoration: 'lineThrough' });
       }
@@ -457,7 +444,7 @@ class ProfessionalPdfGenerator {
             body: [
               [{
                 text: chunk,
-                font: this.fontFamily,
+                font: this.codeFontFamily,
                 fontSize: fontSize,
                 color: '#0f172a',
                 preserveLeadingSpaces: true,
@@ -647,7 +634,7 @@ class ProfessionalPdfGenerator {
                 lineWidth: 2,
                 lineColor: '#d1d5db'
               }],
-              margin: [0, 20, 0, 30]
+              margin:
             });
           }
           isFirstModule = false;
@@ -677,18 +664,18 @@ class ProfessionalPdfGenerator {
         content.push({
           text: Array.isArray(formattedText) ? [{ text: '• ' }, ...formattedText] : [{ text: '• ' }, formattedText],
           style: 'listItem',
-          margin: [10, 3, 0, 3],
+          margin:,
           alignment: 'left'
         });
       } else if (trimmed.match(/^\d+\.\s+/)) {
         flushParagraph();
-        const num = trimmed.match(/^(\d+)\./)?.[1] || '';
+        const num = trimmed.match(/^(\d+)\./)?. || '';
         const listText = trimmed.replace(/^\d+\.\s+/, '');
         const formattedText = this.parseInlineMarkdown(listText);
         content.push({
           text: Array.isArray(formattedText) ? [{ text: num + '. ' }, ...formattedText] : [{ text: num + '. ' }, formattedText],
           style: 'listItem',
-          margin: [10, 3, 0, 3],
+          margin:,
           alignment: 'left'
         });
       } else if (trimmed.startsWith('>')) {
@@ -708,11 +695,11 @@ class ProfessionalPdfGenerator {
               width: '*',
               text: this.parseInlineMarkdown(trimmed.substring(1).trim()),
               style: 'blockquote',
-              margin: [8, 0, 0, 0],
+              margin:,
               alignment: 'justify'
             }
           ],
-          margin: [15, 10, 15, 10]
+          margin:
         });
       } else {
         // ✅ Keep emojis in paragraph text
@@ -728,7 +715,7 @@ class ProfessionalPdfGenerator {
 
   private createDisclaimerPage(): PDFContent[] {
     return [
-      { text: '', margin: [0, 60, 0, 0] },
+      { text: '', margin: },
       {
         text: 'IMPORTANT DISCLAIMER',
         style: 'disclaimerTitle'
@@ -742,14 +729,14 @@ class ProfessionalPdfGenerator {
           h: 2,
           color: '#4a5568'
         }],
-        margin: [0, 0, 0, 30]
+        margin:
       },
       {
         text: 'AI-Generated Content Notice',
         fontSize: 12,
         bold: true,
         color: '#2d3748',
-        margin: [0, 0, 0, 12],
+        margin:,
         alignment: 'left'
       },
       {
@@ -765,14 +752,14 @@ class ProfessionalPdfGenerator {
           'This content should not be considered a substitute for professional advice in medical, legal, financial, or other specialized fields.'
         ],
         style: 'disclaimerNote',
-        margin: [20, 10, 0, 20]
+        margin:
       },
       {
         text: 'Intellectual Property & Usage',
         fontSize: 12,
         bold: true,
         color: '#2d3748',
-        margin: [0, 10, 0, 12],
+        margin:,
         alignment: 'left'
       },
       {
@@ -784,7 +771,7 @@ class ProfessionalPdfGenerator {
         fontSize: 12,
         bold: true,
         color: '#2d3748',
-        margin: [0, 10, 0, 12],
+        margin:,
         alignment: 'left'
       },
       {
@@ -804,7 +791,7 @@ class ProfessionalPdfGenerator {
             minute: '2-digit'
           }), fontSize: 9, color: '#2d3748' }
         ],
-        margin: [0, 30, 0, 10],
+        margin:,
         alignment: 'left'
       },
       {
@@ -812,7 +799,7 @@ class ProfessionalPdfGenerator {
         fontSize: 8,
         color: '#718096',
         alignment: 'center',
-        margin: [0, 0, 0, 20]
+        margin:
       }
     ];
   }
@@ -828,17 +815,17 @@ class ProfessionalPdfGenerator {
     const normalizedTitle = this.normalizeDashes(title);
     
     return [
-      { text: '', margin: [0, 80, 0, 0] },
+      { text: '', margin: },
       {
         text: normalizedTitle,
         style: 'coverTitle',
-        margin: [0, 0, 0, 12]
+        margin:
       },
       {
         text: 'Generated by Pustakam Injin',
         fontSize: 11,
         color: '#666666',
-        margin: [0, 0, 0, 40],
+        margin:,
         alignment: 'left'
       },
       {
@@ -846,7 +833,7 @@ class ProfessionalPdfGenerator {
         fontSize: 11,
         bold: true,
         color: '#1a1a1a',
-        margin: [0, 0, 0, 8],
+        margin:,
         alignment: 'left'
       },
       {
@@ -855,7 +842,7 @@ class ProfessionalPdfGenerator {
         lineHeight: 1.6,
         alignment: 'justify',
         color: '#1a1a1a',
-        margin: [0, 0, 0, 30]
+        margin:
       },
       {
         stack: [
@@ -864,7 +851,7 @@ class ProfessionalPdfGenerator {
             fontSize: 11,
             bold: true,
             color: '#1a1a1a',
-            margin: [0, 0, 0, 8],
+            margin:,
             alignment: 'left'
           },
           {
@@ -872,32 +859,32 @@ class ProfessionalPdfGenerator {
               { text: 'Word Count:', width: 80, fontSize: 9, color: '#666666' },
               { text: metadata.words.toLocaleString(), fontSize: 9, color: '#1a1a1a' }
             ],
-            margin: [0, 0, 0, 4]
+            margin:
           },
           {
             columns: [
               { text: 'Chapters:', width: 80, fontSize: 9, color: '#666666' },
               { text: metadata.modules.toString(), fontSize: 9, color: '#1a1a1a' }
             ],
-            margin: [0, 0, 0, 4]
+            margin:
           },
           {
             columns: [
               { text: 'Generated:', width: 80, fontSize: 9, color: '#666666' },
               { text: metadata.date, fontSize: 9, color: '#1a1a1a' }
             ],
-            margin: [0, 0, 0, 4]
+            margin:
           },
           ...(metadata.provider && metadata.model ? [{
             columns: [
               { text: 'AI Model:', width: 80, fontSize: 9, color: '#666666' },
               { text: `${metadata.provider} ${metadata.model}`, fontSize: 9, color: '#1a1a1a' }
             ],
-            margin: [0, 0, 0, 4]
+            margin:
           }] : [])
         ]
       },
-      { text: '', margin: [0, 0, 0, 80] },
+      { text: '', margin: },
       {
         stack: [
           {
@@ -908,21 +895,21 @@ class ProfessionalPdfGenerator {
               lineWidth: 1,
               lineColor: '#1a1a1a'
             }],
-            margin: [0, 0, 0, 12]
+            margin:
           },
           {
             text: 'Pustakam Injin',
             fontSize: 10,
             bold: true,
             color: '#1a1a1a',
-            margin: [0, 0, 0, 4],
+            margin:,
             alignment: 'left'
           },
           {
             text: 'AI-Powered Knowledge Creation',
             fontSize: 9,
             color: '#666666',
-            margin: [0, 0, 0, 8],
+            margin:,
             alignment: 'left'
           },
           {
@@ -963,13 +950,24 @@ class ProfessionalPdfGenerator {
   public async generate(project: BookProject, onProgress: (progress: number) => void): Promise<void> {
     onProgress(10);
     const pdfMakeLib = await loadPdfMake();
-    const hasAptosMono = Object.keys(pdfMakeLib.vfs).some(key => key.includes('Aptos-Mono'));
-    this.fontFamily = hasAptosMono ? 'Aptos-Mono' : 'Roboto';
+    
+    const hasAptosMono = !!pdfMakeLib.fonts.AptosMono;
+    const hasDevanagari = !!pdfMakeLib.fonts.Devanagari;
+
+    this.codeFontFamily = hasAptosMono ? 'AptosMono' : 'Roboto';
+
+    if ((project.language === 'hi' || project.language === 'mr') && hasDevanagari) {
+        this.fontFamily = 'Devanagari';
+    } else {
+        this.fontFamily = 'Roboto';
+    }
+
+    this.styles.codeBlock.font = this.codeFontFamily;
     
     const totalWords = project.modules.reduce((sum, m) => sum + m.wordCount, 0);
     const providerMatch = project.finalBook?.match(/\*\*Provider:\*\* (.+?) \((.+?)\)/);
-    const provider = providerMatch ? providerMatch[1] : undefined;
-    const model = providerMatch ? providerMatch[2] : undefined;
+    const provider = providerMatch ? providerMatch : undefined;
+    const model = providerMatch ? providerMatch : undefined;
     
     const coverContent = this.createCoverPage(project.title, {
       words: totalWords,
@@ -1002,7 +1000,7 @@ class ProfessionalPdfGenerator {
         alignment: 'justify'
       },
       pageSize: 'A4',
-      pageMargins: [50, 75, 50, 70],
+      pageMargins:,
       header: (currentPage: number) => {
         if (currentPage <= 1) return {};
         return {
@@ -1022,7 +1020,7 @@ class ProfessionalPdfGenerator {
               width: 'auto'
             }
           ],
-          margin: [50, 22, 50, 0]
+          margin:
         };
       },
       footer: (currentPage: number) => {
@@ -1033,7 +1031,7 @@ class ProfessionalPdfGenerator {
               text: 'Pustakam Injin',
               fontSize: 7,
               color: '#999999',
-              margin: [50, 0, 0, 0],
+              margin:,
               width: '*'
             },
             {
@@ -1041,11 +1039,11 @@ class ProfessionalPdfGenerator {
               fontSize: 7,
               color: '#999999',
               alignment: 'right',
-              margin: [0, 0, 50, 0],
+              margin:,
               width: '*'
             }
           ],
-          margin: [0, 20, 0, 0]
+          margin:
         };
       },
       info: {
