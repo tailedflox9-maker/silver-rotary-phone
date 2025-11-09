@@ -1,5 +1,4 @@
 // src/components/BookView.tsx - COMPLETE FIXED VERSION WITH WORKING BOOKMARKS
-
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -278,6 +277,7 @@ const PixelAnimation = () => {
     </div>
   );
 };
+
 
 const RetryDecisionPanel = ({
   retryInfo,
@@ -700,7 +700,6 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   currentModuleIndex
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
-  const readingContainerRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<ReadingSettings>(() => {
     const saved = localStorage.getItem('pustakam-reading-settings');
     const parsed = saved ? JSON.parse(saved) : {};
@@ -719,7 +718,17 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
   const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const [bookmark, setBookmark] = useState<ReadingBookmark | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [currentScrollPos, setCurrentScrollPos] = useState(0);
+
+  // ✅ FIX: Helper functions to get the correct scrolling element
+  const getScrollEventsTarget = (): HTMLElement | Window => {
+    return document.getElementById('main-scroll-area') || window;
+  };
+  
+  const getScrollableElement = (): HTMLElement => {
+    // document.documentElement is for window scrolling (reports scrollTop)
+    // main-scroll-area is for the main element scrolling
+    return document.getElementById('main-scroll-area') || document.documentElement; 
+  };
 
   // ✅ FIX: Load bookmark on mount
   useEffect(() => {
@@ -742,33 +751,33 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     }
   }, [isEditing]);
 
-  // ✅ FIX: Auto-save scroll position (debounced) - Track actual scroll
+  // ✅ FIX: Auto-save scroll position (debounced) - NOW USES CORRECT SCROLL ELEMENT
   useEffect(() => {
     if (isEditing) return;
 
+    const scrollTarget = getScrollEventsTarget();
+    const scrollElement = getScrollableElement();
     let scrollTimeout: any;
+
     const handleScroll = () => {
       setIsScrolling(true);
       clearTimeout(scrollTimeout);
       
       scrollTimeout = setTimeout(() => {
-        // Get actual scroll position from window or body
-        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        setCurrentScrollPos(scrollPosition);
-        
+        const scrollPosition = scrollElement.scrollTop; // ✅ Corrected
         if (scrollPosition > 100) {
           readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
           console.log('✓ Auto-saved bookmark at:', scrollPosition);
         }
         setIsScrolling(false);
-      }, 1000); // Increased debounce time
+      }, 500);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    scrollTarget.addEventListener('scroll', handleScroll, { passive: true }); // ✅ Corrected
 
     return () => {
       clearTimeout(scrollTimeout);
-      window.removeEventListener('scroll', handleScroll);
+      scrollTarget.removeEventListener('scroll', handleScroll); // ✅ Corrected
     };
   }, [bookId, currentModuleIndex, isEditing]);
 
@@ -776,12 +785,9 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     localStorage.setItem('pustakam-reading-settings', JSON.stringify(settings));
   }, [settings]);
 
-  // ✅ FIX: Toggle bookmark with proper feedback
+  // ✅ FIX: Toggle bookmark with proper feedback - NOW USES CORRECT SCROLL ELEMENT
   const toggleBookmark = () => {
-    // Get actual scroll position
-    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    
-    console.log('Current scroll position:', scrollPosition);
+    const scrollPosition = getScrollableElement().scrollTop; // ✅ Corrected
     
     if (isBookmarked) {
       // Remove bookmark
@@ -792,34 +798,28 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
       showToast('Bookmark removed', '🔖');
       
     } else {
-      // Add bookmark - use current scroll or a minimum of 100px
-      const positionToSave = scrollPosition > 50 ? scrollPosition : Math.max(100, scrollPosition);
-      readingProgressUtils.saveBookmark(bookId, currentModuleIndex, positionToSave);
+      // Add bookmark
+      readingProgressUtils.saveBookmark(bookId, currentModuleIndex, scrollPosition);
       
       const newBookmark = readingProgressUtils.getBookmark(bookId);
       setBookmark(newBookmark);
       setIsBookmarked(true);
       
-      showToast(`Bookmark saved at ${Math.round(positionToSave)}px`, '✅');
-      console.log('Saved bookmark:', newBookmark);
+      showToast(`Bookmark saved at ${Math.round(scrollPosition)}px`, '✅');
     }
   };
 
-  // ✅ FIX: Go to bookmark with smooth scroll
+  // ✅ FIX: Go to bookmark with smooth scroll - NOW USES CORRECT SCROLL ELEMENT
   const handleGoToBookmark = () => {
-    if (bookmark && bookmark.scrollPosition) {
+    if (bookmark) {
       console.log('📍 Going to bookmark:', bookmark.scrollPosition);
       
-      // Scroll to the saved position
-      window.scrollTo({
+      getScrollableElement().scrollTo({ // ✅ Corrected
         top: bookmark.scrollPosition,
         behavior: 'smooth'
       });
   
-      showToast(`Jumped to ${Math.round(bookmark.percentComplete)}% progress`, '📖', 'bg-blue-500/95');
-    } else {
-      console.warn('No valid bookmark found:', bookmark);
-      showToast('No bookmark found', '❌', 'bg-red-500/95');
+      showToast('Jumped to last position', '📖', 'bg-blue-500/95');
     }
   };
 
@@ -950,13 +950,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
           </button>
         </div>
         
-        <div ref={contentRef} className="p-4 sm:p-8" onScroll={(e) => {
-          // Also track scroll on the container if it's scrollable
-          const target = e.currentTarget;
-          if (target.scrollTop > 0) {
-            setCurrentScrollPos(target.scrollTop);
-          }
-        }}>
+        <div ref={contentRef} className="p-4 sm:p-8">
           <article
             className={`prose prose-lg max-w-none transition-all duration-300 mx-auto ${
               settings.theme === 'dark' || settings.theme === 'sepia' ? 'prose-invert' : ''
@@ -1311,6 +1305,7 @@ const BookListGrid = ({
   );
 };
 
+
 const DetailTabButton = ({
   label,
   Icon,
@@ -1414,42 +1409,137 @@ export function BookView({
 
   const handleCreateRoadmap = async (session: BookSession) => {
     if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
-    if (!hasApiKey) { alert('Please configure an API key in Settings first'); return; }
+    if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
 
-    await onCreateBookRoadmap(session);
+    const bookId = generateId();
+    
+    try {
+      localStorage.removeItem(`pause_flag_${bookId}`);
+      localStorage.removeItem(`checkpoint_${bookId}`);
+    } catch (e) {
+      console.warn('Failed to clear flags:', e);
+    }
+
+    const newBook: BookProject = {
+      id: bookId, 
+      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
+      goal: session.goal, 
+      language: 'en', 
+      status: 'planning', 
+      progress: 0, 
+      createdAt: new Date(), 
+      updatedAt: new Date(),
+      modules: [], 
+      category: 'general', 
+      reasoning: session.reasoning
+    };
+
+    setBooks(prev => [...prev, newBook]);
+    setCurrentBookId(bookId);
+    setView('detail');
+
+    try {
+      const roadmap = await bookService.generateRoadmap(session, bookId);
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { 
+              ...book, 
+              roadmap, 
+              status: 'roadmap_completed', 
+              progress: 10, 
+              title: roadmap.modules[0]?.title.includes('Module') 
+                ? session.goal 
+                : roadmap.modules[0]?.title || session.goal 
+            }
+          : book
+      ));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
+      setBooks(prev => prev.map(book => 
+        book.id === bookId 
+          ? { ...book, status: 'error', error: errorMessage } 
+          : book
+      ));
+      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
+    }
   };
   
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) { alert('No roadmap available.'); return; }
-    await onGenerateAllModules(book, session);
+    setGenerationStartTime(new Date());
+    setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
+    try {
+      await bookService.generateAllModulesWithRecovery(book, session);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
+      if (!errorMessage.includes('GENERATION_PAUSED')) {
+        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Generation failed: ${errorMessage}` });
+        alert(`Generation failed: ${errorMessage}`);
+      }
+    }
   };
 
   const handlePauseGeneration = (bookId: string) => {
-    if (onPauseGeneration) {
-      onPauseGeneration(bookId);
-    }
+    bookService.pauseGeneration(bookId);
+    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
   };
 
   const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) { alert('No roadmap available'); return; }
-    if (onResumeGeneration) {
-      await onResumeGeneration(book, session);
+    bookService.resumeGeneration(book.id);
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating', totalProgress: 0, logMessage: 'Resuming generation...',
+      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
+    });
+    try {
+      await bookService.generateAllModulesWithRecovery(book, session);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Resume failed';
+      if (!errorMessage.includes('GENERATION_PAUSED')) {
+        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Resume failed: ${errorMessage}`});
+      }
     }
   };
 
   const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
     const failedModules = book.modules.filter(m => m.status === 'error');
     if (failedModules.length === 0) { alert('No failed modules to retry'); return; }
-    await onRetryFailedModules(book, session);
+    setGenerationStartTime(new Date());
+    setGenerationStatus({
+      status: 'generating', totalProgress: 0, logMessage: `Retrying ${failedModules.length} failed modules...`,
+      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
+    });
+    try {
+      await bookService.retryFailedModules(book, session);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Retry failed';
+      setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Retry failed: ${errorMessage}` });
+    }
   };
 
   const handleAssembleBook = async (book: BookProject, session: BookSession) => {
-    await onAssembleBook(book, session);
+    try {
+      await bookService.assembleFinalBook(book, session);
+      setGenerationStatus({ status: 'completed', totalProgress: 100, logMessage: '✅ Book completed!' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
+      alert(`Failed to assemble book: ${errorMessage}`);
+      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, status: 'error', error: errorMessage } : b));
+    }
   };
 
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      onDeleteBook(id);
+      setBooks(prev => prev.filter(b => b.id !== id));
+      if (currentBookId === id) {
+        setCurrentBookId(null);
+        setView('list');
+      }
+      try {
+        localStorage.removeItem(`checkpoint_${id}`);
+        localStorage.removeItem(`pause_flag_${id}`);
+      } catch (e) { console.warn('Failed to clear storage:', e); }
     }
   };
   
@@ -1525,7 +1615,7 @@ export function BookView({
         <BookListGrid
           books={books}
           onSelectBook={onSelectBook}
-          onDeleteBook={handleDeleteBook}
+          onDeleteBook={onDeleteBook}
           onUpdateBookStatus={onUpdateBookStatus}
           setView={setView}
           setShowListInMain={setShowListInMain}
@@ -1681,7 +1771,7 @@ export function BookView({
           </div>
 
           <button
-            onClick={() => handleCreateRoadmap(formData)}
+            onClick={handleCreateRoadmap}
             disabled={!formData.goal.trim() || !hasApiKey || localIsGenerating}
             className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -1789,8 +1879,8 @@ export function BookView({
                           bookService.cancelActiveRequests(currentBook.id);
                         }
                       }}
-                      onPause={() => handlePauseGeneration(currentBook.id)}
-                      onResume={() => handleResumeGeneration(currentBook, formData)}
+                      onPause={handlePauseGeneration}
+                      onResume={handleResumeGeneration}
                       onRetryDecision={onRetryDecision}
                       availableModels={availableModels}
                     />
@@ -1831,7 +1921,7 @@ export function BookView({
                         </div>
                       </div>
                       <button
-                        onClick={() => handleGenerateAllModules(currentBook, formData)}
+                        onClick={handleStartGeneration}
                         disabled={localIsGenerating}
                         className="btn btn-primary w-full py-2.5"
                       >
@@ -1863,7 +1953,7 @@ export function BookView({
                           All chapters written. Ready to assemble.
                         </p>
                       </div>
-                      <button onClick={() => handleAssembleBook(currentBook, formData)} className="btn btn-primary w-full py-2.5">
+                      <button onClick={handleStartAssembly} className="btn btn-primary w-full py-2.5">
                         <Box className="w-5 h-5" />
                         Assemble Final Book
                       </button>
