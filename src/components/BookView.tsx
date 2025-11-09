@@ -1393,140 +1393,47 @@ export function BookView({
     setShowListInMain(true);
   };
 
-  const handleCreateRoadmap = async (session: BookSession) => {
-    if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
-    if (!hasApiKey) { alert('Please configure an API key in Settings first'); setSettingsOpen(true); return; }
-
-    const bookId = generateId();
-    
-    try {
-      localStorage.removeItem(`pause_flag_${bookId}`);
-      localStorage.removeItem(`checkpoint_${bookId}`);
-    } catch (e) {
-      console.warn('Failed to clear flags:', e);
-    }
-
-    const newBook: BookProject = {
-      id: bookId, 
-      title: session.goal.length > 100 ? session.goal.substring(0, 100) + '...' : session.goal,
-      goal: session.goal, 
-      language: 'en', 
-      status: 'planning', 
-      progress: 0, 
-      createdAt: new Date(), 
-      updatedAt: new Date(),
-      modules: [], 
-      category: 'general', 
-      reasoning: session.reasoning
-    };
-
-    setBooks(prev => [...prev, newBook]);
-    setCurrentBookId(bookId);
-    setView('detail');
-
-    try {
-      const roadmap = await bookService.generateRoadmap(session, bookId);
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { 
-              ...book, 
-              roadmap, 
-              status: 'roadmap_completed', 
-              progress: 10, 
-              title: roadmap.modules[0]?.title.includes('Module') 
-                ? session.goal 
-                : roadmap.modules[0]?.title || session.goal 
-            }
-          : book
-      ));
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to generate roadmap';
-      setBooks(prev => prev.map(book => 
-        book.id === bookId 
-          ? { ...book, status: 'error', error: errorMessage } 
-          : book
-      ));
-      alert(`Failed to generate roadmap: ${errorMessage}\n\nPlease check your API key and internet connection.`);
-    }
+  const handleCreateRoadmap = async () => {
+    await onCreateBookRoadmap(formData);
   };
   
-  const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) { alert('No roadmap available.'); return; }
-    setGenerationStartTime(new Date());
-    setGenerationStatus({ status: 'generating', totalProgress: 0, logMessage: 'Starting generation...', totalWordsGenerated: 0 });
-    try {
-      await bookService.generateAllModulesWithRecovery(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Module generation failed';
-      if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Generation failed: ${errorMessage}` });
-        alert(`Generation failed: ${errorMessage}`);
+  const handleStartGeneration = () => {
+    if (currentBook) {
+        const session: BookSession = {
+            goal: currentBook.goal,
+            language: currentBook.language,
+            reasoning: currentBook.reasoning,
+        };
+        onGenerateAllModules(currentBook, session);
+    }
+  };
+
+  const handleStartAssembly = () => {
+    if (currentBook) {
+      const session: BookSession = {
+        goal: currentBook.goal,
+        language: currentBook.language,
+        reasoning: currentBook.reasoning,
+      };
+      onAssembleBook(currentBook, session);
+    }
+  };
+
+  const handlePauseGeneration = () => {
+      if(currentBook && onPauseGeneration) {
+          onPauseGeneration(currentBook.id);
       }
-    }
   };
 
-  const handlePauseGeneration = (bookId: string) => {
-    bookService.pauseGeneration(bookId);
-    setGenerationStatus(prev => ({ ...prev, status: 'paused', logMessage: '⏸ Generation paused' }));
-  };
-
-  const handleResumeGeneration = async (book: BookProject, session: BookSession) => {
-    if (!book.roadmap) { alert('No roadmap available'); return; }
-    bookService.resumeGeneration(book.id);
-    setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating', totalProgress: 0, logMessage: 'Resuming generation...',
-      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
-    });
-    try {
-      await bookService.generateAllModulesWithRecovery(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Resume failed';
-      if (!errorMessage.includes('GENERATION_PAUSED')) {
-        setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Resume failed: ${errorMessage}`});
+  const handleResumeGeneration = () => {
+      if(currentBook && onResumeGeneration) {
+        const session: BookSession = {
+            goal: currentBook.goal,
+            language: currentBook.language,
+            reasoning: currentBook.reasoning,
+        };
+        onResumeGeneration(currentBook, session);
       }
-    }
-  };
-
-  const handleRetryFailedModules = async (book: BookProject, session: BookSession) => {
-    const failedModules = book.modules.filter(m => m.status === 'error');
-    if (failedModules.length === 0) { alert('No failed modules to retry'); return; }
-    setGenerationStartTime(new Date());
-    setGenerationStatus({
-      status: 'generating', totalProgress: 0, logMessage: `Retrying ${failedModules.length} failed modules...`,
-      totalWordsGenerated: book.modules.reduce((sum, m) => sum + (m.status === 'completed' ? m.wordCount : 0), 0)
-    });
-    try {
-      await bookService.retryFailedModules(book, session);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Retry failed';
-      setGenerationStatus({ status: 'error', totalProgress: 0, logMessage: `Retry failed: ${errorMessage}` });
-    }
-  };
-
-  const handleAssembleBook = async (book: BookProject, session: BookSession) => {
-    try {
-      await bookService.assembleFinalBook(book, session);
-      setGenerationStatus({ status: 'completed', totalProgress: 100, logMessage: '✅ Book completed!' });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Assembly failed';
-      alert(`Failed to assemble book: ${errorMessage}`);
-      setBooks(prev => prev.map(b => b.id === book.id ? { ...b, status: 'error', error: errorMessage } : b));
-    }
-  };
-
-  const handleDeleteBook = (id: string) => {
-    if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      setBooks(prev => prev.filter(b => b.id !== id));
-      if (currentBookId === id) {
-        setCurrentBookId(null);
-        setView('list');
-      }
-      try {
-        localStorage.removeItem(`checkpoint_${id}`);
-        localStorage.removeItem(`pause_flag_${id}`);
-      } catch (e) { console.warn('Failed to clear storage:', e); }
-    }
   };
   
   const handleDownloadPdf = async () => {
@@ -1670,21 +1577,38 @@ export function BookView({
               />
             </div>
             <div>
-              <label htmlFor="complexity" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
-                Complexity Level
+               <label htmlFor="language" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
+                Language
               </label>
               <CustomSelect
-                value={formData.complexityLevel || 'intermediate'}
+                value={formData.language}
                 onChange={(val) =>
-                  setFormData((p) => ({ ...p, complexityLevel: val as any }))
+                  setFormData((p) => ({ ...p, language: val as any }))
                 }
                 options={[
-                  { value: 'beginner', label: 'Beginner' },
-                  { value: 'intermediate', label: 'Intermediate' },
-                  { value: 'advanced', label: 'Advanced' },
+                  { value: 'en', label: 'English' },
+                  { value: 'hi', label: 'Hindi (हिंदी)' },
+                  { value: 'mr', label: 'Marathi (मराठी)' },
                 ]}
               />
             </div>
+          </div>
+          
+          <div>
+            <label htmlFor="complexity" className="block text-sm font-medium mb-2 text-[var(--color-text-primary)]">
+              Complexity Level
+            </label>
+            <CustomSelect
+              value={formData.complexityLevel || 'intermediate'}
+              onChange={(val) =>
+                setFormData((p) => ({ ...p, complexityLevel: val as any }))
+              }
+              options={[
+                { value: 'beginner', label: 'Beginner' },
+                { value: 'intermediate', label: 'Intermediate' },
+                { value: 'advanced', label: 'Advanced' },
+              ]}
+            />
           </div>
 
           <div>
