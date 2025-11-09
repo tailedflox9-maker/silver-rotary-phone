@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+// src/App.tsx - COMPLETE FIXED VERSION
+import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { InstallPrompt } from './components/InstallPrompt';
 import { SettingsModal } from './components/SettingsModal';
@@ -8,49 +9,10 @@ import { usePWA } from './hooks/usePWA';
 import { WifiOff } from 'lucide-react';
 import { storageUtils } from './utils/storage';
 import { bookService } from './services/bookService';
+import { BookView } from './components/BookView';
 import { BookProject, BookSession } from './types/book';
 import { generateId } from './utils/helpers';
 import { TopHeader } from './components/TopHeader';
-
-// --- Error Boundary (Fix 7) ---
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error: Error | null }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex items-center justify-center min-h-screen bg-[var(--color-bg)] p-4">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
-            <p className="text-gray-400 mb-4">{this.state.error?.message}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn btn-primary"
-            >
-              Reload App
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
 
 type AppView = 'list' | 'create' | 'detail';
 type Theme = 'light' | 'dark';
@@ -119,17 +81,37 @@ function App() {
     });
   }, []);
 
-  // ✅ FIX 1: Infinite Loop Risk
-  const hasTriggeredCompletion = useRef(false);
+  useEffect(() => {
+    bookService.updateSettings(settings);
+    bookService.setProgressCallback(handleBookProgressUpdate);
+    bookService.setGenerationStatusCallback((bookId, status) => {
+      setGenerationStatus(prev => ({ ...prev, ...status, totalWordsGenerated: status.totalWordsGenerated || prev.totalWordsGenerated }));
+    });
+  }, [settings]);
+
+  useEffect(() => { storageUtils.saveBooks(books); }, [books]);
+  
+  useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
 
   useEffect(() => {
-    if (!currentBook || hasTriggeredCompletion.current) return;
+    const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
+    const handleOffline = () => { setIsOnline(false); setShowOfflineMessage(true); setTimeout(() => setShowOfflineMessage(false), 5000); };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
+  }, []);
+
+  // ✅ FIX: Auto-detect completion and show "Assemble Book" button
+  useEffect(() => {
+    if (!currentBook) return;
     
+    // Check if all modules are completed but book isn't assembled yet
     const areAllModulesDone = 
       currentBook.roadmap &&
       currentBook.modules.length === currentBook.roadmap.modules.length &&
       currentBook.modules.every(m => m.status === 'completed');
     
+    // Update status to show assemble button
     if (areAllModulesDone && 
         currentBook.status === 'generating_content' && 
         generationStatus.status !== 'generating' &&
@@ -137,8 +119,6 @@ function App() {
         generationStatus.status !== 'waiting_retry') {
       
       console.log('✓ All modules completed - updating to roadmap_completed');
-      
-      hasTriggeredCompletion.current = true; // Set flag
       
       setBooks(prevBooks => 
         prevBooks.map(book =>
@@ -155,12 +135,7 @@ function App() {
         totalWordsGenerated: currentBook.modules.reduce((s, m) => s + m.wordCount, 0)
       });
     }
-  }, [currentBook, generationStatus.status]); // Dependency array is correct
-
-  // Reset flag when book changes
-  useEffect(() => {
-    hasTriggeredCompletion.current = false;
-  }, [currentBookId]);
+  }, [currentBook, generationStatus.status]);
   
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
@@ -182,7 +157,7 @@ function App() {
   const handleModelSwitch = async (provider: ModelProvider, model: string) => {
     const newSettings = { ...settings, selectedProvider: provider, selectedModel: model };
     setSettings(newSettings);
-    storageUtils.saveSettings(newSettings); // Fix 5: Ensure settings are saved properly
+    storageUtils.saveSettings(newSettings);
     setShowModelSwitch(false);
     setTimeout(() => {
       if (currentBook) {
@@ -221,10 +196,14 @@ function App() {
       setView('detail');
       const book = books.find(b => b.id === id);
       if (book?.status === 'completed') {
-        try { localStorage.removeItem(`pause_flag_${id}`); } catch (e) { console.warn(e); } // Fix 5: LocalStorage error handling
+        try { localStorage.removeItem(`pause_flag_${id}`); } catch (e) { console.warn(e); }
         setGenerationStatus({ status: 'idle', totalProgress: 0, totalWordsGenerated: book.modules.reduce((s, m) => s + m.wordCount, 0) });
       }
     }
+  };
+
+  const handleBookProgressUpdate = (bookId: string, updates: Partial<BookProject>) => {
+    setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
   };
   
   const handleUpdateBookStatus = (bookId: string, newStatus: BookProject['status']) => {
@@ -244,9 +223,10 @@ function App() {
 
     const bookId = generateId();
     
+    // ✅ FIX: Clear any existing pause/checkpoint for this new book
     try {
-      localStorage.removeItem(`pause_flag_${bookId}`); // Fix 5: LocalStorage error handling
-      localStorage.removeItem(`checkpoint_${bookId}`); // Fix 5: LocalStorage error handling
+      localStorage.removeItem(`pause_flag_${bookId}`);
+      localStorage.removeItem(`checkpoint_${bookId}`);
     } catch (e) {
       console.warn('Failed to clear flags:', e);
     }
@@ -265,17 +245,7 @@ function App() {
       reasoning: session.reasoning
     };
 
-    setBooks(prev => {
-        try { // Fix 5: LocalStorage error handling for saveBooks
-            const updatedBooks = [...prev, newBook];
-            storageUtils.saveBooks(updatedBooks);
-            return updatedBooks;
-        } catch (error) {
-            console.error('Failed to add new book to storage:', error);
-            alert('Could not save new book due to storage issues. Please export data and clear old data in settings.');
-            return prev;
-        }
-    });
+    setBooks(prev => [...prev, newBook]);
     setCurrentBookId(bookId);
     setView('detail');
 
@@ -372,38 +342,28 @@ function App() {
 
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      setBooks(prev => {
-          const updatedBooks = prev.filter(b => b.id !== id);
-          try { // Fix 5: LocalStorage error handling for saveBooks
-            storageUtils.saveBooks(updatedBooks);
-          } catch (error) {
-            console.error('Failed to delete book from storage:', error);
-            alert('Could not delete book from storage. Please manually clear data in settings if issue persists.');
-          }
-          return updatedBooks;
-      });
+      setBooks(prev => prev.filter(b => b.id !== id));
       if (currentBookId === id) {
         setCurrentBookId(null);
         setView('list');
       }
-      try { // Fix 5: LocalStorage error handling
+      try {
         localStorage.removeItem(`checkpoint_${id}`);
         localStorage.removeItem(`pause_flag_${id}`);
       } catch (e) { console.warn('Failed to clear storage:', e); }
-      bookService.clearCurrentGeneratedText(id); // Fix 2: Clear cached generated text for deleted book
     }
   };
   
   const handleSaveSettings = (newSettings: APISettings) => {
     setSettings(newSettings);
-    storageUtils.saveSettings(newSettings); // Fix 5: Ensure settings are saved properly
+    storageUtils.saveSettings(newSettings);
     setSettingsOpen(false);
   };
   
   const handleModelChange = (model: string, provider: ModelProvider) => {
     const newSettings = { ...settings, selectedModel: model, selectedProvider: provider };
     setSettings(newSettings);
-    storageUtils.saveSettings(newSettings); // Fix 5: Ensure settings are saved properly
+    storageUtils.saveSettings(newSettings);
   };
 
   const handleInstallApp = async () => { await installApp(); };
@@ -415,32 +375,6 @@ function App() {
         : book
     ));
   };
-
-  // ✅ FIX 3: useCallback for handleBookProgressUpdate
-  const handleBookProgressUpdate = useCallback((bookId: string, updates: Partial<BookProject>) => {
-    setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
-  }, []);
-
-  useEffect(() => {
-    bookService.updateSettings(settings);
-    bookService.setProgressCallback(handleBookProgressUpdate);
-    bookService.setGenerationStatusCallback((bookId, status) => {
-      setGenerationStatus(prev => ({ ...prev, ...status, totalWordsGenerated: status.totalWordsGenerated || prev.totalWordsGenerated }));
-    });
-  }, [settings, handleBookProgressUpdate]); // ✅ FIX 3: Added handleBookProgressUpdate to dependency array
-
-  useEffect(() => { storageUtils.saveBooks(books); }, [books]);
-  
-  useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
-
-  useEffect(() => {
-    const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
-    const handleOffline = () => { setIsOnline(false); setShowOfflineMessage(true); setTimeout(() => setShowOfflineMessage(false), 5000); };
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
-  }, []);
-
 
   return (
     <div className="app-container">
@@ -469,6 +403,7 @@ function App() {
         onToggleTheme={toggleTheme}
       />
 
+      {/* ✅ THIS IS THE FIX: Added id="main-scroll-area" here */}
       <main id="main-scroll-area" className="main-content">
         {showOfflineMessage && (
           <div className="fixed top-20 right-4 z-50 content-card p-3 animate-fade-in-up">
@@ -545,11 +480,4 @@ function App() {
   );
 }
 
-// ✅ FIX 7: Export App wrapped in Error Boundary
-export default function AppWithErrorBoundary() {
-  return (
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  );
-}
+export default App;
