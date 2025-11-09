@@ -1,5 +1,4 @@
-// src/App.tsx - COMPLETE FIXED VERSION
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { InstallPrompt } from './components/InstallPrompt';
 import { SettingsModal } from './components/SettingsModal';
@@ -9,7 +8,6 @@ import { usePWA } from './hooks/usePWA';
 import { WifiOff } from 'lucide-react';
 import { storageUtils } from './utils/storage';
 import { bookService } from './services/bookService';
-import { BookView } from './components/BookView';
 import { BookProject, BookSession } from './types/book';
 import { generateId } from './utils/helpers';
 import { TopHeader } from './components/TopHeader';
@@ -121,31 +119,6 @@ function App() {
     });
   }, []);
 
-  // ✅ FIX 3: useCallback for handleBookProgressUpdate
-  const handleBookProgressUpdate = useCallback((bookId: string, updates: Partial<BookProject>) => {
-    setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
-  }, []);
-
-  useEffect(() => {
-    bookService.updateSettings(settings);
-    bookService.setProgressCallback(handleBookProgressUpdate);
-    bookService.setGenerationStatusCallback((bookId, status) => {
-      setGenerationStatus(prev => ({ ...prev, ...status, totalWordsGenerated: status.totalWordsGenerated || prev.totalWordsGenerated }));
-    });
-  }, [settings, handleBookProgressUpdate]); // ✅ FIX 3: Added handleBookProgressUpdate to dependency array
-
-  useEffect(() => { storageUtils.saveBooks(books); }, [books]);
-  
-  useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
-
-  useEffect(() => {
-    const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
-    const handleOffline = () => { setIsOnline(false); setShowOfflineMessage(true); setTimeout(() => setShowOfflineMessage(false), 5000); };
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
-  }, []);
-
   // ✅ FIX 1: Infinite Loop Risk
   const hasTriggeredCompletion = useRef(false);
 
@@ -209,7 +182,7 @@ function App() {
   const handleModelSwitch = async (provider: ModelProvider, model: string) => {
     const newSettings = { ...settings, selectedProvider: provider, selectedModel: model };
     setSettings(newSettings);
-    storageUtils.saveSettings(newSettings);
+    storageUtils.saveSettings(newSettings); // Fix 5: Ensure settings are saved properly
     setShowModelSwitch(false);
     setTimeout(() => {
       if (currentBook) {
@@ -248,7 +221,7 @@ function App() {
       setView('detail');
       const book = books.find(b => b.id === id);
       if (book?.status === 'completed') {
-        try { localStorage.removeItem(`pause_flag_${id}`); } catch (e) { console.warn(e); }
+        try { localStorage.removeItem(`pause_flag_${id}`); } catch (e) { console.warn(e); } // Fix 5: LocalStorage error handling
         setGenerationStatus({ status: 'idle', totalProgress: 0, totalWordsGenerated: book.modules.reduce((s, m) => s + m.wordCount, 0) });
       }
     }
@@ -272,8 +245,8 @@ function App() {
     const bookId = generateId();
     
     try {
-      localStorage.removeItem(`pause_flag_${bookId}`);
-      localStorage.removeItem(`checkpoint_${bookId}`);
+      localStorage.removeItem(`pause_flag_${bookId}`); // Fix 5: LocalStorage error handling
+      localStorage.removeItem(`checkpoint_${bookId}`); // Fix 5: LocalStorage error handling
     } catch (e) {
       console.warn('Failed to clear flags:', e);
     }
@@ -292,7 +265,17 @@ function App() {
       reasoning: session.reasoning
     };
 
-    setBooks(prev => [...prev, newBook]);
+    setBooks(prev => {
+        try { // Fix 5: LocalStorage error handling for saveBooks
+            const updatedBooks = [...prev, newBook];
+            storageUtils.saveBooks(updatedBooks);
+            return updatedBooks;
+        } catch (error) {
+            console.error('Failed to add new book to storage:', error);
+            alert('Could not save new book due to storage issues. Please export data and clear old data in settings.');
+            return prev;
+        }
+    });
     setCurrentBookId(bookId);
     setView('detail');
 
@@ -389,28 +372,38 @@ function App() {
 
   const handleDeleteBook = (id: string) => {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
-      setBooks(prev => prev.filter(b => b.id !== id));
+      setBooks(prev => {
+          const updatedBooks = prev.filter(b => b.id !== id);
+          try { // Fix 5: LocalStorage error handling for saveBooks
+            storageUtils.saveBooks(updatedBooks);
+          } catch (error) {
+            console.error('Failed to delete book from storage:', error);
+            alert('Could not delete book from storage. Please manually clear data in settings if issue persists.');
+          }
+          return updatedBooks;
+      });
       if (currentBookId === id) {
         setCurrentBookId(null);
         setView('list');
       }
-      try {
+      try { // Fix 5: LocalStorage error handling
         localStorage.removeItem(`checkpoint_${id}`);
         localStorage.removeItem(`pause_flag_${id}`);
       } catch (e) { console.warn('Failed to clear storage:', e); }
+      bookService.clearCurrentGeneratedText(id); // Fix 2: Clear cached generated text for deleted book
     }
   };
   
   const handleSaveSettings = (newSettings: APISettings) => {
     setSettings(newSettings);
-    storageUtils.saveSettings(newSettings);
+    storageUtils.saveSettings(newSettings); // Fix 5: Ensure settings are saved properly
     setSettingsOpen(false);
   };
   
   const handleModelChange = (model: string, provider: ModelProvider) => {
     const newSettings = { ...settings, selectedModel: model, selectedProvider: provider };
     setSettings(newSettings);
-    storageUtils.saveSettings(newSettings);
+    storageUtils.saveSettings(newSettings); // Fix 5: Ensure settings are saved properly
   };
 
   const handleInstallApp = async () => { await installApp(); };
@@ -422,6 +415,32 @@ function App() {
         : book
     ));
   };
+
+  // ✅ FIX 3: useCallback for handleBookProgressUpdate
+  const handleBookProgressUpdate = useCallback((bookId: string, updates: Partial<BookProject>) => {
+    setBooks(prev => prev.map(book => book.id === bookId ? { ...book, ...updates, updatedAt: new Date() } : book));
+  }, []);
+
+  useEffect(() => {
+    bookService.updateSettings(settings);
+    bookService.setProgressCallback(handleBookProgressUpdate);
+    bookService.setGenerationStatusCallback((bookId, status) => {
+      setGenerationStatus(prev => ({ ...prev, ...status, totalWordsGenerated: status.totalWordsGenerated || prev.totalWordsGenerated }));
+    });
+  }, [settings, handleBookProgressUpdate]); // ✅ FIX 3: Added handleBookProgressUpdate to dependency array
+
+  useEffect(() => { storageUtils.saveBooks(books); }, [books]);
+  
+  useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
+
+  useEffect(() => {
+    const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
+    const handleOffline = () => { setIsOnline(false); setShowOfflineMessage(true); setTimeout(() => setShowOfflineMessage(false), 5000); };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
+  }, []);
+
 
   return (
     <div className="app-container">
