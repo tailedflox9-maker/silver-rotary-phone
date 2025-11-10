@@ -93,7 +93,12 @@ function App() {
 
   useEffect(() => { storageUtils.saveBooks(books); }, [books]);
   
-  useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
+  // This effect was simplified to avoid conflicts with new routing logic.
+  useEffect(() => {
+    if (!currentBookId && view === 'detail') {
+      setView('list');
+    }
+  }, [currentBookId, view]);
 
   useEffect(() => {
     const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
@@ -102,6 +107,75 @@ function App() {
     window.addEventListener('offline', handleOffline);
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
+
+  // --- START: ROUTING LOGIC ---
+
+  // Effect to parse URL hash and set the application state on load/change
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const pathParts = hash.split('/').filter(p => p);
+
+      const newView = pathParts[0];
+      const param = pathParts[1];
+
+      if (newView === 'book' && param) {
+        const bookExists = books.some(b => b.id === param);
+        if (bookExists) {
+          if (view !== 'detail' || currentBookId !== param) {
+            setCurrentBookId(param);
+            setView('detail');
+          }
+        } else {
+          // If book ID in URL is invalid, go to home
+          window.location.hash = '/';
+        }
+      } else if (newView === 'create') {
+        if (view !== 'create') {
+          setCurrentBookId(null);
+          setView('create');
+        }
+      } else if (newView === 'library') {
+        if (view !== 'list' || !showListInMain) {
+          setCurrentBookId(null);
+          setView('list');
+          setShowListInMain(true);
+        }
+      } else { // Default to home view
+        if (view !== 'list' || showListInMain) {
+          setCurrentBookId(null);
+          setView('list');
+          setShowListInMain(false);
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Run on initial load to set state from URL
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [books, view, currentBookId, showListInMain]);
+
+  // Effect to update the URL hash when the application state changes
+  useEffect(() => {
+    let newHash = '/';
+    if (view === 'detail' && currentBookId) {
+      newHash = `/book/${currentBookId}`;
+    } else if (view === 'create') {
+      newHash = '/create';
+    } else if (view === 'list' && showListInMain) {
+      newHash = '/library';
+    }
+    
+    // Only update hash if it's different to prevent loops
+    if (window.location.hash.replace(/^#/, '') !== newHash) {
+      window.location.hash = newHash;
+    }
+  }, [view, currentBookId, showListInMain]);
+
+  // --- END: ROUTING LOGIC ---
 
   useEffect(() => {
     if (!currentBook) return;
