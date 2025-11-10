@@ -1,5 +1,5 @@
 // ============================================================================
-// FILE: src/App.tsx - COMPLETE FIXED VERSION WITH ROUTING
+// FILE: src/App.tsx - COMPLETE FIXED VERSION WITH GENERATION FIX
 // ============================================================================
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
@@ -63,59 +63,6 @@ function App() {
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
   
-  // --- START: ROUTING LOGIC ---
-
-  // Navigation functions to update the URL hash
-  const navigate = useMemo(() => ({
-    toHome: () => { window.location.hash = '/'; },
-    toLibrary: () => { window.location.hash = '/library'; },
-    toCreate: () => { window.location.hash = '/create'; },
-    toBook: (bookId: string) => { window.location.hash = `/book/${bookId}`; },
-  }), []);
-
-  // Effect to sync state FROM the URL hash
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace(/^#\/?/, '');
-      const pathParts = hash.split('/').filter(p => p);
-      const newView = pathParts[0];
-      const param = pathParts[1];
-
-      if (newView === 'book' && param) {
-        const bookExists = books.some(b => b.id === param);
-        if (bookExists) {
-          setCurrentBookId(param);
-          setView('detail');
-          setShowListInMain(false);
-        } else {
-          console.warn(`Book with id "${param}" not found. Redirecting to home.`);
-          navigate.toHome();
-        }
-      } else if (newView === 'create') {
-        setCurrentBookId(null);
-        setView('create');
-        setShowListInMain(false);
-      } else if (newView === 'library') {
-        setCurrentBookId(null);
-        setView('list');
-        setShowListInMain(true);
-      } else { // Default home view
-        setCurrentBookId(null);
-        setView('list');
-        setShowListInMain(false);
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Sync state on initial load
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, [books, navigate]); // Rerun only if books list changes (for validation)
-
-  // --- END: ROUTING LOGIC ---
-  
   useEffect(() => {
     localStorage.setItem('pustakam-theme', theme);
     document.documentElement.className = theme;
@@ -146,11 +93,7 @@ function App() {
 
   useEffect(() => { storageUtils.saveBooks(books); }, [books]);
   
-  useEffect(() => {
-    if (!currentBookId && view === 'detail') {
-      setView('list');
-    }
-  }, [currentBookId, view]);
+  useEffect(() => { if (!currentBookId) setView('list'); }, [currentBookId]);
 
   useEffect(() => {
     const handleOnline = () => { setIsOnline(true); setShowOfflineMessage(false); };
@@ -247,10 +190,14 @@ function App() {
   };
 
   const handleSelectBook = (id: string | null) => {
+    setCurrentBookId(id);
     if (id) {
-      navigate.toBook(id);
-    } else {
-      navigate.toLibrary();
+      setView('detail');
+      const book = books.find(b => b.id === id);
+      if (book?.status === 'completed') {
+        try { localStorage.removeItem(`pause_flag_${id}`); } catch (e) { console.warn(e); }
+        setGenerationStatus({ status: 'idle', totalProgress: 0, totalWordsGenerated: book.modules.reduce((s, m) => s + m.wordCount, 0) });
+      }
     }
   };
 
@@ -297,7 +244,8 @@ function App() {
     };
 
     setBooks(prev => [...prev, newBook]);
-    navigate.toBook(bookId);
+    setCurrentBookId(bookId);
+    setView('detail');
 
     try {
       const roadmap = await bookService.generateRoadmap(session, bookId);
@@ -402,7 +350,8 @@ function App() {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
       setBooks(prev => prev.filter(b => b.id !== id));
       if (currentBookId === id) {
-        navigate.toLibrary();
+        setCurrentBookId(null);
+        setView('list');
       }
       try {
         localStorage.removeItem(`checkpoint_${id}`);
@@ -452,7 +401,10 @@ function App() {
         onOpenSettings={() => setSettingsOpen(true)}
         onSelectBook={handleSelectBook}
         onDeleteBook={handleDeleteBook}
-        onNewBook={() => navigate.toCreate()}
+        onNewBook={() => {
+          setView('create');
+          setCurrentBookId(null);
+        }}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
@@ -479,10 +431,10 @@ function App() {
           onUpdateBookStatus={handleUpdateBookStatus}
           hasApiKey={hasApiKey}
           view={view}
-          setView={setView} // Kept for simplicity in some child components
+          setView={setView}
           onUpdateBookContent={handleUpdateBookContent}
           showListInMain={showListInMain}
-          setShowListInMain={setShowListInMain} // Kept for simplicity
+          setShowListInMain={setShowListInMain}
           isMobile={isMobile}
           generationStatus={generationStatus}
           generationStats={generationStats}
