@@ -984,39 +984,45 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         </div>
       </div>
 
-      {/* ✅ FIX: Floating Back Button */}
-      <div 
-        className={`fixed bottom-6 left-6 z-30 transition-all duration-300 ${
-          showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}
-      >
-        <button
-          onClick={onGoBack}
-          className="w-14 h-14 rounded-full bg-[var(--color-sidebar)] border border-[var(--color-border)] flex items-center justify-center shadow-lg hover:bg-[var(--color-card)] transition-colors"
-          title="Back to Library"
-        >
-          <ArrowLeft size={20} className="text-[var(--color-text-primary)]" />
-        </button>
-      </div>
+{/* ✅ MINIMAL Back Button */}
+<div 
+  className={`reading-back-btn transition-all duration-300 ${
+    showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+  }`}
+>
+  <button
+    onClick={onGoBack}
+    className="reading-floating-btn"
+    title="Back to Library"
+    aria-label="Back to Library"
+  >
+    <ArrowLeft size={18} />
+    <span className="tooltip">Back</span>
+  </button>
+</div>
 
-      {/* ✅ FIX: Floating Bookmark Button */}
-      <div 
-        className={`fixed bottom-6 right-6 z-30 transition-all duration-300 ${
-          showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-        }`}
-      >
-        <button
-          onClick={toggleBookmark}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${
-            isBookmarked 
-              ? 'bg-yellow-500/90 text-white border border-yellow-400 hover:bg-yellow-500 animate-pulse' 
-              : 'bg-[var(--color-sidebar)] border border-[var(--color-border)] hover:bg-[var(--color-card)]'
-          }`}
-          title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
-        >
-          {isBookmarked ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
-        </button>
-      </div>
+{/* ✅ MINIMAL Floating Controls (Bookmark) */}
+<div 
+  className={`reading-floating-controls transition-all duration-300 ${
+    showFloatingButtons ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+  }`}
+>
+  <button
+    onClick={toggleBookmark}
+    className={`reading-floating-btn ${isBookmarked ? 'bookmark-active' : ''}`}
+    title={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+    aria-label={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+  >
+    {isBookmarked ? (
+      <BookmarkCheck size={18} className="bookmark-check-icon" />
+    ) : (
+      <Bookmark size={18} />
+    )}
+    <span className="tooltip">
+      {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+    </span>
+  </button>
+</div>
     </>
   );
 };
