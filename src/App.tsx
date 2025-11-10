@@ -1,5 +1,5 @@
 // ============================================================================
-// FILE: src/App.tsx - COMPLETE FIXED VERSION WITH GENERATION FIX
+// FILE: src/App.tsx - COMPLETE FIXED VERSION WITH ROUTING
 // ============================================================================
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
@@ -63,6 +63,59 @@ function App() {
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
   
+  // --- START: ROUTING LOGIC ---
+
+  // Navigation functions to update the URL hash
+  const navigate = useMemo(() => ({
+    toHome: () => { window.location.hash = '/'; },
+    toLibrary: () => { window.location.hash = '/library'; },
+    toCreate: () => { window.location.hash = '/create'; },
+    toBook: (bookId: string) => { window.location.hash = `/book/${bookId}`; },
+  }), []);
+
+  // Effect to sync state FROM the URL hash
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const pathParts = hash.split('/').filter(p => p);
+      const newView = pathParts[0];
+      const param = pathParts[1];
+
+      if (newView === 'book' && param) {
+        const bookExists = books.some(b => b.id === param);
+        if (bookExists) {
+          setCurrentBookId(param);
+          setView('detail');
+          setShowListInMain(false);
+        } else {
+          console.warn(`Book with id "${param}" not found. Redirecting to home.`);
+          navigate.toHome();
+        }
+      } else if (newView === 'create') {
+        setCurrentBookId(null);
+        setView('create');
+        setShowListInMain(false);
+      } else if (newView === 'library') {
+        setCurrentBookId(null);
+        setView('list');
+        setShowListInMain(true);
+      } else { // Default home view
+        setCurrentBookId(null);
+        setView('list');
+        setShowListInMain(false);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Sync state on initial load
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [books, navigate]); // Rerun only if books list changes (for validation)
+
+  // --- END: ROUTING LOGIC ---
+  
   useEffect(() => {
     localStorage.setItem('pustakam-theme', theme);
     document.documentElement.className = theme;
@@ -93,7 +146,6 @@ function App() {
 
   useEffect(() => { storageUtils.saveBooks(books); }, [books]);
   
-  // This effect was simplified to avoid conflicts with new routing logic.
   useEffect(() => {
     if (!currentBookId && view === 'detail') {
       setView('list');
@@ -107,75 +159,6 @@ function App() {
     window.addEventListener('offline', handleOffline);
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
-
-  // --- START: ROUTING LOGIC ---
-
-  // Effect to parse URL hash and set the application state on load/change
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace(/^#\/?/, '');
-      const pathParts = hash.split('/').filter(p => p);
-
-      const newView = pathParts[0];
-      const param = pathParts[1];
-
-      if (newView === 'book' && param) {
-        const bookExists = books.some(b => b.id === param);
-        if (bookExists) {
-          if (view !== 'detail' || currentBookId !== param) {
-            setCurrentBookId(param);
-            setView('detail');
-          }
-        } else {
-          // If book ID in URL is invalid, go to home
-          window.location.hash = '/';
-        }
-      } else if (newView === 'create') {
-        if (view !== 'create') {
-          setCurrentBookId(null);
-          setView('create');
-        }
-      } else if (newView === 'library') {
-        if (view !== 'list' || !showListInMain) {
-          setCurrentBookId(null);
-          setView('list');
-          setShowListInMain(true);
-        }
-      } else { // Default to home view
-        if (view !== 'list' || showListInMain) {
-          setCurrentBookId(null);
-          setView('list');
-          setShowListInMain(false);
-        }
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Run on initial load to set state from URL
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, [books, view, currentBookId, showListInMain]);
-
-  // Effect to update the URL hash when the application state changes
-  useEffect(() => {
-    let newHash = '/';
-    if (view === 'detail' && currentBookId) {
-      newHash = `/book/${currentBookId}`;
-    } else if (view === 'create') {
-      newHash = '/create';
-    } else if (view === 'list' && showListInMain) {
-      newHash = '/library';
-    }
-    
-    // Only update hash if it's different to prevent loops
-    if (window.location.hash.replace(/^#/, '') !== newHash) {
-      window.location.hash = newHash;
-    }
-  }, [view, currentBookId, showListInMain]);
-
-  // --- END: ROUTING LOGIC ---
 
   useEffect(() => {
     if (!currentBook) return;
@@ -264,14 +247,10 @@ function App() {
   };
 
   const handleSelectBook = (id: string | null) => {
-    setCurrentBookId(id);
     if (id) {
-      setView('detail');
-      const book = books.find(b => b.id === id);
-      if (book?.status === 'completed') {
-        try { localStorage.removeItem(`pause_flag_${id}`); } catch (e) { console.warn(e); }
-        setGenerationStatus({ status: 'idle', totalProgress: 0, totalWordsGenerated: book.modules.reduce((s, m) => s + m.wordCount, 0) });
-      }
+      navigate.toBook(id);
+    } else {
+      navigate.toLibrary();
     }
   };
 
@@ -318,8 +297,7 @@ function App() {
     };
 
     setBooks(prev => [...prev, newBook]);
-    setCurrentBookId(bookId);
-    setView('detail');
+    navigate.toBook(bookId);
 
     try {
       const roadmap = await bookService.generateRoadmap(session, bookId);
@@ -424,8 +402,7 @@ function App() {
     if (window.confirm('Delete this book permanently? This cannot be undone.')) {
       setBooks(prev => prev.filter(b => b.id !== id));
       if (currentBookId === id) {
-        setCurrentBookId(null);
-        setView('list');
+        navigate.toLibrary();
       }
       try {
         localStorage.removeItem(`checkpoint_${id}`);
@@ -475,10 +452,7 @@ function App() {
         onOpenSettings={() => setSettingsOpen(true)}
         onSelectBook={handleSelectBook}
         onDeleteBook={handleDeleteBook}
-        onNewBook={() => {
-          setView('create');
-          setCurrentBookId(null);
-        }}
+        onNewBook={() => navigate.toCreate()}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
@@ -505,10 +479,10 @@ function App() {
           onUpdateBookStatus={handleUpdateBookStatus}
           hasApiKey={hasApiKey}
           view={view}
-          setView={setView}
+          setView={setView} // Kept for simplicity in some child components
           onUpdateBookContent={handleUpdateBookContent}
           showListInMain={showListInMain}
-          setShowListInMain={setShowListInMain}
+          setShowListInMain={setShowListInMain} // Kept for simplicity
           isMobile={isMobile}
           generationStatus={generationStatus}
           generationStats={generationStats}
