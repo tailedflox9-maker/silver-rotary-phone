@@ -1,4 +1,4 @@
-// src/components/TopHeader.tsx - COMPLETE FILE WITH FIXED DROPDOWNS
+// src/components/TopHeader.tsx - COMPLETE FILE WITH MOBILE FIXES
 import React, { useState, useMemo, useEffect } from 'react';
 import { Settings, Brain, Check, AlertCircle, ChevronDown, BookOpen, Trash2, Plus, Search, Clock, Sun, Moon } from 'lucide-react';
 import { APISettings, ModelProvider, BookProject } from '../types';
@@ -185,7 +185,7 @@ export function TopHeader({ settings, books, currentBookId, onModelChange, onOpe
               <ChevronDown size={14} className={`text-[var(--color-text-secondary)] transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {modelDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-[var(--color-sidebar)] backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
+              <div className="absolute top-full right-0 md:right-0 left-0 md:left-auto mt-2 w-80 max-w-[calc(100vw-2rem)] mx-auto md:mx-0 bg-[var(--color-sidebar)] backdrop-blur-xl border border-[var(--color-border)] rounded-xl shadow-2xl z-50 max-h-[32rem] overflow-y-auto animate-fade-in-up model-dropdown">
                 {(Object.entries(modelConfig) as [ModelProvider, any][]).map(([provider, config]) => (
                   <div key={provider} className="p-3 border-b border-[var(--color-border)] last:border-b-0">
                     <div className="flex items-center gap-2.5 px-2 py-2 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
