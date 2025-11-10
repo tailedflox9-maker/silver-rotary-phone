@@ -52,16 +52,6 @@
     --color-accent-primary-hover: #0b5ed7;
   }
 
-  /* View Transition API Setup for an even, unified theme change. */
-  /* This instructs the browser to treat the header and main content */
-  /* as separate elements that transition in perfect sync. */
-  header {
-    view-transition-name: main-header;
-  }
-  main {
-    view-transition-name: main-content;
-  }
-
   * {
     box-sizing: border-box;
   }
@@ -82,14 +72,6 @@
     scroll-behavior: smooth;
   }
 }
-
-/* Customize the View Transition animation for a softer effect */
-::view-transition-old(*),
-::view-transition-new(*) {
-  animation-duration: 0.35s; /* A slightly calmer duration */
-  animation-timing-function: ease-in-out;
-}
-
 
 /* ==========================================================================
     Components Layer
@@ -226,13 +208,6 @@
   .content-card { @apply bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl shadow-lg; }
   .light .content-card { @apply shadow-md; }
   .stats-card { @apply bg-black/20 border border-white/10 rounded-xl p-5 shadow-lg backdrop-blur-sm transition-all hover:border-white/20 hover:-translate-y-1; }
-
-  /* --- Smooth Theme Transition Fallback --- */
-  /* For browsers without View Transitions, this ensures key UI elements */
-  /* fade smoothly between light and dark modes. */
-  .content-card, .btn, header, .modal-content, .model-dropdown, .reading-container, .reading-floating-btn {
-    @apply transition-colors duration-300;
-  }
 
   /* --- Modal --- */
   .modal-backdrop {
