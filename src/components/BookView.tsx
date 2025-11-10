@@ -227,7 +227,7 @@ const PixelAnimation = () => {
 
     const generatePixels = () => {
       if (containerRef.current) {
-        const pixelSpace = 12; 
+        const pixelSpace = 12;
         const containerWidth = containerRef.current.offsetWidth;
         const containerHeight = containerRef.current.offsetHeight;
 
@@ -311,7 +311,7 @@ const RetryDecisionPanel = ({
   }, [countdown]);
   
   const isRateLimit = retryInfo.error.toLowerCase().includes('rate limit') ||
-                      retryInfo.error.toLowerCase().includes('429');
+                       retryInfo.error.toLowerCase().includes('429');
 
   const isNetworkError = retryInfo.error.toLowerCase().includes('network') ||
                          retryInfo.error.toLowerCase().includes('connection');
@@ -896,58 +896,66 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
         style={readingAreaStyles}
       >
         <div 
-          className="sticky top-0 z-20 flex justify-center items-center gap-3 p-3 border-b" 
+          className="sticky top-0 z-20 flex flex-wrap justify-between items-center p-3 sm:px-4 border-b" 
           style={{ borderColor: currentTheme.border, backgroundColor: `${currentTheme.bg}e6` }}
         >
-          <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
-            {(['light', 'sepia', 'dark'] as const).map((themeOption) => (
-              <button
-                key={themeOption}
-                onClick={() => setSettings(prev => ({ ...prev, theme: themeOption }))}
-                className={`p-2 rounded-md transition-all`}
-                style={{
-                  backgroundColor: settings.theme === themeOption ? currentTheme.accent : 'transparent',
-                  color: settings.theme === themeOption ? '#FFFFFF' : currentTheme.secondary,
-                }}
-                title={`${themeOption.charAt(0).toUpperCase() + themeOption.slice(1)} theme`}
-              >
-                {themeOption === 'light' ? <Sun size={16} /> : themeOption === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
-              </button>
-            ))}
-          </div>
+          {/* Left Controls: Theme and Zoom */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-0"> {/* Added mb-2 for mobile stacking */}
+            <div className="flex items-center gap-0.5 p-0.5 sm:p-1 rounded-lg" style={{ backgroundColor: currentTheme.contentBg }}>
+              {(['light', 'sepia', 'dark'] as const).map((themeOption) => (
+                <button
+                  key={themeOption}
+                  onClick={() => setSettings(prev => ({ ...prev, theme: themeOption }))}
+                  className={`p-1.5 sm:p-2 rounded-md transition-all`}
+                  style={{
+                    backgroundColor: settings.theme === themeOption ? currentTheme.accent : 'transparent',
+                    color: settings.theme === themeOption ? '#FFFFFF' : currentTheme.secondary,
+                  }}
+                  title={`${themeOption.charAt(0).toUpperCase() + themeOption.slice(1)} theme`}
+                >
+                  {themeOption === 'light' ? <Sun size={16} /> : themeOption === 'sepia' ? <Palette size={16} /> : <Moon size={16} />}
+                </button>
+              ))}
+            </div>
 
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 ml-2">
               <button
                 onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.max(12, prev.fontSize - 1) }))}
-                className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+                className="p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+                title="Decrease font size"
               >
                 <ZoomOut size={16} />
               </button>
-              <span className="min-w-[3rem] text-center text-sm font-mono" style={{ color: currentTheme.secondary }}>{settings.fontSize}px</span>
+              <span className="min-w-[2.5rem] text-center text-sm font-mono" style={{ color: currentTheme.secondary }}>{settings.fontSize}px</span>
               <button
                 onClick={() => setSettings(prev => ({ ...prev, fontSize: Math.min(28, prev.fontSize + 1) }))}
-                className="p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+                className="p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-black/5" style={{ color: currentTheme.secondary }}
+                title="Increase font size"
               >
                 <ZoomIn size={16} />
               </button>
+            </div>
           </div>
           
-          {/* ✅ FIX: Go to Bookmark Button */}
-          {bookmark && (
-              <button
-                  onClick={handleGoToBookmark}
-                  className="btn btn-secondary btn-sm flex items-center gap-2"
-                  style={{borderColor: currentTheme.border, color: currentTheme.secondary}}
-                  title={`Go to last read position (${Math.round(bookmark.percentComplete)}% complete)`}
-              >
-                  <Bookmark size={14} /> 
-                  Go to Bookmark
-              </button>
-          )}
+          {/* Right Controls: Go to Bookmark & Edit */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+            {bookmark && (
+                <button
+                    onClick={handleGoToBookmark}
+                    className="btn btn-secondary btn-sm flex items-center gap-1 sm:gap-2"
+                    style={{borderColor: currentTheme.border, color: currentTheme.secondary}}
+                    title={`Go to last read position (${Math.round(bookmark.percentComplete)}% complete)`}
+                >
+                    <Bookmark size={14} /> 
+                    <span className="hidden md:flex">Go to Bookmark</span> {/* Hidden on small, shown on medium+ */}
+                </button>
+            )}
 
-          <button onClick={onEdit} className="btn btn-secondary btn-sm" style={{borderColor: currentTheme.border, color: currentTheme.secondary}}>
-            <Edit size={14} /> Edit
-          </button>
+            <button onClick={onEdit} className="btn btn-secondary btn-sm flex items-center gap-1 sm:gap-2" style={{borderColor: currentTheme.border, color: currentTheme.secondary}} title="Edit Content">
+              <Edit size={14} /> 
+              <span className="hidden md:flex">Edit</span> {/* Hidden on small, shown on medium+ */}
+            </button>
+          </div>
         </div>
         
         <div ref={contentRef} className="p-4 sm:p-8">
