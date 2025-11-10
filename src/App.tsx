@@ -137,7 +137,19 @@ function App() {
   }, [currentBook, generationStatus.status]);
   
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+
+    // A modern, polished theme transition using the View Transitions API.
+    // It provides a smooth cross-fade effect.
+    // Fallback to simple class toggle for unsupported browsers.
+    if (!('startViewTransition' in document)) {
+      setTheme(newTheme);
+      return;
+    }
+
+    (document as any).startViewTransition(() => {
+      setTheme(newTheme);
+    });
   };
 
   const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
