@@ -52,6 +52,16 @@
     --color-accent-primary-hover: #0b5ed7;
   }
 
+  /* View Transition API Setup for an even, unified theme change. */
+  /* This instructs the browser to treat the header and main content */
+  /* as separate elements that transition in perfect sync. */
+  header {
+    view-transition-name: main-header;
+  }
+  main {
+    view-transition-name: main-content;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -72,6 +82,14 @@
     scroll-behavior: smooth;
   }
 }
+
+/* Customize the View Transition animation for a softer effect */
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 0.35s; /* A slightly calmer duration */
+  animation-timing-function: ease-in-out;
+}
+
 
 /* ==========================================================================
     Components Layer
