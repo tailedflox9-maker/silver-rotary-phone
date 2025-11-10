@@ -181,7 +181,7 @@ const FONT_FAMILIES = {
   serif: 'ui-serif, Georgia, "Times New Roman", serif',
   sans: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
   mono: 'ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
-  anta: '"Anta", sans-serif', // Added "Anta" font family
+  anta: "'Anta', sans-serif",
 };
 const MAX_WIDTHS = {
   narrow: '65ch',
