@@ -715,3 +715,174 @@ article a:hover {
 .light .model-dropdown button.selected .text-xs {
   color: #0B5ED7 !important;
 }
+/* Add to src/index.css - Minimal Reading Mode Buttons */
+
+/* Floating buttons - minimal, glass-morphism style */
+.reading-floating-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reading-floating-btn:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.reading-floating-btn:active {
+  transform: translateY(0);
+}
+
+/* Dark theme */
+.dark .reading-floating-btn {
+  background: rgba(26, 26, 26, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .reading-floating-btn:hover {
+  background: rgba(26, 26, 26, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Light theme */
+.light .reading-floating-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.light .reading-floating-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Bookmark button active state */
+.reading-floating-btn.bookmark-active {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.3);
+  opacity: 0.8;
+}
+
+.reading-floating-btn.bookmark-active:hover {
+  background: rgba(234, 179, 8, 0.25);
+  border-color: rgba(234, 179, 8, 0.5);
+  opacity: 1;
+}
+
+/* Icon colors */
+.dark .reading-floating-btn svg {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dark .reading-floating-btn:hover svg {
+  color: rgba(255, 255, 255, 1);
+}
+
+.light .reading-floating-btn svg {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light .reading-floating-btn:hover svg {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.reading-floating-btn.bookmark-active svg {
+  color: #eab308;
+}
+
+/* Tooltip - minimal */
+.reading-floating-btn .tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.reading-floating-btn:hover .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.light .reading-floating-btn .tooltip {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* Container positioning */
+.reading-floating-controls {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .reading-floating-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .reading-floating-controls {
+    bottom: 20px;
+    right: 20px;
+    gap: 10px;
+  }
+}
+
+/* Back button variant */
+.reading-back-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 30;
+}
+
+@media (max-width: 768px) {
+  .reading-back-btn {
+    bottom: 20px;
+    left: 20px;
+  }
+}
+
+/* Subtle entrance animation */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+
+.reading-floating-btn {
+  animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.reading-floating-btn:nth-child(2) {
+  animation-delay: 0.1s;
+}
