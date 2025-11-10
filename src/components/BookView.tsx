@@ -142,7 +142,7 @@ interface ReadingModeProps {
 interface ReadingSettings {
   fontSize: number;
   lineHeight: number;
-  fontFamily: 'serif' | 'sans' | 'mono';
+  fontFamily: 'serif' | 'sans' | 'mono'| 'anta'; 
   theme: 'dark' | 'sepia' | 'light';
   maxWidth: 'narrow' | 'medium' | 'wide';
   textAlign: 'left' | 'justify';
@@ -181,6 +181,7 @@ const FONT_FAMILIES = {
   serif: 'ui-serif, Georgia, "Times New Roman", serif',
   sans: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
   mono: 'ui-monospace, "SF Mono", "Monaco", "Cascadia Code", monospace',
+  anta: '"Anta", sans-serif', // Added "Anta" font family
 };
 const MAX_WIDTHS = {
   narrow: '65ch',
@@ -706,7 +707,7 @@ const ReadingMode: React.FC<ReadingModeProps> = ({
     return {
       fontSize: 18,
       lineHeight: 1.7,
-      fontFamily: 'serif',
+      fontFamily: 'anta', // Set "anta" as the default
       theme: theme === 'dark' ? 'dark' : 'light',
       maxWidth: 'medium',
       textAlign: 'left',
