@@ -151,7 +151,7 @@ const getAlternativeModels = () => {
   if (settings.zhipuApiKey && settings.selectedProvider !== 'zhipu') 
     alternatives.push({ provider: 'zhipu', model: 'glm-4.5-flash', name: 'GLM 4.5 Flash' });
   if (settings.groqApiKey && settings.selectedProvider !== 'groq') 
-    alternatives.push({ provider: 'groq', model: 'groq/compound', name: 'Groq Compound' });  // ✅ Updated
+    alternatives.push({ provider: 'groq', model: 'groq/compound', name: 'Groq Compound' });
   return alternatives;
 };
 
@@ -280,7 +280,6 @@ const getAlternativeModels = () => {
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) { alert('No roadmap available.'); return; }
     
-    // ✅ FIX: Validate session has required fields
     if (!session || !session.goal || !session.goal.trim()) {
       console.error('Invalid session:', session);
       alert('Invalid book session. Please recreate the book.');
