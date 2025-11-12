@@ -1,5 +1,5 @@
 // ============================================================================
-// FILE: src/App.tsx - WITH COMPOUND MODE INTEGRATION
+// FILE: src/App.tsx - COMPLETE FIXED VERSION WITH GENERATION FIX
 // ============================================================================
 import React, { useState, useEffect, useMemo } from 'react';
 import { Analytics } from '@vercel/analytics/react';
@@ -43,9 +43,6 @@ function App() {
   const [showModelSwitch, setShowModelSwitch] = useState(false);
   const [modelSwitchOptions, setModelSwitchOptions] = useState<Array<{provider: ModelProvider; model: string; name: string}>>([]);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('pustakam-theme') as Theme) || 'dark');
-  
-  // ✅ NEW: Compound Mode State
-  const [useCompoundMode, setUseCompoundMode] = useState(false);
 
   const { isInstallable, isInstalled, installApp, dismissInstallPrompt } = usePWA();
   
@@ -66,14 +63,6 @@ function App() {
     generationStatus.totalWordsGenerated || totalWordsGenerated
   );
   
-  // ✅ NEW: Auto-detect Compound model
-  useEffect(() => {
-    const isCompound = settings.selectedModel.includes('compound');
-    if (isCompound !== useCompoundMode) {
-      setUseCompoundMode(isCompound);
-    }
-  }, [settings.selectedModel]);
-
   useEffect(() => {
     localStorage.setItem('pustakam-theme', theme);
     document.documentElement.className = theme;
@@ -153,18 +142,18 @@ function App() {
 
   const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
   
-  const getAlternativeModels = () => {
-    const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
-    if (settings.googleApiKey && settings.selectedProvider !== 'google') 
-      alternatives.push({ provider: 'google', model: 'gemini-2.5-flash', name: 'Google Gemini 2.5 Flash' });
-    if (settings.mistralApiKey && settings.selectedProvider !== 'mistral') 
-      alternatives.push({ provider: 'mistral', model: 'mistral-small-latest', name: 'Mistral Small' });
-    if (settings.zhipuApiKey && settings.selectedProvider !== 'zhipu') 
-      alternatives.push({ provider: 'zhipu', model: 'glm-4.5-flash', name: 'GLM 4.5 Flash' });
-    if (settings.groqApiKey && settings.selectedProvider !== 'groq') 
-      alternatives.push({ provider: 'groq', model: 'groq/compound', name: 'Groq Compound' });
-    return alternatives;
-  };
+const getAlternativeModels = () => {
+  const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
+  if (settings.googleApiKey && settings.selectedProvider !== 'google') 
+    alternatives.push({ provider: 'google', model: 'gemini-2.5-flash', name: 'Google Gemini 2.5 Flash' });
+  if (settings.mistralApiKey && settings.selectedProvider !== 'mistral') 
+    alternatives.push({ provider: 'mistral', model: 'mistral-small-latest', name: 'Mistral Small' });
+  if (settings.zhipuApiKey && settings.selectedProvider !== 'zhipu') 
+    alternatives.push({ provider: 'zhipu', model: 'glm-4.5-flash', name: 'GLM 4.5 Flash' });
+  if (settings.groqApiKey && settings.selectedProvider !== 'groq') 
+    alternatives.push({ provider: 'groq', model: 'groq/compound', name: 'Groq Compound' });  // ✅ Updated
+  return alternatives;
+};
 
   const showModelSwitchModal = (alternatives: any) => { setModelSwitchOptions(alternatives); setShowModelSwitch(true); };
   
@@ -263,18 +252,7 @@ function App() {
     setView('detail');
 
     try {
-      // ✅ UPDATED: Use Compound Service if enabled
-      let roadmap;
-      
-      if (useCompoundMode && settings.selectedModel.includes('compound')) {
-        console.log('🧠 Using Compound AI Enhanced Mode for roadmap generation');
-        const { getCompoundService } = await import('./services/compoundService');
-        const compoundSvc = getCompoundService(settings);
-        roadmap = await compoundSvc.generateEnhancedRoadmap(session, bookId);
-      } else {
-        roadmap = await bookService.generateRoadmap(session, bookId);
-      }
-      
+      const roadmap = await bookService.generateRoadmap(session, bookId);
       setBooks(prev => prev.map(book => 
         book.id === bookId 
           ? { 
@@ -302,6 +280,7 @@ function App() {
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
     if (!book.roadmap) { alert('No roadmap available.'); return; }
     
+    // ✅ FIX: Validate session has required fields
     if (!session || !session.goal || !session.goal.trim()) {
       console.error('Invalid session:', session);
       alert('Invalid book session. Please recreate the book.');
@@ -469,8 +448,6 @@ function App() {
           onRetryDecision={handleRetryDecision}
           availableModels={getAlternativeModels()}
           theme={theme}
-          useCompoundMode={useCompoundMode}
-          onToggleCompoundMode={setUseCompoundMode}
         />
       </main>
 
