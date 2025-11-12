@@ -21,7 +21,9 @@ export type ModelID =
   | 'openai/gpt-oss-120b'
   | 'openai/gpt-oss-20b'
   | 'moonshotai/kimi-k2-instruct-0905'
-  | 'moonshotai/kimi-k2-instruct';
+  | 'moonshotai/kimi-k2-instruct'
+  | 'groq/compound'           // ✅ NEW
+  | 'groq/compound-mini';     // ✅ NEW
 
 export interface APISettings {
   googleApiKey: string;
