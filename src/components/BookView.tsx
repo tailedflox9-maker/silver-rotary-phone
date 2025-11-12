@@ -1,4 +1,4 @@
-// src/components/BookView.tsx - COMPLETE FIXED VERSION WITH WORKING BOOKMARKS & COMPOUND AI INTEGRATION
+// src/components/BookView.tsx - COMPLETE FIXED VERSION WITH WORKING BOOKMARKS
 import React, { useEffect, ReactNode, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -103,7 +103,7 @@ interface GenerationStats {
 interface BookViewProps {
   books: BookProject[];
   currentBookId: string | null;
-  onCreateBookRoadmap: (session: BookSession, useCompound?: boolean) => Promise<void>;
+  onCreateBookRoadmap: (session: BookSession) => Promise<void>;
   onGenerateAllModules: (book: BookProject, session: BookSession) => Promise<void>;
   onRetryFailedModules: (book: BookProject, session: BookSession) => Promise<void>;
   onAssembleBook: (book: BookProject, session: BookSession) => Promise<void>;
@@ -125,10 +125,6 @@ interface BookViewProps {
   onRetryDecision?: (decision: 'retry' | 'switch' | 'skip') => void;
   availableModels?: Array<{provider: string; model: string; name: string}>;
   theme: 'light' | 'dark';
-  // ✅ NEW: Compound Mode Props
-  useCompoundMode?: boolean;
-  onToggleCompoundMode?: (enabled: boolean) => void;
-  settings?: { selectedModel: string };
 }
 interface ReadingModeProps {
   content: string;
@@ -1374,9 +1370,6 @@ export function BookView({
   onRetryDecision,
   availableModels,
   theme,
-  useCompoundMode = false,
-  onToggleCompoundMode,
-  settings = { selectedModel: '' },
 }: BookViewProps) {
   const [detailTab, setDetailTab] = useState<'overview' | 'analytics' | 'read'>('overview');
   const [localIsGenerating, setLocalIsGenerating] = useState(false);
@@ -1475,7 +1468,7 @@ export function BookView({
   const handleCreateRoadmap = async (session: BookSession) => {
     if (!session.goal.trim()) { alert('Please enter a learning goal'); return; }
     if (!hasApiKey) { alert('Please configure an API key in Settings first'); return; }
-    await onCreateBookRoadmap(session, useCompoundMode);
+    await onCreateBookRoadmap(session);
   };
   
   const handleGenerateAllModules = async (book: BookProject, session: BookSession) => {
@@ -1743,30 +1736,6 @@ export function BookView({
                     </label>
                   </div>
                 </div>
-
-                {/* ✅ NEW: Compound Mode Toggle */}
-                {settings.selectedModel.includes('compound') && (
-                  <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={useCompoundMode}
-                        onChange={(e) => onToggleCompoundMode?.(e.target.checked)}
-                        className="w-4 h-4 accent-blue-500"
-                      />
-                      <div className="flex-1">
-                        <div className="font-semibold text-blue-300 flex items-center gap-2">
-                          <Brain className="w-4 h-4" />
-                          Enhanced Reasoning Mode (Compound AI)
-                        </div>
-                        <div className="text-xs text-blue-400/80 mt-1">
-                          Uses advanced step-by-step thinking, self-review, and quality checks. 
-                          Generates higher quality content but takes ~20% longer.
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -1824,24 +1793,6 @@ export function BookView({
             </div>
           </div>
         </div>
-        
-        {/* ✅ NEW: Visual Indicator for Compound Mode */}
-        {currentBook.status === 'roadmap_completed' && useCompoundMode && (
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6 animate-fade-in-up">
-            <div className="flex items-start gap-3">
-              <Brain className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-              <div>
-                <div className="font-semibold text-blue-300 mb-1">
-                  🧠 Compound AI Enhanced Mode Active
-                </div>
-                <div className="text-xs text-blue-400/80">
-                  This book will be generated using advanced reasoning with self-review 
-                  for higher quality content.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {currentBook.status === 'completed' && (
           <div className="border-b border-[var(--color-border)] mb-8">
