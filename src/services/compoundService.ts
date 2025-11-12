@@ -1,6 +1,6 @@
 // ============================================================================
 // FILE: src/services/compoundService.ts
-// Compound AI System - Research-Grade Book Generation with Web Search & Code
+// Compound AI Models - Advanced Reasoning Service
 // ============================================================================
 
 import { BookProject, BookRoadmap, BookModule, RoadmapModule, BookSession } from '../types/book';
@@ -9,42 +9,23 @@ import { generateId } from '../utils/helpers';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-interface ResearchInsight {
-  query: string;
-  sources: string[];
-  findings: string;
-  reliability: 'high' | 'medium' | 'low';
+interface CompoundThinkingStep {
+  step: number;
+  thought: string;
+  reasoning: string;
 }
 
-interface AcademicModule {
-  id: string;
-  title: string;
-  abstract: string;
-  sections: {
-    introduction: string;
-    literature: string;
-    methodology: string;
-    content: string;
-    examples: string;
-    exercises?: string;
-    conclusion: string;
-  };
-  references: string[];
-  keywords: string[];
+interface CompoundAnalysis {
+  complexity: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites: string[];
+  learningPath: string[];
+  estimatedModules: number;
+  thinkingSteps: CompoundThinkingStep[];
 }
 
-/**
- * Compound AI Service - Leverages Groq's Web Search + Code Execution
- * 
- * Key Capabilities:
- * - Real-time web search for current information
- * - Code execution for verifying examples and computations
- * - Multi-tool orchestration (up to 10 calls)
- * - Research-grade content with citations
- */
 export class CompoundAIService {
   private settings: APISettings;
-  private requestTimeout = 480000; // 8 minutes for complex tasks
+  private requestTimeout = 360000;
   private activeRequests = new Map<string, AbortController>();
 
   constructor(settings: APISettings) {
@@ -56,212 +37,191 @@ export class CompoundAIService {
   }
 
   /**
-   * Check if current model is Compound
+   * Check if current model is a Compound model
    */
   isCompoundModel(): boolean {
-    return this.settings.selectedModel === 'groq/compound' || 
-           this.settings.selectedModel === 'groq/compound-mini';
+    return this.settings.selectedModel.includes('compound');
   }
 
   /**
-   * Get model type and capabilities
+   * Get Compound-specific model capabilities
    */
   getModelCapabilities(): {
-    modelType: 'compound' | 'compound-mini' | 'standard';
-    hasWebSearch: boolean;
-    hasCodeExecution: boolean;
-    maxToolCalls: number;
+    hasAdvancedReasoning: boolean;
+    hasSelfCorrection: boolean;
+    hasChainOfThought: boolean;
     maxTokens: number;
-    description: string;
+    modelName: string;
   } {
-    if (this.settings.selectedModel === 'groq/compound') {
-      return {
-        modelType: 'compound',
-        hasWebSearch: true,
-        hasCodeExecution: true,
-        maxToolCalls: 10,
-        maxTokens: 8192,
-        description: 'Full Compound system with up to 10 tool calls - includes real-time web search and code execution'
-      };
-    } else if (this.settings.selectedModel === 'groq/compound-mini') {
-      return {
-        modelType: 'compound-mini',
-        hasWebSearch: true,
-        hasCodeExecution: true,
-        maxToolCalls: 1,
-        maxTokens: 4096,
-        description: 'Streamlined Compound with 1 tool call - 3x faster with web search and code execution'
-      };
-    } else {
-      return {
-        modelType: 'standard',
-        hasWebSearch: false,
-        hasCodeExecution: false,
-        maxToolCalls: 0,
-        maxTokens: 8192,
-        description: 'Standard LLM without tool access'
-      };
-    }
+    const isMini = this.settings.selectedModel === 'groq/compound-mini';
+    
+    return {
+      hasAdvancedReasoning: true,
+      hasSelfCorrection: true,
+      hasChainOfThought: true,
+      maxTokens: isMini ? 4096 : 8192,
+      modelName: isMini ? 'Compound Mini (Fast)' : 'Compound (Advanced)'
+    };
   }
 
   /**
-   * MAIN: Generate Research-Grade Roadmap with Web-Verified Topics
+   * Enhanced Roadmap Generation with Deep Analysis
    */
-  async generateResearchRoadmap(session: BookSession, bookId: string): Promise<BookRoadmap> {
+  async generateEnhancedRoadmap(session: BookSession, bookId: string): Promise<BookRoadmap> {
     if (!this.isCompoundModel()) {
-      throw new Error('Research-grade roadmap requires Compound model');
+      throw new Error('Enhanced roadmap generation requires a Compound model');
     }
 
-    console.log('🔬 Compound: Researching topic with web search...');
+    console.log('🧠 Using Compound AI for enhanced roadmap generation...');
 
-    // Step 1: Research the topic using web search
-    const research = await this.researchTopic(session.goal);
-
-    // Step 2: Generate roadmap with research context
-    const roadmap = await this.buildAcademicRoadmap(session, research, bookId);
+    // Step 1: Deep Analysis of Learning Goal
+    const analysis = await this.analyzeLearnignGoal(session);
+    
+    // Step 2: Generate Roadmap with Analysis Context
+    const roadmap = await this.generateRoadmapWithReasoning(session, analysis, bookId);
 
     return roadmap;
   }
 
   /**
-   * Research Topic with Web Search (Compound's superpower!)
+   * Deep Analysis of Learning Goal
    */
-  private async researchTopic(goal: string): Promise<ResearchInsight> {
-    const searchPrompt = `You have access to real-time web search. Research this topic comprehensively:
+  private async analyzeLearnignGoal(session: BookSession): Promise<CompoundAnalysis> {
+    const analysisPrompt = `You are an expert educational content analyzer using advanced reasoning.
 
-**Topic:** "${goal}"
+**Learning Goal:** "${session.goal}"
+**Target Audience:** ${session.targetAudience || 'general learners'}
+**Complexity Level:** ${session.complexityLevel || 'intermediate'}
+${session.reasoning ? `**Motivation:** ${session.reasoning}` : ''}
 
-**Task:**
-1. Search for the latest research, papers, and authoritative sources on this topic
-2. Identify key subtopics, current trends, and best practices
-3. Find recommended learning resources and textbooks
-4. Note any recent developments or paradigm shifts
+**TASK - Think Step-by-Step:**
 
-Provide a comprehensive research summary with sources.
+1. **Analyze Complexity:** 
+   - What prerequisite knowledge is needed?
+   - Is this beginner, intermediate, or advanced material?
+   - What makes this topic challenging?
 
-Format your response as:
-## Research Findings
-[Your synthesis of current knowledge]
+2. **Identify Prerequisites:**
+   - What foundational concepts must be understood first?
+   - What skills or knowledge gaps might learners have?
 
-## Key Subtopics Identified
-- [Subtopic 1]
-- [Subtopic 2]
-...
+3. **Design Learning Path:**
+   - What's the logical progression from basics to advanced?
+   - What dependencies exist between topics?
+   - What's the optimal module count (8-20)?
 
-## Recommended Resources
-- [Source 1]
-- [Source 2]
-...
+4. **Estimate Scope:**
+   - How many modules would be ideal?
+   - What depth of coverage is appropriate?
 
-## Recent Developments
-[Any cutting-edge information]`;
+**OUTPUT FORMAT (JSON):**
+\`\`\`json
+{
+  "thinkingSteps": [
+    {
+      "step": 1,
+      "thought": "First, I need to...",
+      "reasoning": "This is important because..."
+    }
+  ],
+  "complexity": "intermediate",
+  "prerequisites": ["Topic 1", "Topic 2"],
+  "learningPath": ["Foundation", "Core Concepts", "Advanced"],
+  "estimatedModules": 12
+}
+\`\`\`
 
-    const response = await this.generateWithCompound(searchPrompt);
-    
-    return this.parseResearchInsights(response, goal);
+Think carefully and respond ONLY with valid JSON.`;
+
+    const response = await this.generateWithGroq(analysisPrompt);
+    return this.parseAnalysisResponse(response);
   }
 
   /**
-   * Build Academic Roadmap with Research Context
+   * Generate Roadmap with Reasoning Context
    */
-  private async buildAcademicRoadmap(
+  private async generateRoadmapWithReasoning(
     session: BookSession, 
-    research: ResearchInsight,
+    analysis: CompoundAnalysis,
     bookId: string
   ): Promise<BookRoadmap> {
-    const roadmapPrompt = `You are an expert curriculum designer creating a research-grade learning roadmap.
+    const roadmapPrompt = `You have analyzed this learning goal and identified key insights. Now create a comprehensive roadmap.
 
-**Topic:** "${session.goal}"
+**Learning Goal:** "${session.goal}"
+**Analysis Results:**
+- Complexity: ${analysis.complexity}
+- Prerequisites: ${analysis.prerequisites.join(', ')}
+- Learning Path: ${analysis.learningPath.join(' → ')}
+- Recommended Modules: ${analysis.estimatedModules}
 
-**Research Findings:**
-${research.findings}
+**Your Thinking Process:**
+${analysis.thinkingSteps.map((s, i) => `${i + 1}. ${s.thought}\n   → ${s.reasoning}`).join('\n')}
 
-**Target Audience:** ${session.targetAudience || 'Professionals and advanced learners'}
-**Complexity:** ${session.complexityLevel || 'Advanced'}
+**TASK - Create Structured Roadmap:**
 
-**Task - Design Academic-Quality Curriculum:**
-
-Based on current research and best practices, create a comprehensive roadmap with 10-18 modules that:
-
-1. **Foundation First**: Start with theoretical foundations and prerequisites
-2. **Progressive Depth**: Build from fundamentals to advanced applications
-3. **Research-Backed**: Include modules on current research and developments
-4. **Practical Integration**: Balance theory with hands-on implementation
-5. **Critical Thinking**: Include sections for analysis and evaluation
-
-**Module Design Guidelines:**
-- Each module = 1 research paper equivalent (~4000-6000 words)
-- Include Abstract, Introduction, Literature Review, Main Content, Examples, Conclusion
-- 4-6 specific learning objectives per module
-- Realistic time estimates (2-4 hours per module)
+Generate ${analysis.estimatedModules} modules that:
+1. Build logically from foundations to advanced topics
+2. Address identified prerequisites early
+3. Follow the optimal learning path
+4. Include clear, actionable learning objectives (3-5 per module)
+5. Estimate realistic completion times
 
 **OUTPUT FORMAT (JSON):**
 \`\`\`json
 {
   "modules": [
     {
-      "title": "Module Title (Academic Style)",
-      "objectives": [
-        "Understand...",
-        "Analyze...",
-        "Implement...",
-        "Evaluate..."
-      ],
-      "estimatedTime": "3-4 hours",
-      "researchFocus": "Brief description of research angle"
+      "title": "Module Title",
+      "objectives": ["Objective 1", "Objective 2", "Objective 3"],
+      "estimatedTime": "2-3 hours"
     }
   ],
-  "estimatedReadingTime": "40-60 hours",
-  "difficultyLevel": "advanced",
-  "researchKeywords": ["keyword1", "keyword2", "keyword3"]
+  "estimatedReadingTime": "25-30 hours",
+  "difficultyLevel": "${analysis.complexity}"
 }
 \`\`\`
 
-Generate ONLY valid JSON.`;
+Return ONLY valid JSON. Make each module title clear and descriptive.`;
 
-    const response = await this.generateWithCompound(roadmapPrompt, bookId);
-    return this.parseRoadmapResponse(response, session);
+    const response = await this.generateWithGroq(roadmapPrompt, bookId);
+    return this.parseRoadmapResponse(response, session, analysis.complexity);
   }
 
   /**
-   * MAIN: Generate Research-Grade Module with Web Search + Code Verification
+   * Enhanced Module Generation with Self-Review
    */
-  async generateResearchModule(
+  async generateEnhancedModule(
     book: BookProject,
     roadmapModule: RoadmapModule,
     session: BookSession,
     previousModules: BookModule[]
   ): Promise<BookModule> {
     if (!this.isCompoundModel()) {
-      throw new Error('Research-grade modules require Compound model');
+      throw new Error('Enhanced module generation requires a Compound model');
     }
 
-    console.log(`🔬 Compound: Generating research module: ${roadmapModule.title}`);
+    console.log(`🧠 Generating module with Compound reasoning: ${roadmapModule.title}`);
 
-    // Step 1: Generate academic module with web-verified content
-    const academicModule = await this.generateAcademicModule(
-      roadmapModule,
-      session,
+    // Step 1: Generate with reasoning prompts
+    const content = await this.generateModuleWithReasoning(
+      roadmapModule, 
+      session, 
       previousModules,
       book.modules.length + 1,
       book.roadmap?.totalModules || 0
     );
 
-    // Step 2: Verify code examples if present
-    if (session.preferences?.includeExamples) {
-      await this.verifyCodeExamples(academicModule);
-    }
+    // Step 2: Self-review and improve
+    const improvedContent = await this.selfReviewContent(content, roadmapModule.title);
 
-    // Step 3: Format as professional markdown
-    const formattedContent = this.formatAcademicModule(academicModule);
-
-    const wordCount = formattedContent.split(/\s+/).filter(w => w.length > 0).length;
+    // Step 3: Create module object
+    const wordCount = improvedContent.split(/\s+/).filter(w => w.length > 0).length;
 
     return {
       id: generateId(),
       roadmapModuleId: roadmapModule.id,
       title: roadmapModule.title,
-      content: formattedContent,
+      content: improvedContent,
       wordCount,
       status: 'completed',
       generatedAt: new Date()
@@ -269,242 +229,210 @@ Generate ONLY valid JSON.`;
   }
 
   /**
-   * Generate Academic Module (Research Paper Style)
+   * Generate Module with Advanced Reasoning
    */
-  private async generateAcademicModule(
+  private async generateModuleWithReasoning(
     roadmapModule: RoadmapModule,
     session: BookSession,
     previousModules: BookModule[],
     moduleIndex: number,
     totalModules: number
-  ): Promise<AcademicModule> {
+  ): Promise<string> {
     const contextSummary = previousModules.length > 0
-      ? `\n\n**PREVIOUS CHAPTERS:**\n${previousModules.slice(-2).map(m =>
-          `- ${m.title} (${m.wordCount} words)`
+      ? `\n\n**PREVIOUS MODULES CONTEXT:**\n${previousModules.slice(-2).map(m =>
+          `- ${m.title}: ${m.content.substring(0, 200)}...`
         ).join('\n')}`
       : '';
 
-    const prompt = `You are writing a research-grade chapter with web search and code execution access.
+    const prompt = `You are writing Chapter ${moduleIndex} of ${totalModules} for a comprehensive guide.
 
-**CHAPTER ${moduleIndex} OF ${totalModules}:** ${roadmapModule.title}
+**CHAPTER TITLE:** ${roadmapModule.title}
 
 **LEARNING OBJECTIVES:**
 ${roadmapModule.objectives.map((obj, i) => `${i + 1}. ${obj}`).join('\n')}
 
 **BOOK CONTEXT:**
-- Topic: ${session.goal}
-- Audience: ${session.targetAudience || 'Advanced learners & professionals'}
-- Level: ${session.complexityLevel || 'Advanced'}${contextSummary}
+- Overall Goal: ${session.goal}
+- Target Audience: ${session.targetAudience || 'general learners'}
+- Complexity: ${session.complexityLevel || 'intermediate'}
+${session.reasoning ? `- Book Purpose: ${session.reasoning}` : ''}${contextSummary}
 
-**RESEARCH-GRADE STRUCTURE:**
+**🧠 REASONING PROCESS (Think Before Writing):**
 
-Write a comprehensive chapter following academic research paper format:
+Before generating content, consider:
+1. **Reader's Current Knowledge:** What do they know from previous chapters?
+2. **Common Misconceptions:** What mistakes do learners typically make here?
+3. **Prerequisite Check:** Is there foundational knowledge needed?
+4. **Practical Relevance:** How does this apply to real-world scenarios?
+5. **Progressive Complexity:** Start simple, build to advanced concepts
 
+**WRITING REQUIREMENTS:**
+
+📝 **Structure:**
 ## ${roadmapModule.title}
 
-### Abstract
-*150-200 words summarizing the chapter's key contributions*
+### Introduction
+- Set context and relevance
+- Preview what will be learned
+- Connect to previous knowledge
 
-### I. Introduction
-- Context and motivation
-- Research questions addressed
-- Chapter organization
+### Core Concepts
+- Break down complex ideas into digestible parts
+- Use analogies and metaphors
+- Provide clear definitions
 
-### II. Theoretical Foundation
-- Core concepts and definitions
-- Mathematical formulations (if applicable)
-- Conceptual frameworks
+### Detailed Explanation
+- Deep dive into each concept
+- Explain the "why" behind the "what"
+- Address common questions
 
-### III. Literature Review & Current Research
-**USE WEB SEARCH** to find:
-- Recent papers and developments
-- Current best practices
-- Industry standards
-- Expert perspectives
+${session.preferences?.includeExamples ? `### Practical Examples
+- Real-world applications
+- Step-by-step demonstrations
+- Common use cases` : ''}
 
-### IV. Detailed Analysis
-- In-depth exploration of concepts
-- Step-by-step breakdowns
-- Edge cases and considerations
-- Performance implications
+${session.preferences?.includePracticalExercises ? `### Practice Exercises
+- Hands-on activities
+- Progressive difficulty
+- Solutions or hints` : ''}
 
-${session.preferences?.includeExamples ? `### V. Practical Implementation
-**USE CODE EXECUTION** to verify:
-- Working code examples
-- Real computations
-- Validated outputs
-- Performance benchmarks` : ''}
+### Key Takeaways
+- Summarize main points
+- Highlight critical insights
+- Preview next chapter
 
-### VI. Advanced Topics
-- Research frontier
-- Open challenges
-- Future directions
+**📏 LENGTH:** 2500-4000 words
+**✍️ TONE:** Clear, engaging, educational
+**🎯 FOCUS:** Deep understanding over surface coverage
 
-${session.preferences?.includePracticalExercises ? `### VII. Research Exercises
-- Analytical problems
-- Implementation challenges
-- Research questions` : ''}
+Write the complete chapter now:`;
 
-### VIII. Conclusion & Key Takeaways
-- Summary of main contributions
-- Practical implications
-- Connection to next chapter
-
-### References
-- Academic citations (numbered format)
-- Web sources used
-- Recommended readings
-
-**QUALITY STANDARDS:**
-- 4000-6000 words
-- Citation-backed claims
-- Verified code examples
-- Research-grade depth
-- Professional tone
-- No emoji or casual language
-
-Generate the complete chapter now.`;
-
-    const response = await this.generateWithCompound(prompt);
-    return this.parseAcademicModule(response, roadmapModule.id);
+    return await this.generateWithGroq(prompt);
   }
 
   /**
-   * Verify Code Examples using Compound's Code Execution
+   * Self-Review and Improve Content
    */
-  private async verifyCodeExamples(module: AcademicModule): Promise<void> {
-    if (!module.sections.examples) return;
+  private async selfReviewContent(content: string, moduleTitle: string): Promise<string> {
+    console.log(`🔍 Self-reviewing: ${moduleTitle}...`);
 
-    // Extract code blocks
-    const codeBlocks = module.sections.examples.match(/```[\s\S]*?```/g);
-    if (!codeBlocks || codeBlocks.length === 0) return;
+    const reviewPrompt = `You are a quality assurance expert reviewing educational content.
 
-    console.log(`✓ Verifying ${codeBlocks.length} code examples...`);
+**MODULE:** ${moduleTitle}
 
-    for (const block of codeBlocks) {
-      const code = block.replace(/```[\w]*\n?/g, '').trim();
-      
-      // Skip if not Python (Compound only executes Python)
-      if (!block.includes('python')) continue;
+**CONTENT TO REVIEW:**
+${content.substring(0, 5000)}${content.length > 5000 ? '\n... (content continues)' : ''}
 
-      const verificationPrompt = `Verify this code example by executing it:
+**REVIEW CHECKLIST:**
 
-\`\`\`python
-${code}
+1. ✅ **Accuracy:** Are facts and explanations correct?
+2. ✅ **Clarity:** Is language clear and jargon explained?
+3. ✅ **Flow:** Does content progress logically?
+4. ✅ **Completeness:** Are all objectives addressed?
+5. ✅ **Examples:** Are examples helpful and accurate?
+6. ✅ **Engagement:** Is the tone appropriate and engaging?
+
+**ANALYSIS:**
+- Identify any factual errors
+- Note unclear explanations
+- Spot logical gaps
+- Check for missing context
+
+**OUTPUT:**
+
+If content is high-quality (minor or no issues):
+\`\`\`
+APPROVED
+Minor suggestions: [list any small improvements]
 \`\`\`
 
-Check:
-1. Does it run without errors?
-2. Does the output match expectations?
-3. Are there any edge cases that fail?
+If significant issues found:
+\`\`\`
+REVISED VERSION:
+[Provide improved version with corrections]
+\`\`\`
 
-If there are issues, suggest corrections.`;
+Perform thorough review now:`;
 
-      try {
-        await this.generateWithCompound(verificationPrompt);
-        console.log(`  ✓ Code block verified`);
-      } catch (error) {
-        console.warn(`  ⚠ Code verification failed:`, error);
+    try {
+      const review = await this.generateWithGroq(reviewPrompt);
+      
+      if (review.includes('APPROVED')) {
+        console.log(`✓ Module approved by self-review`);
+        return content;
+      } else if (review.includes('REVISED VERSION:')) {
+        console.log(`✓ Module improved through self-review`);
+        const revised = review.split('REVISED VERSION:')[1]?.trim();
+        return revised || content;
+      } else {
+        console.log(`⚠️ Review inconclusive, keeping original`);
+        return content;
       }
+    } catch (error) {
+      console.warn('Self-review failed, using original content');
+      return content;
     }
   }
 
   /**
-   * Format Academic Module to Professional Markdown
+   * Generate Summary with Deep Insights
    */
-  private formatAcademicModule(module: AcademicModule): string {
-    let content = `# ${module.title}\n\n`;
-    
-    // Abstract
-    if (module.abstract) {
-      content += `**Abstract:** ${module.abstract}\n\n`;
-      content += `**Keywords:** ${module.keywords.join(', ')}\n\n`;
-      content += `---\n\n`;
-    }
-
-    // Sections
-    const sectionTitles: Record<string, string> = {
-      introduction: 'I. Introduction',
-      literature: 'II. Theoretical Foundation & Literature Review',
-      methodology: 'III. Methodology & Analysis',
-      content: 'IV. Detailed Discussion',
-      examples: 'V. Practical Implementation',
-      exercises: 'VI. Research Exercises',
-      conclusion: 'VII. Conclusion & Key Takeaways'
-    };
-
-    Object.entries(module.sections).forEach(([key, text]) => {
-      if (!text) return;
-      const sectionTitle = sectionTitles[key as keyof typeof sectionTitles] || key;
-      content += `## ${sectionTitle}\n\n${text}\n\n`;
-    });
-
-    // References
-    if (module.references && module.references.length > 0) {
-      content += `## References\n\n`;
-      module.references.forEach((ref, i) => {
-        content += `[${i + 1}] ${ref}\n\n`;
-      });
-    }
-
-    return content;
-  }
-
-  /**
-   * Generate Research-Grade Summary with Citations
-   */
-  async generateResearchSummary(
-    session: BookSession,
+  async generateEnhancedSummary(
+    session: BookSession, 
     modules: BookModule[]
   ): Promise<string> {
     if (!this.isCompoundModel()) {
-      throw new Error('Research summary requires Compound model');
+      throw new Error('Enhanced summary requires a Compound model');
     }
 
-    const prompt = `Generate a comprehensive summary for this research-grade book.
+    const prompt = `You are creating a comprehensive book summary with deep insights.
 
-**Topic:** ${session.goal}
+**BOOK GOAL:** ${session.goal}
 
-**Chapters:**
+**CHAPTERS COVERED:**
 ${modules.map((m, i) => `${i + 1}. ${m.title} (${m.wordCount} words)`).join('\n')}
 
-**Task - Write Academic Summary (800-1200 words):**
+**TASK - Create Multi-Level Summary:**
 
-## Executive Summary
-[High-level overview of the complete work]
+Think about what the reader has learned across this entire journey:
 
-## Key Contributions
-- Theoretical insights
-- Practical frameworks
-- Novel approaches
+1. **High-Level Synthesis:**
+   - What's the big picture?
+   - How do all chapters connect?
+   - What transformation has occurred?
 
-## Chapter Synthesis
-[How chapters build on each other]
+2. **Key Insights:**
+   - Most important takeaways
+   - Unexpected discoveries
+   - Critical concepts to remember
 
-## Research Implications
-[Broader impact and applications]
+3. **Practical Application:**
+   - How to use this knowledge
+   - Next steps for the reader
+   - Resources for continued learning
 
-## Future Directions
-[Open problems and research opportunities]
+4. **Reflection Prompts:**
+   - Questions for the reader to consider
+   - Ways to assess their understanding
 
-## Recommended Next Steps
-[For readers who want to go deeper]
+**FORMAT:**
+Write 800-1200 words in markdown with ## headers.
 
-Use academic tone, no emoji.`;
+Begin with congratulations, then provide the structured summary above.`;
 
-    return await this.generateWithCompound(prompt);
+    return await this.generateWithGroq(prompt);
   }
 
   /**
-   * Core: Generate with Compound (Web Search + Code Execution)
+   * Core: Generate with Groq API (Compound Models)
    */
-  private async generateWithCompound(
-    prompt: string,
+  private async generateWithGroq(
+    prompt: string, 
     bookId?: string,
     onChunk?: (chunk: string) => void
   ): Promise<string> {
     if (!this.settings.groqApiKey) {
-      throw new Error('Groq API key required for Compound');
+      throw new Error('Groq API key not configured');
     }
 
     const requestId = bookId || generateId();
@@ -521,22 +449,11 @@ Use academic tone, no emoji.`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.settings.groqApiKey}`,
-          // Use latest Compound version
-          'Groq-Model-Version': 'latest'
+          'Authorization': `Bearer ${this.settings.groqApiKey}`
         },
         body: JSON.stringify({
-          model: this.settings.selectedModel, // groq/compound or groq/compound-mini
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a research assistant with access to web search and code execution. Use these tools to provide accurate, well-researched, and verified information.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
+          model: this.settings.selectedModel,
+          messages: [{ role: 'user', content: prompt }],
           temperature: 0.7,
           max_tokens: this.getModelCapabilities().maxTokens,
           stream: !!onChunk
@@ -546,19 +463,13 @@ Use academic tone, no emoji.`;
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || `Compound API Error: ${response.status}`);
+        throw new Error(errorData?.error?.message || `Groq API Error: ${response.status}`);
       }
 
       if (onChunk && response.body) {
         return await this.handleStreamResponse(response.body, onChunk);
       } else {
         const data = await response.json();
-        
-        // Log tools used (web search, code execution)
-        if (data.choices?.[0]?.message?.executed_tools) {
-          console.log('🔧 Tools used:', data.choices[0].message.executed_tools);
-        }
-        
         return data?.choices?.[0]?.message?.content || '';
       }
     } finally {
@@ -571,7 +482,7 @@ Use academic tone, no emoji.`;
    * Handle Streaming Response
    */
   private async handleStreamResponse(
-    body: ReadableStream<Uint8Array>,
+    body: ReadableStream<Uint8Array>, 
     onChunk: (chunk: string) => void
   ): Promise<string> {
     const reader = body.getReader();
@@ -601,7 +512,7 @@ Use academic tone, no emoji.`;
               onChunk(textPart);
             }
           } catch (parseError) {
-            // Ignore parse errors
+            // Ignore parse errors in stream
           }
         }
       }
@@ -612,69 +523,9 @@ Use academic tone, no emoji.`;
   }
 
   /**
-   * Parse Research Insights
+   * Parse Analysis Response
    */
-  private parseResearchInsights(response: string, goal: string): ResearchInsight {
-    return {
-      query: goal,
-      sources: this.extractSources(response),
-      findings: response,
-      reliability: 'high' // Compound uses real-time web search
-    };
-  }
-
-  /**
-   * Extract Sources from Response
-   */
-  private extractSources(text: string): string[] {
-    const sources: string[] = [];
-    const urlRegex = /https?:\/\/[^\s<>"]+/g;
-    const matches = text.match(urlRegex);
-    if (matches) {
-      sources.push(...matches);
-    }
-    return [...new Set(sources)]; // Remove duplicates
-  }
-
-  /**
-   * Parse Academic Module
-   */
-  private parseAcademicModule(response: string, moduleId: string): AcademicModule {
-    // Extract sections using regex
-    const abstractMatch = response.match(/\*\*Abstract:\*\*\s*([\s\S]*?)(?=###|##|$)/);
-    const introMatch = response.match(/###?\s*I+\.?\s*Introduction\s*([\s\S]*?)(?=###|##|$)/i);
-    const litMatch = response.match(/###?\s*I+\.?\s*(?:Literature|Theoretical)[\s\S]*?\s*([\s\S]*?)(?=###|##|$)/i);
-    const contentMatch = response.match(/###?\s*I+V\.?\s*(?:Detailed|Discussion)[\s\S]*?\s*([\s\S]*?)(?=###|##|$)/i);
-    const examplesMatch = response.match(/###?\s*V\.?\s*(?:Practical|Implementation)[\s\S]*?\s*([\s\S]*?)(?=###|##|$)/i);
-    const conclusionMatch = response.match(/###?\s*(?:VII+|Conclusion)[\s\S]*?\s*([\s\S]*?)(?=###|##|References|$)/i);
-    
-    // Extract references
-    const referencesMatch = response.match(/###?\s*References\s*([\s\S]*?)$/i);
-    const references = referencesMatch 
-      ? referencesMatch[1].split('\n').filter(line => line.trim().match(/^\[\d+\]/))
-      : [];
-
-    return {
-      id: moduleId,
-      title: 'Research Module',
-      abstract: abstractMatch?.[1]?.trim() || '',
-      sections: {
-        introduction: introMatch?.[1]?.trim() || '',
-        literature: litMatch?.[1]?.trim() || '',
-        methodology: '',
-        content: contentMatch?.[1]?.trim() || '',
-        examples: examplesMatch?.[1]?.trim() || '',
-        conclusion: conclusionMatch?.[1]?.trim() || ''
-      },
-      references: references.map(r => r.trim()),
-      keywords: []
-    };
-  }
-
-  /**
-   * Parse Roadmap Response
-   */
-  private parseRoadmapResponse(response: string, session: BookSession): BookRoadmap {
+  private parseAnalysisResponse(response: string): CompoundAnalysis {
     let cleaned = response.trim()
       .replace(/```json\s*/g, '')
       .replace(/```\s*/g, '')
@@ -683,13 +534,43 @@ Use academic tone, no emoji.`;
 
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Invalid roadmap format');
+      throw new Error('Invalid analysis response format');
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    return {
+      complexity: parsed.complexity || 'intermediate',
+      prerequisites: parsed.prerequisites || [],
+      learningPath: parsed.learningPath || [],
+      estimatedModules: parsed.estimatedModules || 10,
+      thinkingSteps: parsed.thinkingSteps || []
+    };
+  }
+
+  /**
+   * Parse Roadmap Response
+   */
+  private parseRoadmapResponse(
+    response: string, 
+    session: BookSession,
+    complexity: 'beginner' | 'intermediate' | 'advanced'
+  ): BookRoadmap {
+    let cleaned = response.trim()
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*/g, '')
+      .replace(/^[^{]*/, '')
+      .replace(/[^}]*$/, '');
+
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid roadmap response format');
     }
 
     const roadmap = JSON.parse(jsonMatch[0]);
 
     if (!roadmap.modules || !Array.isArray(roadmap.modules)) {
-      throw new Error('Invalid roadmap: missing modules');
+      throw new Error('Invalid roadmap: missing modules array');
     }
 
     roadmap.modules = roadmap.modules.map((module: any, index: number) => ({
@@ -697,15 +578,15 @@ Use academic tone, no emoji.`;
       title: module.title?.trim() || `Module ${index + 1}`,
       objectives: Array.isArray(module.objectives) 
         ? module.objectives 
-        : [`Understand ${module.title}`],
-      estimatedTime: module.estimatedTime || '3-4 hours',
+        : [`Learn ${module.title}`],
+      estimatedTime: module.estimatedTime || '2-3 hours',
       order: index + 1
     }));
 
     roadmap.totalModules = roadmap.modules.length;
     roadmap.estimatedReadingTime = roadmap.estimatedReadingTime || 
-      `${roadmap.modules.length * 3}-${roadmap.modules.length * 4} hours`;
-    roadmap.difficultyLevel = roadmap.difficultyLevel || session.complexityLevel || 'advanced';
+      `${roadmap.modules.length * 2}-${roadmap.modules.length * 3} hours`;
+    roadmap.difficultyLevel = complexity;
 
     return roadmap;
   }
