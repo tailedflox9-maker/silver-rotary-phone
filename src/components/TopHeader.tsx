@@ -79,16 +79,18 @@ const modelConfig = {
     models: [{ id: 'glm-4.5-flash', name: 'GLM 4.5 Flash', description: 'Chinese AI model' }] 
   },
   groq: {
-    name: "Groq", 
-    icon: (props: { theme?: 'light' | 'dark' }) => <GroqIcon {...props} />, 
-    models: [
-      { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Powerful & versatile' },
-      { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', description: 'Large open-source model' },
-      { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', description: 'Medium open-source model' },
-      { id: 'moonshotai/kimi-k2-instruct-0905', name: 'Kimi K2 Instruct (0905)', description: 'Moonshot AI instruction model' },
-      { id: 'moonshotai/kimi-k2-instruct', name: 'Kimi K2 Instruct', description: 'Moonshot AI latest' },
-    ]
-  }
+  name: "Groq", 
+  icon: (props: { theme?: 'light' | 'dark' }) => <GroqIcon {...props} />, 
+  models: [
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', description: 'Powerful & versatile' },
+    { id: 'groq/compound', name: 'Compound', description: 'Advanced reasoning model' },               // ✅ NEW
+    { id: 'groq/compound-mini', name: 'Compound Mini', description: 'Fast reasoning model' },        // ✅ NEW
+    { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', description: 'Large open-source model' },
+    { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', description: 'Medium open-source model' },
+    { id: 'moonshotai/kimi-k2-instruct-0905', name: 'Kimi K2 Instruct (0905)', description: 'Moonshot AI instruction model' },
+    { id: 'moonshotai/kimi-k2-instruct', name: 'Kimi K2 Instruct', description: 'Moonshot AI latest' },
+  ]
+}
 };
 
 interface TopHeaderProps {
