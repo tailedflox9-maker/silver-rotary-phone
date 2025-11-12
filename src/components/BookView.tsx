@@ -58,7 +58,7 @@ import {
   BookmarkCheck,
   Copy
 } from 'lucide-react';
-import { BookProject, BookSession, ReadingBookmark } from '../types/book';
+import { APISettings, BookProject, BookSession, ReadingBookmark } from '../types/book';
 import { bookService } from '../services/bookService';
 import { BookAnalytics } from './BookAnalytics';
 import { CustomSelect } from './CustomSelect';
@@ -125,6 +125,7 @@ interface BookViewProps {
   onRetryDecision?: (decision: 'retry' | 'switch' | 'skip') => void;
   availableModels?: Array<{provider: string; model: string; name: string}>;
   theme: 'light' | 'dark';
+  settings: APISettings;
 }
 interface ReadingModeProps {
   content: string;
@@ -1370,6 +1371,7 @@ export function BookView({
   onRetryDecision,
   availableModels,
   theme,
+  settings,
 }: BookViewProps) {
   const [detailTab, setDetailTab] = useState<'overview' | 'analytics' | 'read'>('overview');
   const [localIsGenerating, setLocalIsGenerating] = useState(false);
@@ -1385,6 +1387,12 @@ export function BookView({
       includePracticalExercises: false,
       includeQuizzes: false,
     },
+    advancedSettings: {
+      reasoningEffort: 'medium',
+      enableCitations: false,
+      enableSearchSettings: false,
+      ossReasoningEffort: 'medium',
+    }
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
@@ -1736,6 +1744,119 @@ export function BookView({
                     </label>
                   </div>
                 </div>
+
+                {/* ✅ NEW: Advanced Model Settings (only for Groq Compound/OSS) */}
+                {settings.selectedProvider === 'groq' && 
+                  (settings.selectedModel.includes('compound') || settings.selectedModel.includes('gpt-oss')) && (
+                  <div className="mt-6 pt-6 border-t border-[var(--color-border)] space-y-4 animate-fade-in">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="w-5 h-5 text-purple-400" />
+                      <h4 className="text-sm font-semibold text-white">Advanced Model Parameters</h4>
+                    </div>
+                    
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                      <p className="text-xs text-blue-300">
+                        These parameters are specific to {settings.selectedModel.includes('compound') ? 'Compound' : 'GPT OSS'} models and enhance output quality.
+                      </p>
+                    </div>
+
+                    {/* Reasoning Effort (for both Compound and OSS) */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        Reasoning Effort
+                      </label>
+                      <p className="text-xs text-gray-500 mb-2">
+                        Controls how much computational effort the model uses for reasoning
+                      </p>
+                      <select
+                        value={formData.advancedSettings?.reasoningEffort || formData.advancedSettings?.ossReasoningEffort || 'medium'}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          advancedSettings: {
+                            ...prev.advancedSettings,
+                            ...(settings.selectedModel.includes('compound') 
+                              ? { reasoningEffort: e.target.value as any }
+                              : { ossReasoningEffort: e.target.value as any }
+                            )
+                          }
+                        }))}
+                        className="input-style"
+                      >
+                        <option value="low">Low (Faster, less detailed)</option>
+                        <option value="medium">Medium (Balanced)</option>
+                        <option value="high">High (Slower, more detailed)</option>
+                      </select>
+                    </div>
+
+                    {/* Citations (Compound only) */}
+                    {settings.selectedModel.includes('compound') && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.advancedSettings?.enableCitations || false}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                advancedSettings: {
+                                  ...prev.advancedSettings,
+                                  enableCitations: e.target.checked
+                                }
+                              }))}
+                              className="w-4 h-4 accent-purple-500"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                Enable Citations
+                              </div>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Model will provide source citations for generated content
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+
+                        {/* Search Settings (Compound only) */}
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.advancedSettings?.enableSearchSettings || false}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                advancedSettings: {
+                                  ...prev.advancedSettings,
+                                  enableSearchSettings: e.target.checked
+                                }
+                              }))}
+                              className="w-4 h-4 accent-purple-500"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                <Search className="w-4 h-4" />
+                                Enable Search Settings
+                              </div>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Model can search for additional context while generating
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                      <p className="text-xs text-yellow-300 flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>
+                          Higher reasoning effort may increase generation time but provides more detailed and accurate content.
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
