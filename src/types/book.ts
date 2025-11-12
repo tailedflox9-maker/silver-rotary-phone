@@ -59,6 +59,17 @@ export interface BookGenerationProgress {
   timestamp: Date;
 }
 
+// ✅ NEW: Advanced model parameters
+export interface AdvancedModelSettings {
+  // For Compound models
+  reasoningEffort?: 'low' | 'medium' | 'high';
+  enableCitations?: boolean;
+  enableSearchSettings?: boolean;
+  
+  // For OSS models
+  ossReasoningEffort?: 'low' | 'medium' | 'high';
+}
+
 export interface BookSession {
   goal: string;
   language: 'en'; // Simplified to English only
@@ -70,6 +81,8 @@ export interface BookSession {
     includeQuizzes: boolean;
   };
   reasoning?: string; // Optional field for the book's rationale
+  // ✅ NEW: Advanced settings per session
+  advancedSettings?: AdvancedModelSettings;
 }
 
 export interface ReadingBookmark {
