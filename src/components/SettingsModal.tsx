@@ -1,6 +1,11 @@
 // src/components/SettingsModal.tsx
 import React from 'react';
-import { X, Shield, Database, Download, Upload, Trash2, HelpCircle, Key, Settings, ExternalLink, Eye, EyeOff, User, Zap, Globe, Cpu, BookOpen, AlertTriangle, Plus } from 'lucide-react';
+import { 
+  X, Shield, Database, Download, Upload, Trash2, HelpCircle, Key, 
+  Settings, ExternalLink, Eye, EyeOff, User, Zap, Globe, Cpu, 
+  BookOpen, AlertTriangle, Plus,
+  Brain, FileText, Search, Sparkles
+} from 'lucide-react';
 import { APISettings } from '../types';
 import { storageUtils } from '../utils/storage';
 import { DisclaimerPage } from './DisclaimerPage';
