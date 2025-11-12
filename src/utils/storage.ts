@@ -33,12 +33,20 @@ export const storageUtils = {
       }
 
       // ✅ UPDATED: Add Groq models validation
-      const validModels = {
-        google: ['gemini-2.0-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemma-3-27b-it', 'gemini-2.5-pro'],
-        mistral: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest', 'pixtral-large-latest'],
-        zhipu: ['glm-4.5-flash'],
-        groq: ['llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'moonshotai/kimi-k2-instruct-0905', 'moonshotai/kimi-k2-instruct']
-      };
+const validModels = {
+  google: ['gemini-2.0-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemma-3-27b-it', 'gemini-2.5-pro'],
+  mistral: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest', 'pixtral-large-latest'],
+  zhipu: ['glm-4.5-flash'],
+  groq: [
+    'llama-3.3-70b-versatile', 
+    'groq/compound',                    // ✅ NEW
+    'groq/compound-mini',               // ✅ NEW
+    'openai/gpt-oss-120b', 
+    'openai/gpt-oss-20b', 
+    'moonshotai/kimi-k2-instruct-0905', 
+    'moonshotai/kimi-k2-instruct'
+  ]
+};
 
       const providerModels = validModels[settings.selectedProvider];
       if (!providerModels.includes(settings.selectedModel)) {
