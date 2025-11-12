@@ -142,14 +142,18 @@ function App() {
 
   const hasApiKey = !!(settings.googleApiKey || settings.mistralApiKey || settings.zhipuApiKey || settings.groqApiKey);
   
-  const getAlternativeModels = () => {
-    const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
-    if (settings.googleApiKey && settings.selectedProvider !== 'google') alternatives.push({ provider: 'google', model: 'gemini-2.5-flash', name: 'Google Gemini 2.5 Flash' });
-    if (settings.mistralApiKey && settings.selectedProvider !== 'mistral') alternatives.push({ provider: 'mistral', model: 'mistral-small-latest', name: 'Mistral Small' });
-    if (settings.zhipuApiKey && settings.selectedProvider !== 'zhipu') alternatives.push({ provider: 'zhipu', model: 'glm-4.5-flash', name: 'GLM 4.5 Flash' });
-    if (settings.groqApiKey && settings.selectedProvider !== 'groq') alternatives.push({ provider: 'groq', model: 'llama-3.3-70b-versatile', name: 'Groq Llama 3.3 70B' });
-    return alternatives;
-  };
+const getAlternativeModels = () => {
+  const alternatives: Array<{provider: ModelProvider; model: string; name: string}> = [];
+  if (settings.googleApiKey && settings.selectedProvider !== 'google') 
+    alternatives.push({ provider: 'google', model: 'gemini-2.5-flash', name: 'Google Gemini 2.5 Flash' });
+  if (settings.mistralApiKey && settings.selectedProvider !== 'mistral') 
+    alternatives.push({ provider: 'mistral', model: 'mistral-small-latest', name: 'Mistral Small' });
+  if (settings.zhipuApiKey && settings.selectedProvider !== 'zhipu') 
+    alternatives.push({ provider: 'zhipu', model: 'glm-4.5-flash', name: 'GLM 4.5 Flash' });
+  if (settings.groqApiKey && settings.selectedProvider !== 'groq') 
+    alternatives.push({ provider: 'groq', model: 'groq/compound', name: 'Groq Compound' });  // ✅ Updated
+  return alternatives;
+};
 
   const showModelSwitchModal = (alternatives: any) => { setModelSwitchOptions(alternatives); setShowModelSwitch(true); };
   
