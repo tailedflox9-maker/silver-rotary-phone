@@ -1,4 +1,6 @@
 // src/types.ts
+import { AdvancedModelSettings } from './types/book';
+
 export type ModelProvider = 'google' | 'mistral' | 'zhipu' | 'groq';
 
 export type ModelID =
@@ -22,16 +24,19 @@ export type ModelID =
   | 'openai/gpt-oss-20b'
   | 'moonshotai/kimi-k2-instruct-0905'
   | 'moonshotai/kimi-k2-instruct'
-  | 'groq/compound'           // ✅ NEW
-  | 'groq/compound-mini';     // ✅ NEW
+  | 'groq/compound'
+  | 'groq/compound-mini';
 
 export interface APISettings {
   googleApiKey: string;
   zhipuApiKey: string;
   mistralApiKey: string;
-  groqApiKey: string; // ✅ NEW
+  groqApiKey: string;
   selectedModel: ModelID;
   selectedProvider: ModelProvider;
+  
+  // ✅ NEW: Advanced settings
+  advancedSettings?: AdvancedModelSettings;
 }
 
 export * from './types/book';
