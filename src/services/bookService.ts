@@ -296,8 +296,8 @@ class BookGenerationService {
    if (this.settings.groqApiKey && this.settings.selectedProvider !== 'groq') {
       alternatives.push({
         provider: 'groq',
-        model: 'groq/compound',              // ✅ Changed to compound as default
-        name: 'Groq Compound'                // ✅ Updated name
+        model: 'groq/compound',
+        name: 'Groq Compound'
       });
     }
     
@@ -341,7 +341,7 @@ class BookGenerationService {
     this.userRetryDecisions.set(bookId, decision);
   }
 
-  private async generateWithAI(prompt: string, bookId?: string, onChunk?: (chunk: string) => void): Promise<string> {
+  private async generateWithAI(prompt: string, bookId?: string, onChunk?: (chunk: string) => void, session?: BookSession): Promise<string> {
     const validation = this.validateSettings();
     if (!validation.isValid) {
       throw new Error(`Configuration error: ${validation.errors.join(', ')}`);
@@ -373,7 +373,7 @@ class BookGenerationService {
           result = await this.generateWithZhipu(prompt, abortController.signal, onChunk); 
           break;
         case 'groq':
-          result = await this.generateWithGroq(prompt, abortController.signal, onChunk); 
+          result = await this.generateWithGroq(prompt, abortController.signal, onChunk, session); 
           break;
         default: 
           throw new Error(`Unsupported provider: ${this.settings.selectedProvider}`);
@@ -621,63 +621,91 @@ class BookGenerationService {
     throw new Error('ZhipuAI API failed after retries');
   }
 
-  private async generateWithGroq(prompt: string, signal?: AbortSignal, onChunk?: (chunk: string) => void): Promise<string> {
+  private async generateWithGroq(prompt: string, signal?: AbortSignal, onChunk?: (chunk: string) => void, session?: BookSession): Promise<string> {
     const apiKey = this.getApiKey();
     const model = this.settings.selectedModel;
     const maxRetries = 3;
     let attempt = 0;
-
+  
+    // ✅ NEW: Prioritize session settings, fallback to global settings
+    const advSettings = session?.advancedSettings || this.settings.advancedSettings;
+    const isCompoundModel = model.includes('compound');
+    const isOSSModel = model.includes('gpt-oss');
+  
     while (attempt < maxRetries) {
       try {
+        // ✅ NEW: Build request body with advanced parameters
+        const requestBody: any = {
+          model: model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 8192,
+          stream: true
+        };
+  
+        // ✅ Add Compound-specific parameters
+        if (isCompoundModel && advSettings) {
+          if (advSettings.reasoningEffort) {
+            requestBody.reasoning_effort = advSettings.reasoningEffort;
+          }
+          if (advSettings.enableCitations) {
+            requestBody.enable_citations = true;
+          }
+          if (advSettings.enableSearchSettings) {
+            requestBody.search_settings = {
+              enabled: true
+            };
+          }
+        }
+  
+        // ✅ Add OSS-specific parameters
+        if (isOSSModel && advSettings?.ossReasoningEffort) {
+          requestBody.reasoning_effort = advSettings.ossReasoningEffort;
+        }
+  
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
-          body: JSON.stringify({
-            model: model,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 8192,
-            stream: true
-          }),
+          body: JSON.stringify(requestBody),
           signal
         });
-
+  
         if (response.status === 429 || response.status === 503) {
           const delay = Math.pow(2, attempt) * 1000;
           await sleep(delay);
           attempt++;
           continue;
         }
-
+  
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData?.error?.message || `Groq API Error: ${response.status}`);
         }
-
+  
         if (!response.body) throw new Error('Response body is null');
-
+  
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullContent = '';
         let buffer = '';
-
+  
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
+  
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
-
+  
           for (const line of lines) {
             const trimmedLine = line.trim();
             if (trimmedLine.startsWith('data: ')) {
               const jsonStr = trimmedLine.substring(6);
               if (jsonStr === '[DONE]') continue;
-
+  
               try {
                 const data = JSON.parse(jsonStr);
                 const textPart = data?.choices?.[0]?.delta?.content || '';
@@ -689,10 +717,10 @@ class BookGenerationService {
             }
           }
         }
-
+  
         if (!fullContent) throw new Error('No content generated');
         return fullContent;
-
+  
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') throw error;
         attempt++;
@@ -704,7 +732,6 @@ class BookGenerationService {
   }
 
   async generateRoadmap(session: BookSession, bookId: string): Promise<BookRoadmap> {
-    // ✅ FIX: Clear any existing pause flags when starting a new book
     try {
       localStorage.removeItem(`pause_flag_${bookId}`);
       localStorage.removeItem(`checkpoint_${bookId}`);
@@ -721,7 +748,7 @@ class BookGenerationService {
     while (attempt < maxAttempts) {
       try {
         const prompt = this.buildRoadmapPrompt(session);
-        const response = await this.generateWithAI(prompt, bookId);
+        const response = await this.generateWithAI(prompt, bookId, undefined, session);
         const roadmap = await this.parseRoadmapResponse(response, session);
         
         this.updateProgress(bookId, { status: 'roadmap_completed', progress: 10, roadmap });
@@ -869,7 +896,7 @@ class BookGenerationService {
           totalWordsGenerated: totalWordsBefore + currentWordCount,
           aiStage
         });
-      });
+      }, session);
 
       const wordCount = moduleContent.split(/\s+/).filter(word => word.length > 0).length;
 
@@ -1005,7 +1032,6 @@ class BookGenerationService {
       throw new Error('No roadmap available');
     }
     
-    // ✅ FIX: Clear pause flag at the START of generation
     this.resumeGeneration(book.id);
     
     const checkpoint = this.loadCheckpoint(book.id);
@@ -1280,7 +1306,6 @@ class BookGenerationService {
         modules: completedModules
       });
     } else {
-      // ✅ FIX: Clear checkpoint and pause flags when all modules are done
       this.clearCheckpoint(book.id);
       try {
         localStorage.removeItem(`pause_flag_${book.id}`);
@@ -1289,14 +1314,12 @@ class BookGenerationService {
         console.warn('Failed to clear pause flag:', error);
       }
       
-      // ✅ FIX: Update status to roadmap_completed so the UI shows "Assemble Book" button
       this.updateProgress(book.id, {
         status: 'roadmap_completed',
         modules: completedModules,
         progress: 90
       });
       
-      // ✅ FIX: Update generation status to completed
       this.updateGenerationStatus(book.id, {
         status: 'completed',
         totalProgress: 100,
@@ -1423,7 +1446,6 @@ class BookGenerationService {
 
       this.clearCheckpoint(book.id);
       
-      // ✅ FIX: Clear pause flag when book is completed
       try {
         localStorage.removeItem(`pause_flag_${book.id}`);
         console.log('✓ Cleared pause flag for completed book:', book.id);
@@ -1475,7 +1497,7 @@ Write 800-1200 words covering:
 - Motivation and expectations
 Use engaging tone with ## markdown headers.`;
 
-    return await this.generateWithAI(prompt);
+    return await this.generateWithAI(prompt, undefined, undefined, session);
   }
 
   private async generateBookSummary(session: BookSession, modules: BookModule[]): Promise<string> {
@@ -1490,7 +1512,7 @@ Write 600-900 words covering:
 - Next steps guidance
 - Congratulations to reader`;
 
-    return await this.generateWithAI(prompt);
+    return await this.generateWithAI(prompt, undefined, undefined, session);
   }
 
   private async generateGlossary(modules: BookModule[]): Promise<string> {
