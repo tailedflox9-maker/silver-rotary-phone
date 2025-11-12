@@ -447,6 +447,7 @@ const getAlternativeModels = () => {
           onRetryDecision={handleRetryDecision}
           availableModels={getAlternativeModels()}
           theme={theme}
+          settings={settings} // ✅ FIX: Pass the settings object as a prop
         />
       </main>
 
