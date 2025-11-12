@@ -8,9 +8,17 @@ const defaultSettings: APISettings = {
   googleApiKey: '',
   zhipuApiKey: '',
   mistralApiKey: '',
-  groqApiKey: '', // ✅ NEW
+  groqApiKey: '',
   selectedProvider: 'google',
   selectedModel: 'gemini-2.5-flash',
+  
+  // ✅ NEW: Default advanced settings
+  advancedSettings: {
+    reasoningEffort: 'medium',
+    enableCitations: false,
+    enableSearchSettings: false,
+    ossReasoningEffort: 'medium',
+  }
 };
 
 export const storageUtils = {
@@ -26,21 +34,19 @@ export const storageUtils = {
         ...parsed,
       };
 
-      // ✅ UPDATED: Add groq to valid providers
       if (!settings.selectedProvider || !['google', 'mistral', 'zhipu', 'groq'].includes(settings.selectedProvider)) {
         console.warn('Invalid selectedProvider found in storage:', settings.selectedProvider);
         settings.selectedProvider = defaultSettings.selectedProvider;
       }
 
-      // ✅ UPDATED: Add Groq models validation
 const validModels = {
   google: ['gemini-2.0-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemma-3-27b-it', 'gemini-2.5-pro'],
   mistral: ['mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest', 'pixtral-large-latest'],
   zhipu: ['glm-4.5-flash'],
   groq: [
     'llama-3.3-70b-versatile', 
-    'groq/compound',                    // ✅ NEW
-    'groq/compound-mini',               // ✅ NEW
+    'groq/compound',
+    'groq/compound-mini',
     'openai/gpt-oss-120b', 
     'openai/gpt-oss-20b', 
     'moonshotai/kimi-k2-instruct-0905', 
