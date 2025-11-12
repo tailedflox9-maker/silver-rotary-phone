@@ -293,11 +293,11 @@ class BookGenerationService {
       });
     }
 
-    if (this.settings.groqApiKey && this.settings.selectedProvider !== 'groq') {
+   if (this.settings.groqApiKey && this.settings.selectedProvider !== 'groq') {
       alternatives.push({
         provider: 'groq',
-        model: 'llama-3.3-70b-versatile',
-        name: 'Groq Llama 3.3 70B Versatile'
+        model: 'groq/compound',              // ✅ Changed to compound as default
+        name: 'Groq Compound'                // ✅ Updated name
       });
     }
     
